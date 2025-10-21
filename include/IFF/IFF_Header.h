@@ -49,9 +49,10 @@ enum IFF_Header_Flag_Typing
 
 enum IFF_Header_Flag_Structuring
 {
-	IFF_Header_Flag_Structuring_DEFAULT = 0,      // Pad odd-length chunks with a byte
-	IFF_Header_Flag_Structuring_NO_PADDING = 1,   // Bit 0
-	IFF_Header_Flag_Structuring_SHARDING = 2      // Bit 1: "    " Chunks are processed as continuation directives
+	IFF_Header_Flag_Structuring_DEFAULT = 0,			// Pad odd-length chunks with a byte
+	IFF_Header_Flag_Structuring_NO_PADDING = 1,			// Bit 0
+	IFF_Header_Flag_Structuring_SHARDING = 2,			// Bit 1: "    " Chunks are processed as continuation directives
+	IFF_Header_Flag_Structuring_STRICT_CONTAINERS = 4   // Bit 2: Enforce CAT/LIST declared type vs content type validation
 };
 
 struct IFF_Header_Flags_Fields
@@ -75,7 +76,7 @@ union IFF_Header_Flags
 /** @brief The structure of the IFF-2025 header directive (" IFF"). */
 struct IFF_Header
 {
-	enum IFF_Header_Version version;
+	VPS_TYPE_16U version;
 	VPS_TYPE_16U revision;
 	union IFF_Header_Flags flags;
 };

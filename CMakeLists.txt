@@ -13,19 +13,22 @@ add_library(VulpesIFF STATIC)
 
 # Add the source files for this library.
 target_sources(VulpesIFF PRIVATE
-		src/IFF_Parser.c
-		src/IFF_Parser_State.c
-		src/IFF_Header.c
-		src/IFF_CheckedReader.c
+		src/IFF_ChecksumAlgorithm.c
+		src/IFF_ChecksumCalculator.c
+		src/IFF_ChecksumSpan.c
 		src/IFF_Chunk.c
 		src/IFF_Chunk_Key.c
 		src/IFF_ChunkDecoder.c
+		src/IFF_Container.c
 		src/IFF_ContextualData.c
-		src/IFF_ControlledReader.c
+		src/IFF_DataPump.c
+		src/IFF_DataTap.c
 		src/IFF_FormDecoder.c
+		src/IFF_Header.c
+		src/IFF_Parser.c
+		src/IFF_Parser_State.c
 		src/IFF_Reader.c
 		src/IFF_Scope_State.c
-		src/IFF_Container.c
 		src/IFF_Tag.c
 )
 

@@ -17,7 +17,7 @@
 #include <IFF/IFF_Tag.h>
 #include <IFF/IFF_Header.h>
 #include <IFF/IFF_Chunk.h>
-#include <IFF/IFF_Reader.h>
+#include <IFF/IFF_DataPump.h>
 #include <IFF/IFF_FormDecoder.h>
 #include <IFF/IFF_Chunk_Key.h>
 #include <IFF/IFF_ChunkDecoder.h>

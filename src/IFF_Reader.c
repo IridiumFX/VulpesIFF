@@ -1,95 +1,72 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_Data.h>
-#include <vulpes/VPS_Decoder.h>
-#include <vulpes/VPS_Decoder_Base256.h>
-#include <vulpes/VPS_StreamReader.h>
-#include <vulpes/VPS_DataReader.h>
+#include <vulpes/VPS_Dictionary.h>
+#include <vulpes/VPS_Endian.h>
 
-#include <IFF/IFF_Tag.h>
 #include <IFF/IFF_Header.h>
+#include <IFF/IFF_Tag.h>
+#include <IFF/IFF_DataTap.h>
 #include <IFF/IFF_Reader.h>
+
+/**
+ * @brief Interprets a raw byte buffer as an integer based on current config.
+ */
+static char IFF_Reader_PRIVATE_InterpretSize
+(
+	enum IFF_Header_Sizing sizing,
+	enum IFF_Header_Flag_Typing typing,
+	const unsigned char* raw_bytes,
+	VPS_TYPE_SIZE* out_size
+)
+{
+	char is_le = typing & IFF_Header_Flag_Typing_LITTLE_ENDIAN;
+	char is_unsigned = typing & IFF_Header_Flag_Typing_UNSIGNED_SIZES;
+
+	switch (sizing)
+	{
+		case IFF_Header_Sizing_16:
+			if (is_unsigned) *out_size = is_le ? VPS_Endian_Read16ULE(raw_bytes) : VPS_Endian_Read16UBE(raw_bytes);
+			else *out_size = (VPS_TYPE_64U)(VPS_TYPE_64S)(is_le ? (VPS_TYPE_16S)VPS_Endian_Read16ULE(raw_bytes) : (VPS_TYPE_16S)VPS_Endian_Read16UBE(raw_bytes));
+			return 1;
+		case IFF_Header_Sizing_64:
+			if (is_unsigned) *out_size = is_le ? VPS_Endian_Read64ULE(raw_bytes) : VPS_Endian_Read64UBE(raw_bytes);
+			else *out_size = (VPS_TYPE_64U)(is_le ? (VPS_TYPE_64S)VPS_Endian_Read64ULE(raw_bytes) : (VPS_TYPE_64S)VPS_Endian_Read64UBE(raw_bytes));
+			return 1;
+		default: // IFF_Header_Sizing_32
+			if (is_unsigned) *out_size = is_le ? VPS_Endian_Read32ULE(raw_bytes) : VPS_Endian_Read32UBE(raw_bytes);
+			else *out_size = (VPS_TYPE_64U)(VPS_TYPE_64S)(is_le ? (VPS_TYPE_32S)VPS_Endian_Read32ULE(raw_bytes) : (VPS_TYPE_32S)VPS_Endian_Read32UBE(raw_bytes));
+			return 1;
+	}
+	return 0; // Should be unreachable
+}
 
 char IFF_Reader_Allocate
 (
-	struct IFF_Reader **item
+	struct IFF_Reader** item
 )
 {
-	struct IFF_Reader *reader;
+	struct IFF_Reader* reader;
+	if (!item) return 0;
 
-	if (!item)
+	reader = calloc(1, sizeof(struct IFF_Reader));
+	if (!reader) return 0;
+
+	// Allocate the entire decorator stack that this reader owns.
+	if (!IFF_DataTap_Allocate(&reader->tap))
 	{
+		IFF_Reader_Release(reader);
 		return 0;
-	}
-
-	reader = calloc
-	(
-		1
-		, sizeof(struct IFF_Reader)
-	);
-	if (!reader)
-	{
-		return 0;
-	}
-
-	VPS_Decoder_Allocate
-	(
-		&reader->base256_decoder
-	);
-	if (!reader->base256_decoder)
-	{
-		goto cleanup;
-	}
-
-	VPS_Data_Allocate
-	(
-		&reader->data_buffer
-		, 128
-		, 0
-	);
-	if (!reader->data_buffer)
-	{
-		goto cleanup;
-	}
-
-	VPS_DataReader_Allocate
-	(
-		&reader->data_reader
-	);
-	if (!reader->data_reader)
-	{
-		goto cleanup;
-	}
-
-	VPS_StreamReader_Allocate
-	(
-		&reader->stream_reader
-	);
-	if (!reader->stream_reader)
-	{
-		goto cleanup;
 	}
 
 	*item = reader;
-
 	return 1;
-
-cleanup:
-
-	IFF_Reader_Release
-	(
-		reader
-	);
-
-	return 0;
 }
 
 char IFF_Reader_Construct
 (
-	struct IFF_Reader *item
+	struct IFF_Reader* item
 	, int fh
 )
 {
@@ -98,383 +75,139 @@ char IFF_Reader_Construct
 		return 0;
 	}
 
-	// Construct the I/O pipeline that this reader will manage.
-	if
-	(
-		!VPS_Decoder_Base256_Construct
-		(
-			item->base256_decoder
-		)
-	)
+	// Construct the underlying stack, passing the file handle down.
+	if (!IFF_DataTap_Construct(item->tap, fh))
 	{
 		return 0;
 	}
 
-	if
-	(
-		!VPS_Data_Construct
-		(
-			item->data_buffer
-		)
-	)
-	{
-		return 0;
-	}
-
-	if
-	(
-		!VPS_DataReader_Construct
-		(
-			item->data_reader
-			, item->data_buffer
-		)
-	)
-	{
-		return 0;
-	}
-
-	if
-	(
-		!VPS_StreamReader_Construct
-		(
-			item->stream_reader
-			, item->data_buffer
-			, fh
-			, 0 // Let the stream reader create its own raw buffer
-			, 0
-		)
-	)
-	{
-		return 0;
-	}
+	// TODO: Allocate and construct the content_decoders dictionary when needed.
+	//		 The Spec hints to different encodings but only Base256 is currenty defined
+	item->content_decoders = 0;
 
 	return 1;
 }
 
 char IFF_Reader_Deconstruct
 (
-	struct IFF_Reader *item
+	struct IFF_Reader* item
 )
 {
-	if (!item)
-	{
-		return 0;
-	}
+	if (!item) return 0;
 
-	VPS_StreamReader_Deconstruct
-	(
-		item->stream_reader
-	);
-
-	VPS_DataReader_Deconstruct
-	(
-		item->data_reader
-	);
-
-	VPS_Data_Deconstruct
-	(
-		item->data_buffer
-	);
-
-	VPS_Decoder_Deconstruct
-	(
-		item->base256_decoder
-	);
+	// Deconstruct the owned reader stack.
+	IFF_DataTap_Deconstruct(item->tap);
+	VPS_Dictionary_Release(item->content_decoders);
+	item->content_decoders = 0;
 
 	return 1;
 }
 
 char IFF_Reader_Release
 (
-	struct IFF_Reader *item
+	struct IFF_Reader* item
 )
 {
 	if (item)
 	{
-		IFF_Reader_Deconstruct
-		(
-			item
-		);
-
-		VPS_StreamReader_Release
-		(
-			item->stream_reader
-		);
-
-		VPS_DataReader_Release
-		(
-			item->data_reader
-		);
-
-		VPS_Data_Release
-		(
-			item->data_buffer
-		);
-
-		VPS_Decoder_Release
-		(
-			item->base256_decoder
-		);
-
-		free
-		(
-			item
-		);
+		IFF_Reader_Deconstruct(item);
+		IFF_DataTap_Release(item->tap);
+		free(item);
 	}
 	return 1;
 }
 
-static char IFF_Reader_PRIVATE_EnsureDataAvailable
-(
-	struct IFF_Reader *reader,
-	VPS_TYPE_SIZE bytes_needed
-)
-{
-	VPS_TYPE_SIZE bytes_available = 0;
-
-	VPS_Data_Compact(reader->data_buffer);
-
-	if (reader->data_buffer->limit >= bytes_needed)
-	{
-		return 1;
-	}
-
-	if
-	(
-		!VPS_StreamReader_Read
-		(
-			reader->stream_reader
-			, bytes_needed
-			, 0
-			, 0
-			, 0
-			, &bytes_available
-			, reader->base256_decoder
-			, 0
-		)
-	)
-	{
-		return 0; // Read error
-	}
-
-	return (char)(bytes_available >= bytes_needed);
-}
-
 char IFF_Reader_ReadTag
 (
-	struct IFF_Reader *reader
+	struct IFF_Reader* reader
 	, enum IFF_Header_TagSizing tag_sizing
-	, struct IFF_Tag *tag
+	, struct IFF_Tag* tag
 )
 {
-	unsigned char raw_tag_buffer[IFF_TAG_CANONICAL_SIZE];
-	enum IFF_Tag_Type type;
-	VPS_TYPE_8U tag_size;
+	struct VPS_Data* raw_data = 0;
+	VPS_TYPE_8U tag_size_in_bytes;
 
-	tag_size = IFF_Header_Flags_GetTagLength
-	(
-		tag_sizing
-	); 
+	if (!reader || !tag) return 0;
 
-	if (!reader || !tag || tag_size == 0)
+	tag_size_in_bytes = IFF_Header_Flags_GetTagLength(tag_sizing);
+	if (tag_size_in_bytes == 0) return 0;
+
+	// 1. Read raw bytes from the next layer down.
+	if (!IFF_DataTap_ReadRaw(reader->tap, tag_size_in_bytes, &raw_data))
 	{
 		return 0;
 	}
 
-	if (!IFF_Reader_PRIVATE_EnsureDataAvailable(reader, tag_size))
-	{
-		return 0;
-	}
+	// 2. Interpret the raw bytes to create the canonical tag.
+	enum IFF_Tag_Type type = (raw_data->bytes[0] == ' ') ? IFF_TAG_TYPE_DIRECTIVE : IFF_TAG_TYPE_TAG;
+	char result = IFF_Tag_Construct(tag, raw_data->bytes, tag_size_in_bytes, type);
 
-	if
-	(
-		!VPS_DataReader_ReadBytes
-		(
-			reader->data_reader
-			, raw_tag_buffer
-			, tag_size
-		)
-	)
-	{
-		return 0;
-	}
-
-	type = (raw_tag_buffer[0] == ' ') ? IFF_TAG_TYPE_DIRECTIVE : IFF_TAG_TYPE_TAG;
-
-	return IFF_Tag_Construct
-	(
-		tag
-		, raw_tag_buffer
-		, tag_size
-		, type
-	);
-}
-
-// --- Size Reader Abstraction ---
-
-typedef char (*size_reader_func)(struct VPS_DataReader*, VPS_TYPE_64U*);
-
-// --- Unsigned Readers ---
-static char read_size_16u_be(struct VPS_DataReader *r, VPS_TYPE_64U *s) { VPS_TYPE_16U t; if(!VPS_DataReader_Read16UBE(r, &t)) return 0; *s = t; return 1; }
-static char read_size_16u_le(struct VPS_DataReader *r, VPS_TYPE_64U *s) { VPS_TYPE_16U t; if(!VPS_DataReader_Read16ULE(r, &t)) return 0; *s = t; return 1; }
-static char read_size_32u_be(struct VPS_DataReader *r, VPS_TYPE_64U *s) { VPS_TYPE_32U t; if(!VPS_DataReader_Read32UBE(r, &t)) return 0; *s = t; return 1; }
-static char read_size_32u_le(struct VPS_DataReader *r, VPS_TYPE_64U *s) { VPS_TYPE_32U t; if(!VPS_DataReader_Read32ULE(r, &t)) return 0; *s = t; return 1; }
-static char read_size_64u_be(struct VPS_DataReader *r, VPS_TYPE_64U *s) { return VPS_DataReader_Read64UBE(r, s); }
-static char read_size_64u_le(struct VPS_DataReader *r, VPS_TYPE_64U *s) { return VPS_DataReader_Read64ULE(r, s); }
-
-// --- Signed Readers ---
-static char read_size_16s_be(struct VPS_DataReader *r, VPS_TYPE_64U *s) { VPS_TYPE_16S t; if(!VPS_DataReader_Read16SBE(r, &t)) return 0; *s = (VPS_TYPE_64U)(VPS_TYPE_64S)t; return 1; }
-static char read_size_16s_le(struct VPS_DataReader *r, VPS_TYPE_64U *s) { VPS_TYPE_16S t; if(!VPS_DataReader_Read16SLE(r, &t)) return 0; *s = (VPS_TYPE_64U)(VPS_TYPE_64S)t; return 1; }
-static char read_size_32s_be(struct VPS_DataReader *r, VPS_TYPE_64U *s) { VPS_TYPE_32S t; if(!VPS_DataReader_Read32SBE(r, &t)) return 0; *s = (VPS_TYPE_64U)(VPS_TYPE_64S)t; return 1; }
-static char read_size_32s_le(struct VPS_DataReader *r, VPS_TYPE_64U *s) { VPS_TYPE_32S t; if(!VPS_DataReader_Read32SLE(r, &t)) return 0; *s = (VPS_TYPE_64U)(VPS_TYPE_64S)t; return 1; }
-static char read_size_64s_be(struct VPS_DataReader *r, VPS_TYPE_64U *s) { return VPS_DataReader_Read64SBE(r, (VPS_TYPE_64S*)s); }
-static char read_size_64s_le(struct VPS_DataReader *r, VPS_TYPE_64U *s) { return VPS_DataReader_Read64SLE(r, (VPS_TYPE_64S*)s); }
-
-
-static size_reader_func get_size_reader
-(
-	enum IFF_Header_Sizing sizing,
-	enum IFF_Header_Flag_Typing typing
-)
-{
-	char is_le = typing & IFF_Header_Flag_Typing_LITTLE_ENDIAN;
-    char is_unsigned = typing & IFF_Header_Flag_Typing_UNSIGNED_SIZES;
-
-	switch (sizing)
-	{
-		case IFF_Header_Sizing_16:
-		{
-			if (is_unsigned) return is_le ? read_size_16u_le : read_size_16u_be;
-			return is_le ? read_size_16s_le : read_size_16s_be;
-		}
-		break;
-
-		case IFF_Header_Sizing_64:
-		{
-			if (is_unsigned) return is_le ? read_size_64u_le : read_size_64u_be;
-			return is_le ? read_size_64s_le : read_size_64s_be;
-		}
-		break;
-
-		default: // IFF_Header_Sizing_32
-		{
-			if (is_unsigned) return is_le ? read_size_32u_le : read_size_32u_be;
-			return is_le ? read_size_32s_le : read_size_32s_be;
-		}
-	}
+	VPS_Data_Release(raw_data);
+	return result;
 }
 
 char IFF_Reader_ReadSize
 (
-	struct IFF_Reader *reader
+	struct IFF_Reader* reader
 	, enum IFF_Header_Sizing sizing
 	, enum IFF_Header_Flag_Typing typing
-	, VPS_TYPE_64U *size
+	, VPS_TYPE_SIZE* size
 )
 {
-	size_reader_func size_reader;
-	char result;
+	struct VPS_Data* raw_data = 0;
+	VPS_TYPE_8U size_in_bytes;
 
-	VPS_TYPE_8U size_in_bytes = IFF_Header_Flags_GetSizeLength
-	(
-		sizing
-	);
-
-	if (!reader || !size || size_in_bytes == 0)
-	{
-		return 0;
-	}
+	if (!reader || !size) return 0;
 	*size = 0;
 
-	if (!IFF_Reader_PRIVATE_EnsureDataAvailable(reader, size_in_bytes))
+	size_in_bytes = IFF_Header_Flags_GetSizeLength(sizing);
+	if (size_in_bytes == 0) return 0;
+
+	// 1. Read raw bytes from the next layer down.
+	if (!IFF_DataTap_ReadRaw(reader->tap, size_in_bytes, &raw_data))
 	{
 		return 0;
 	}
 
-	size_reader = get_size_reader
-	(
-		sizing,
-		typing
-	);
-	if (!size_reader)
-	{
-		return 0; // Should be unreachable
-	}
+	// 2. Interpret the raw bytes based on the current configuration.
+	char result = IFF_Reader_PRIVATE_InterpretSize(sizing, typing, raw_data->bytes, size);
 
-	result = size_reader
-	(
-		reader->data_reader
-		, size
-	);
-
+	VPS_Data_Release(raw_data);
 	return result;
 }
 
 char IFF_Reader_ReadData
 (
-	struct IFF_Reader *reader
-	, VPS_TYPE_64U size
-	, struct VPS_Data **out_data
+	struct IFF_Reader* reader
+	, enum IFF_Header_Encoding encoding
+	, VPS_TYPE_SIZE size
+	, struct VPS_Data** out_data
 )
 {
-	if (!reader || !out_data || size == 0)
-	{
-		return 0;
-	}
+	if (!reader || !out_data) return 0;
 
-	if (!IFF_Reader_PRIVATE_EnsureDataAvailable(reader, size))
-	{
-		return 0;
-	}
+	// If content decoding were implemented, the logic would go here.
+	// We would read the raw data, then pass it through the appropriate
+	// decoder from the `content_decoders` dictionary based on `encoding`.
 
-	if
-	(
-		!VPS_Data_Clone
-		(
-			out_data
-			, reader->data_buffer
-			, reader->data_buffer->position
-			, size
-		)
-	)
-	{
-		return 0;
-	}
-
-	if
-	(
-		!VPS_Data_Seek
-		(
-			reader->data_buffer
-			, size
-			, SEEK_CUR
-		)
-	)
-	{
-		VPS_Data_Release(*out_data);
-		*out_data = 0;
-
-		return 0;
-	}
-
-	return 1;
+	// For now, we just pass through to the checked reader.
+	return IFF_DataTap_ReadRaw(reader->tap, size, out_data);
 }
 
-char IFF_Reader_Seek
+char IFF_Reader_Skip
 (
-	struct IFF_Reader *reader
-	, VPS_TYPE_64S offset
+	struct IFF_Reader* reader
+	, VPS_TYPE_SIZE bytes_to_skip
 )
 {
-	if (!reader || !reader->stream_reader || offset < 0)
+	if (reader)
 	{
 		return 0;
 	}
 
-	return VPS_StreamReader_Seek
+	return IFF_DataTap_Skip
 	(
-		reader->stream_reader
-		, offset
-		, SEEK_CUR
+		reader->tap
+		, bytes_to_skip
 	);
 }

@@ -10,7 +10,7 @@
 #include <IFF/IFF_Tag.h>
 #include <IFF/IFF_ContextualData.h>
 #include <IFF/IFF_Scope_State.h>
-#include <IFF/IFF_Reader.h>
+#include <IFF/IFF_DataPump.h>
 #include <IFF/IFF_Parser_State.h>
 #include <IFF/IFF_Chunk_Key.h>
 

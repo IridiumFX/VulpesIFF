@@ -32,3 +32,81 @@ RESUME_HERE
 
 	IFF_Reader should not emit the tag. It should only provide the primitive byte read steps
 	IFF_ControlledReader can
+
+
+
++-------------------------------------------------------------------------+
+| High-Level Logic                                                        |
+|  - "I want to write these pixels."                                      |
+|  - Calls StartChecksumSpan()                                            |
+|  - Passes raw pixel data to ControlledWriter                            |
++-------------------------------------------------------------------------+
+       |
+       v (raw pixel data)
++-------------------------------------------------------------------------+
+| IFF_ControlledWriter (Interpreter & Content Encoder)                    |
+|  1. Receives raw pixel data.                                            |
+|  2. Checks config: encoding is Base64.                                  |
+|  3. ENCODES pixels -> Base64 byte string.                               |
+|  4. Passes ENCODED bytes to CheckedWriter.                              |
++-------------------------------------------------------------------------+
+       |
+       v (encoded Base64 bytes)
++-------------------------------------------------------------------------+
+| IFF_CheckedWriter (The Tap)                                             |
+|  1. Receives encoded bytes.                                             |
+|  2. UPDATES CHECKSUM with these encoded bytes.                          |
+|  3. Passes same encoded bytes to IFF_Writer.                            |
++-------------------------------------------------------------------------+
+       |
+       v (encoded Base64 bytes)
++-------------------------------------------------------------------------+
+| IFF_Writer (The Dumb Pump)                                              |
+|  1. Receives encoded bytes.                                             |
+|  2. WRITES bytes to file/socket.                                        |
++-------------------------------------------------------------------------+
+
+...........................................................................
+
++-------------------------------------------------------------------------+
+| IFF_Parser (High-Level Logic)                                           |
+| - Sees ' CHK', calls checked_reader->StartChecksumSpan()                |
+| - Calls controlled_reader->ReadTag() to get a canonical tag             |
+| - Sees ' SUM', calls checked_reader->EndChecksumSpanAndVerify()         |
++-------------------------------------------------------------------------+
+       |
+       | Calls ReadTag(), ReadSize()
+       v
++-------------------------------------------------------------------------+
+| IFF_ControlledReader (Interpreter)                                      |
+| - Holds parsing state (tag_size, endianness, etc.)                      |
+| - ReadTag():                                                            |
+|   1. Calls checked_reader->ReadRaw(4) -> gets raw ['F','O','R','M']     |
+|   2. Canonicalizes to create IFF_Tag struct                             |
+|   3. Returns canonical struct to Parser                                 |
++-------------------------------------------------------------------------+
+       |
+       | Calls ReadRaw(num_bytes)
+       v
++-------------------------------------------------------------------------+
+| IFF_CheckedReader (The Tap)                                             |
+| - Holds active checksum state (e.g., CRC32 context)                     |
+| - ReadRaw(num_bytes):                                                   |
+|   1. Calls reader->ReadRaw(num_bytes) -> gets raw bytes                 |
+|   2. Updates CRC32 context with these raw bytes                         |
+|   3. Returns raw bytes to ControlledReader                              |
++-------------------------------------------------------------------------+
+       |
+       | Calls ReadRaw(num_bytes)
+       v
++-------------------------------------------------------------------------+
+| IFF_Reader (The Dumb Pump)                                              |
+| - ReadRaw(num_bytes):                                                   |
+|   1. Reads raw bytes from the underlying VPS_StreamReader               |
+|   2. Returns raw bytes                                                  |
++-------------------------------------------------------------------------+
+       |
+       v
++-------------------------------------------------------------------------+
+| File / Socket                                                           |
++-------------------------------------------------------------------------+

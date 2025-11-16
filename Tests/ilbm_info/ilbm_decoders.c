@@ -7,7 +7,7 @@
 
 #include <IFF/IFF_Header.h>
 #include <IFF/IFF_Tag.h>
-#include <IFF/IFF_Reader.h>
+#include <IFF/IFF_DataPump.h>
 #include <IFF/IFF_ContextualData.h>
 #include <IFF/IFF_Parser_State.h>
 #include <IFF/IFF_ChunkDecoder.h>

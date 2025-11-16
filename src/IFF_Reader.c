@@ -11,8 +11,6 @@
 
 #include <IFF/IFF_Tag.h>
 #include <IFF/IFF_Header.h>
-#include <IFF/IFF_ContextualData.h>
-#include <IFF/IFF_Parser_State.h>
 #include <IFF/IFF_Reader.h>
 
 char IFF_Reader_Allocate
@@ -37,31 +35,75 @@ char IFF_Reader_Allocate
 		return 0;
 	}
 
+	VPS_Decoder_Allocate
+	(
+		&reader->base256_decoder
+	);
+	if (!reader->base256_decoder)
+	{
+		goto cleanup;
+	}
+
+	VPS_Data_Allocate
+	(
+		&reader->data_buffer
+		, 128
+		, 0
+	);
+	if (!reader->data_buffer)
+	{
+		goto cleanup;
+	}
+
+	VPS_DataReader_Allocate
+	(
+		&reader->data_reader
+	);
+	if (!reader->data_reader)
+	{
+		goto cleanup;
+	}
+
+	VPS_StreamReader_Allocate
+	(
+		&reader->stream_reader
+	);
+	if (!reader->stream_reader)
+	{
+		goto cleanup;
+	}
+
 	*item = reader;
 
 	return 1;
+
+cleanup:
+
+	IFF_Reader_Release
+	(
+		reader
+	);
+
+	return 0;
 }
 
 char IFF_Reader_Construct
 (
 	struct IFF_Reader *item
 	, int fh
-	, struct IFF_Parser_State *parse_state
 )
 {
-	if (!item || !parse_state)
+	if (!item)
 	{
 		return 0;
 	}
 
-	item->parse_state = parse_state;
-
 	// Construct the I/O pipeline that this reader will manage.
 	if
 	(
-		!VPS_Data_Allocate
+		!VPS_Decoder_Base256_Construct
 		(
-			&item->data_buffer
+			item->base256_decoder
 		)
 	)
 	{
@@ -73,8 +115,6 @@ char IFF_Reader_Construct
 		!VPS_Data_Construct
 		(
 			item->data_buffer
-			, 128
-			, 0
 		)
 	)
 	{
@@ -83,9 +123,10 @@ char IFF_Reader_Construct
 
 	if
 	(
-		!VPS_StreamReader_Allocate
+		!VPS_DataReader_Construct
 		(
-			&item->stream_reader
+			item->data_reader
+			, item->data_buffer
 		)
 	)
 	{
@@ -107,39 +148,6 @@ char IFF_Reader_Construct
 		return 0;
 	}
 
-	if
-	(
-		!VPS_Decoder_Allocate
-		(
-			&item->decoder
-		)
-	)
-	{
-		return 0;
-	}
-
-	if
-	(
-		!VPS_DataReader_Allocate
-		(
-			&item->data_reader
-		)
-	)
-	{
-		return 0;
-	}
-
-	if
-	(
-		!VPS_Decoder_Base256_Construct
-		(
-			item->decoder
-		)
-	)
-	{
-		return 0;
-	}
-
 	return 1;
 }
 
@@ -153,29 +161,25 @@ char IFF_Reader_Deconstruct
 		return 0;
 	}
 
-	// Deconstruct and release the managed I/O pipeline components.
-	VPS_Decoder_Release
-	(
-		item->decoder
-	);
-	VPS_StreamReader_Release
+	VPS_StreamReader_Deconstruct
 	(
 		item->stream_reader
 	);
-	VPS_Data_Release
-	(
-		item->data_buffer
-	);
-	VPS_DataReader_Release
+
+	VPS_DataReader_Deconstruct
 	(
 		item->data_reader
 	);
 
-	item->parse_state = 0;
-	item->stream_reader = 0;
-	item->data_buffer = 0;
-	item->data_reader = 0;
-	item->decoder = 0;
+	VPS_Data_Deconstruct
+	(
+		item->data_buffer
+	);
+
+	VPS_Decoder_Deconstruct
+	(
+		item->base256_decoder
+	);
 
 	return 1;
 }
@@ -191,6 +195,27 @@ char IFF_Reader_Release
 		(
 			item
 		);
+
+		VPS_StreamReader_Release
+		(
+			item->stream_reader
+		);
+
+		VPS_DataReader_Release
+		(
+			item->data_reader
+		);
+
+		VPS_Data_Release
+		(
+			item->data_buffer
+		);
+
+		VPS_Decoder_Release
+		(
+			item->base256_decoder
+		);
+
 		free
 		(
 			item
@@ -214,23 +239,41 @@ static char IFF_Reader_PRIVATE_EnsureDataAvailable
 		return 1;
 	}
 
-	if (!VPS_StreamReader_Read(reader->stream_reader, bytes_needed, 0, 0, 0, &bytes_available, reader->decoder, 0))
+	if
+	(
+		!VPS_StreamReader_Read
+		(
+			reader->stream_reader
+			, bytes_needed
+			, 0
+			, 0
+			, 0
+			, &bytes_available
+			, reader->base256_decoder
+			, 0
+		)
+	)
 	{
 		return 0; // Read error
 	}
 
-	return (bytes_available >= bytes_needed);
+	return (char)(bytes_available >= bytes_needed);
 }
 
 char IFF_Reader_ReadTag
 (
 	struct IFF_Reader *reader
+	, enum IFF_Header_TagSizing tag_sizing
 	, struct IFF_Tag *tag
 )
 {
-	VPS_TYPE_8U tag_size = IFF_Header_Flags_GetTagLength
+	unsigned char raw_tag_buffer[IFF_TAG_CANONICAL_SIZE];
+	enum IFF_Tag_Type type;
+	VPS_TYPE_8U tag_size;
+
+	tag_size = IFF_Header_Flags_GetTagLength
 	(
-		reader->parse_state->active_header_flags
+		tag_sizing
 	); 
 
 	if (!reader || !tag || tag_size == 0)
@@ -243,15 +286,20 @@ char IFF_Reader_ReadTag
 		return 0;
 	}
 
-	VPS_DataReader_Construct(reader->data_reader, reader->data_buffer);
-
-	unsigned char raw_tag_buffer[IFF_TAG_CANONICAL_SIZE];
-	if (!VPS_DataReader_ReadBytes(reader->data_reader, raw_tag_buffer, tag_size))
+	if
+	(
+		!VPS_DataReader_ReadBytes
+		(
+			reader->data_reader
+			, raw_tag_buffer
+			, tag_size
+		)
+	)
 	{
 		return 0;
 	}
 
-	enum IFF_Tag_Type type = (raw_tag_buffer[0] == ' ') ? IFF_TAG_TYPE_DIRECTIVE : IFF_TAG_TYPE_TAG;
+	type = (raw_tag_buffer[0] == ' ') ? IFF_TAG_TYPE_DIRECTIVE : IFF_TAG_TYPE_TAG;
 
 	return IFF_Tag_Construct
 	(
@@ -283,28 +331,44 @@ static char read_size_64s_be(struct VPS_DataReader *r, VPS_TYPE_64U *s) { return
 static char read_size_64s_le(struct VPS_DataReader *r, VPS_TYPE_64U *s) { return VPS_DataReader_Read64SLE(r, (VPS_TYPE_64S*)s); }
 
 
-static size_reader_func get_size_reader(union IFF_Header_Flags flags)
+static size_reader_func get_size_reader
+(
+	enum IFF_Header_Sizing sizing,
+	enum IFF_Header_Flag_Typing typing
+)
 {
-	char is_le = flags.as_fields.typing & IFF_Header_Flag_Typing_LITTLE_ENDIAN;
-    char is_unsigned = flags.as_fields.typing & IFF_Header_Flag_Typing_UNSIGNED_SIZES;
+	char is_le = typing & IFF_Header_Flag_Typing_LITTLE_ENDIAN;
+    char is_unsigned = typing & IFF_Header_Flag_Typing_UNSIGNED_SIZES;
 
-	switch (flags.as_fields.sizing)
+	switch (sizing)
 	{
 		case IFF_Header_Sizing_16:
-            if (is_unsigned) return is_le ? read_size_16u_le : read_size_16u_be;
-            else return is_le ? read_size_16s_le : read_size_16s_be;
+		{
+			if (is_unsigned) return is_le ? read_size_16u_le : read_size_16u_be;
+			return is_le ? read_size_16s_le : read_size_16s_be;
+		}
+		break;
+
 		case IFF_Header_Sizing_64:
-            if (is_unsigned) return is_le ? read_size_64u_le : read_size_64u_be;
-            else return is_le ? read_size_64s_le : read_size_64s_be;
+		{
+			if (is_unsigned) return is_le ? read_size_64u_le : read_size_64u_be;
+			return is_le ? read_size_64s_le : read_size_64s_be;
+		}
+		break;
+
 		default: // IFF_Header_Sizing_32
-            if (is_unsigned) return is_le ? read_size_32u_le : read_size_32u_be;
-            else return is_le ? read_size_32s_le : read_size_32s_be;
+		{
+			if (is_unsigned) return is_le ? read_size_32u_le : read_size_32u_be;
+			return is_le ? read_size_32s_le : read_size_32s_be;
+		}
 	}
 }
 
 char IFF_Reader_ReadSize
 (
 	struct IFF_Reader *reader
+	, enum IFF_Header_Sizing sizing
+	, enum IFF_Header_Flag_Typing typing
 	, VPS_TYPE_64U *size
 )
 {
@@ -313,7 +377,7 @@ char IFF_Reader_ReadSize
 
 	VPS_TYPE_8U size_in_bytes = IFF_Header_Flags_GetSizeLength
 	(
-		reader->parse_state->active_header_flags
+		sizing
 	);
 
 	if (!reader || !size || size_in_bytes == 0)
@@ -327,15 +391,21 @@ char IFF_Reader_ReadSize
 		return 0;
 	}
 
-	size_reader = get_size_reader(reader->parse_state->active_header_flags);
+	size_reader = get_size_reader
+	(
+		sizing,
+		typing
+	);
 	if (!size_reader)
 	{
 		return 0; // Should be unreachable
 	}
 
-	VPS_DataReader_Construct(reader->data_reader, reader->data_buffer);
-
-	result = size_reader(reader->data_reader, size);
+	result = size_reader
+	(
+		reader->data_reader
+		, size
+	);
 
 	return result;
 }
@@ -352,20 +422,38 @@ char IFF_Reader_ReadData
 		return 0;
 	}
 
-	if (!IFF_Reader_PRIVATE_EnsureDataAvailable(reader, (VPS_TYPE_SIZE)size))
+	if (!IFF_Reader_PRIVATE_EnsureDataAvailable(reader, size))
 	{
 		return 0;
 	}
 
-	if (!VPS_Data_Clone(out_data, reader->data_buffer, reader->data_buffer->position, (VPS_TYPE_SIZE)size))
+	if
+	(
+		!VPS_Data_Clone
+		(
+			out_data
+			, reader->data_buffer
+			, reader->data_buffer->position
+			, size
+		)
+	)
 	{
 		return 0;
 	}
 
-	if (!VPS_Data_Seek(reader->data_buffer, (VPS_TYPE_SIZE)size, SEEK_CUR))
+	if
+	(
+		!VPS_Data_Seek
+		(
+			reader->data_buffer
+			, size
+			, SEEK_CUR
+		)
+	)
 	{
 		VPS_Data_Release(*out_data);
 		*out_data = 0;
+
 		return 0;
 	}
 

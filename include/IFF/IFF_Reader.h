@@ -1,17 +1,9 @@
-/**
- * @brief A high-level reader for consuming IFF structural elements from a stream.
- *
- * This component encapsulates the entire I/O pipeline and provides a simple
- * API to read IFF-specific building blocks like tags and correctly-sized chunk
- * length fields, respecting the active header flags of the parsing session.
- */
 struct IFF_Reader
 {
-	struct IFF_Parser_State *parse_state; // Back-link to get header flags
+	struct VPS_Decoder *base256_decoder;
 	struct VPS_StreamReader *stream_reader;
 	struct VPS_Data *data_buffer;
 	struct VPS_DataReader *data_reader;
-	struct VPS_Decoder *decoder;
 };
 
 char IFF_Reader_Allocate
@@ -23,7 +15,6 @@ char IFF_Reader_Construct
 (
 	struct IFF_Reader *item
 	, int fh
-	, struct IFF_Parser_State *parse_state
 );
 
 char IFF_Reader_Deconstruct
@@ -39,12 +30,15 @@ char IFF_Reader_Release
 char IFF_Reader_ReadTag
 (
 	struct IFF_Reader *reader
+	, enum IFF_Header_TagSizing tag_sizing
 	, struct IFF_Tag *tag
 );
 
 char IFF_Reader_ReadSize
 (
 	struct IFF_Reader *reader
+	, enum IFF_Header_Sizing sizing
+	, enum IFF_Header_Flag_Typing typing
 	, VPS_TYPE_64U *size
 );
 

@@ -11,4 +11,24 @@ IFF_Reader			Wraps on the VPS_StreamReader and VPS_DataReader.
 
 
 
+SDLC
+----
 
+Update git submodule:
+---------------------
+
+git submodule update --remote dependencies/VulpesCore
+git add dependencies/VulpesCore
+git commit -m "Updated VulpesCore submodule to latest version"
+
+
+
+RESUME_HERE
+-----------
+
+	Pipeline ... who runs the checksumming ?
+
+
+
+	IFF_Reader should not emit the tag. It should only provide the primitive byte read steps
+	IFF_ControlledReader can

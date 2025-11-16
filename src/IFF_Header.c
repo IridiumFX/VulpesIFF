@@ -8,10 +8,10 @@ const union IFF_Header_Flags IFF_HEADER_FLAGS_1985 = { 0 };
 
 VPS_TYPE_8U IFF_Header_Flags_GetTagLength
 (
-	union IFF_Header_Flags flags
+	enum IFF_Header_TagSizing tag_sizing
 )
 {
-	switch (flags.as_fields.tag_sizing)
+	switch (tag_sizing)
 	{
 		case IFF_Header_TagSizing_8:
 			return 8;
@@ -24,10 +24,10 @@ VPS_TYPE_8U IFF_Header_Flags_GetTagLength
 
 VPS_TYPE_8U IFF_Header_Flags_GetSizeLength
 (
-	union IFF_Header_Flags flags
+	enum IFF_Header_Sizing sizing
 )
 {
-	switch (flags.as_fields.sizing)
+	switch (sizing)
 	{
 		case IFF_Header_Sizing_16:
 			return 2;

@@ -30,10 +30,10 @@ extern const struct IFF_Tag IFF_TAG_SYSTEM_LIST;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_CAT;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_FORM;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_PROP;
-
-// --- Internal System Tag Constants (for parser context) ---
-extern const struct IFF_Tag IFF_TAG_INTERNAL_VARIANT;
-extern const struct IFF_Tag IFF_TAG_INTERNAL_TYPE;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_VER;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_REV;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_CHK;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_SUM;
 
 char IFF_Tag_Allocate
 (

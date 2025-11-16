@@ -15,8 +15,7 @@ enum IFF_Header_Sizing
 	// Default
 	IFF_Header_Sizing_32 = 0,
 	IFF_Header_Sizing_64 = 1,
-	// For smaller devices (15 == -1 in a signed nibble)
-	IFF_Header_Sizing_16 = 15
+	IFF_Header_Sizing_16 = 255
 };
 
 enum IFF_Header_TagSizing
@@ -85,10 +84,10 @@ extern const union IFF_Header_Flags IFF_HEADER_FLAGS_1985;
 
 VPS_TYPE_8U IFF_Header_Flags_GetTagLength
 (
-	union IFF_Header_Flags flags
+	enum IFF_Header_TagSizing tag_sizing
 );
 
 VPS_TYPE_8U IFF_Header_Flags_GetSizeLength
 (
-	union IFF_Header_Flags flags
+	enum IFF_Header_Sizing sizing
 );

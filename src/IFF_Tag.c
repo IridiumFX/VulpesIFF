@@ -46,19 +46,28 @@ const struct IFF_Tag IFF_TAG_SYSTEM_PROP =
     , {'P', 'R', 'O', 'P', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 };
 
-// --- Internal System Tag Constants (for parser context) ---
-// These are used as keys in the scoped dictionary to track container context.
-// They use non-standard characters to avoid collision with any valid IFF tag.
-const struct IFF_Tag IFF_TAG_INTERNAL_VARIANT =
+const struct IFF_Tag IFF_TAG_SYSTEM_VER =
 {
-    IFF_TAG_TYPE_TAG,
-    {'_', 'V', 'A', 'R', 'I', 'A', 'N', 'T', '_', '_', '_', '_', '_', '_', '_', '_'}
+    IFF_TAG_TYPE_TAG
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'V', 'E', 'R'}
 };
 
-const struct IFF_Tag IFF_TAG_INTERNAL_TYPE =
+const struct IFF_Tag IFF_TAG_SYSTEM_REV =
 {
-    IFF_TAG_TYPE_TAG,
-    {'_', 'T', 'Y', 'P', 'E', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_'}
+    IFF_TAG_TYPE_TAG
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'R', 'E', 'V'}
+};
+
+const struct IFF_Tag IFF_TAG_SYSTEM_CHK =
+{
+    IFF_TAG_TYPE_TAG
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'C', 'H', 'K'}
+};
+
+const struct IFF_Tag IFF_TAG_SYSTEM_SUM =
+{
+    IFF_TAG_TYPE_TAG
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'S', 'U', 'M'}
 };
 
 char IFF_Tag_Allocate

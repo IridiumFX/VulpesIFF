@@ -1,3 +1,6 @@
 [submodule "dependencies/VulpesCore"]
 	path = dependencies/VulpesCore
 	url = https://github.com/IridiumFX/VulpesCore.git
+[submodule "IFF-2025"]
+	path = IFF-2025
+	url = git@github.com:IridiumFX/IFF-2025.git

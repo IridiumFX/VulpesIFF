@@ -48,25 +48,25 @@ const struct IFF_Tag IFF_TAG_SYSTEM_PROP =
 
 const struct IFF_Tag IFF_TAG_SYSTEM_VER =
 {
-    IFF_TAG_TYPE_TAG
+    IFF_TAG_TYPE_DIRECTIVE
     , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'V', 'E', 'R'}
 };
 
 const struct IFF_Tag IFF_TAG_SYSTEM_REV =
 {
-    IFF_TAG_TYPE_TAG
+    IFF_TAG_TYPE_DIRECTIVE
     , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'R', 'E', 'V'}
 };
 
 const struct IFF_Tag IFF_TAG_SYSTEM_CHK =
 {
-    IFF_TAG_TYPE_TAG
+    IFF_TAG_TYPE_DIRECTIVE
     , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'C', 'H', 'K'}
 };
 
 const struct IFF_Tag IFF_TAG_SYSTEM_SUM =
 {
-    IFF_TAG_TYPE_TAG
+    IFF_TAG_TYPE_DIRECTIVE
     , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'S', 'U', 'M'}
 };
 

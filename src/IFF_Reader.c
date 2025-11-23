@@ -28,15 +28,16 @@ static char IFF_Reader_PRIVATE_InterpretSize
 	{
 		case IFF_Header_Sizing_16:
 			if (is_unsigned) *out_size = is_le ? VPS_Endian_Read16ULE(raw_bytes) : VPS_Endian_Read16UBE(raw_bytes);
-			else *out_size = (VPS_TYPE_64U)(VPS_TYPE_64S)(is_le ? (VPS_TYPE_16S)VPS_Endian_Read16ULE(raw_bytes) : (VPS_TYPE_16S)VPS_Endian_Read16UBE(raw_bytes));
+			else *out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_16S)VPS_Endian_Read16ULE(raw_bytes) : (VPS_TYPE_16S)VPS_Endian_Read16UBE(raw_bytes));
 			return 1;
 		case IFF_Header_Sizing_64:
-			if (is_unsigned) *out_size = is_le ? VPS_Endian_Read64ULE(raw_bytes) : VPS_Endian_Read64UBE(raw_bytes);
-			else *out_size = (VPS_TYPE_64U)(is_le ? (VPS_TYPE_64S)VPS_Endian_Read64ULE(raw_bytes) : (VPS_TYPE_64S)VPS_Endian_Read64UBE(raw_bytes));
+			// On a 32-bit host, this will truncate. This is an accepted limitation of this build configuration.
+			if (is_unsigned) *out_size = (VPS_TYPE_SIZE)(is_le ? VPS_Endian_Read64ULE(raw_bytes) : VPS_Endian_Read64UBE(raw_bytes));
+			else *out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_64S)VPS_Endian_Read64ULE(raw_bytes) : (VPS_TYPE_64S)VPS_Endian_Read64UBE(raw_bytes));
 			return 1;
 		default: // IFF_Header_Sizing_32
 			if (is_unsigned) *out_size = is_le ? VPS_Endian_Read32ULE(raw_bytes) : VPS_Endian_Read32UBE(raw_bytes);
-			else *out_size = (VPS_TYPE_64U)(VPS_TYPE_64S)(is_le ? (VPS_TYPE_32S)VPS_Endian_Read32ULE(raw_bytes) : (VPS_TYPE_32S)VPS_Endian_Read32UBE(raw_bytes));
+			else *out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_32S)VPS_Endian_Read32ULE(raw_bytes) : (VPS_TYPE_32S)VPS_Endian_Read32UBE(raw_bytes));
 			return 1;
 	}
 	return 0; // Should be unreachable
@@ -200,7 +201,7 @@ char IFF_Reader_Skip
 	, VPS_TYPE_SIZE bytes_to_skip
 )
 {
-	if (reader)
+	if (!reader)
 	{
 		return 0;
 	}

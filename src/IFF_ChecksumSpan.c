@@ -56,15 +56,13 @@ char IFF_ChecksumSpan_Construct
 		return 0;
 	}
 
-	VPS_List_Construct
+	return VPS_List_Construct
 	(
 		item->calculators
 		, 0
 		, 0
 		, (char(*)(void*))IFF_ChecksumCalculator_Release
 	);
-
-	return 1;
 }
 
 char IFF_ChecksumSpan_Deconstruct
@@ -76,6 +74,10 @@ char IFF_ChecksumSpan_Deconstruct
 	{
 		return 0;
 	}
+
+	// Deconstructing the list will clear it, which in turn calls the
+	// `node_data_release` callback (IFF_ChecksumCalculator_Release) for each item.
+	VPS_List_Deconstruct(item->calculators);
 
 	return 1;
 }

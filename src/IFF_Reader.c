@@ -8,6 +8,7 @@
 #include <IFF/IFF_Header.h>
 #include <IFF/IFF_Tag.h>
 #include <IFF/IFF_DataTap.h>
+#include <IFF/IFF_Chunk.h>
 #include <IFF/IFF_Reader.h>
 
 /**
@@ -211,4 +212,65 @@ char IFF_Reader_Skip
 		reader->tap
 		, bytes_to_skip
 	);
+}
+
+char IFF_Reader_ReadChunk
+(
+	struct IFF_Reader* reader,
+	const struct IFF_Header_Flags_Fields* config,
+	struct IFF_Chunk** out_chunk
+)
+{
+	if (!reader || !config || !out_chunk) return 0;
+
+	*out_chunk = NULL;
+	struct IFF_Tag tag;
+	VPS_TYPE_SIZE size = 0;
+	struct VPS_Data* data = NULL;
+	struct IFF_Chunk* chunk = NULL;
+
+	// 1. Read Tag using the granular primitive
+	if (!IFF_Reader_ReadTag(reader, config->tag_sizing, &tag))
+	{
+		return 0;
+	}
+
+	// 2. Read Size using the granular primitive
+	if (!IFF_Reader_ReadSize(reader, config->sizing, config->typing, &size))
+	{
+		// Failed to read size after reading a tag, this is a file corruption error.
+		return 0;
+	}
+
+	// 3. Read Data payload using the granular primitive
+	if (size > 0)
+	{
+		if (!IFF_Reader_ReadData(reader, config->encoding, size, &data))
+		{
+			// Failed to read the data payload after getting tag and size.
+			// This is a file corruption error.
+			return 0;
+		}
+	}
+
+	// 4. Assemble the final chunk object
+	if (!IFF_Chunk_Allocate(&chunk))
+	{
+		VPS_Data_Release(data); // Must release the data if chunk allocation fails
+		return 0;
+	}
+
+	// The IFF_Chunk takes ownership of the data pointer.
+	if (!IFF_Chunk_Construct(chunk, &tag, size, data))
+	{
+		// If construction fails, release everything.
+		// IFF_Chunk_Release will handle the internal data pointer.
+		IFF_Chunk_Release(chunk);
+
+		return 0;
+	}
+
+	*out_chunk = chunk;
+
+	return 1;
 }

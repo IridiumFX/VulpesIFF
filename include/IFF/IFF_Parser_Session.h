@@ -67,13 +67,15 @@ char IFF_Parser_Session_SetFlags
 	union IFF_Header_Flags flags
 );
 
-char IFF_Parser_Session_FindProp(
+char IFF_Parser_Session_FindProp
+(
     struct IFF_Parser_Session *state,
     struct IFF_Tag *prop_tag,
     struct IFF_ContextualData **out_prop_data
 );
 
-char IFF_Parser_Session_AddProp(
+char IFF_Parser_Session_AddProp
+(
 	struct IFF_Parser_Session* state,
 	struct IFF_Tag* form_type,
 	struct IFF_Tag* prop_tag,

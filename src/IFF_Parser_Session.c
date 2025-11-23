@@ -185,7 +185,8 @@ char IFF_Parser_Session_LeaveScope
 	return 1;
 }
 
-char IFF_Parser_Session_FindProp(
+char IFF_Parser_Session_FindProp
+(
     struct IFF_Parser_Session *state,
     struct IFF_Tag *prop_tag,
     struct IFF_ContextualData **out_prop_data
@@ -207,7 +208,8 @@ char IFF_Parser_Session_FindProp(
     return VPS_ScopedDictionary_Find(state->props, &key, (void**)out_prop_data);
 }
 
-char IFF_Parser_Session_AddProp(
+char IFF_Parser_Session_AddProp
+(
 	struct IFF_Parser_Session* state,
 	struct IFF_Tag* form_type,
 	struct IFF_Tag* prop_tag,

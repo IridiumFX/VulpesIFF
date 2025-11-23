@@ -53,3 +53,8 @@ char IFF_Parser_Factory_Scan
 	struct IFF_Parser_Factory *parser,
 	struct IFF_Parser_Session *state
 );
+
+char IFF_Parser_Factory_GetFinalEntity(
+	struct IFF_Parser_Session* session,
+	void** entity
+);

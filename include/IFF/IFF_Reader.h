@@ -68,8 +68,24 @@ char IFF_Reader_ReadData
 	, struct VPS_Data** out_data
 );
 
+/**
+ * @brief Skips a block of data, applying content decoding if necessary.
+ */
 char IFF_Reader_Skip
 (
 	struct IFF_Reader* reader
 	, VPS_TYPE_SIZE bytes_to_skip
+);
+
+/**
+ * @brief Reads a complete atomic chunk (Tag, Size, and Data).
+ * @details This is the primary high-level primitive for the parser. It internally
+ *          calls the granular ReadTag, ReadSize, and ReadData functions, ensuring
+ *          the entire decorator stack (e.g., checksumming) is processed correctly.
+ */
+char IFF_Reader_ReadChunk
+(
+	struct IFF_Reader* reader,
+	const struct IFF_Header_Flags_Fields* config,
+	struct IFF_Chunk** out_chunk
 );

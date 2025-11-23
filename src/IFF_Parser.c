@@ -59,6 +59,15 @@ char IFF_Parser_Allocate
 		goto cleanup;
 	}
 
+	IFF_Reader_Allocate
+	(
+		&parser->reader
+	);
+	if (!parser->reader)
+	{
+		goto cleanup;
+	}
+
 	*item = parser;
 
 	return 1;
@@ -167,6 +176,7 @@ char IFF_Parser_Release
 	(
 		item->session
 	);
+
 	IFF_Reader_Release
 	(
 		item->reader
@@ -182,9 +192,78 @@ char IFF_Parser_Release
 
 char IFF_Parser_Scan
 (
-	struct IFF_Parser *parser,
-	struct IFF_Parser_Session *session
+	struct IFF_Parser *parser
 )
 {
-	return 0;
+	struct IFF_Parser_Session* session;
+	struct IFF_Tag first_tag;
+	union IFF_Header_Flags* current_flags;
+
+	if (!parser || !parser->session || !parser->reader)
+	{
+		return 0;
+	}
+
+	session = parser->session;
+
+	// --- Bootstrap Logic ---
+	 current_flags = &session->active_header_flags;
+
+	// 1. Read the very first tag from the stream using the default IFF-85 flags.
+	if (!IFF_Reader_ReadTag(parser->reader, current_flags->as_fields.tag_sizing, &first_tag))
+	{
+		// Empty file is not an error, just nothing to do.
+		session->final_entity = 0;
+		return 1;
+	}
+
+	VPS_TYPE_16S ordering;
+	IFF_Tag_Compare(&first_tag, &IFF_TAG_SYSTEM_IFF, &ordering);
+
+	if (ordering == 0)
+	{
+		// --- Case 1: File starts with an ' IFF' directive. ---
+		struct IFF_Chunk* iff_chunk = 0;
+
+		// Read the rest of the ' IFF' chunk (size and data).
+		if (!IFF_Reader_ReadChunk(parser->reader, &current_flags->as_fields, &first_tag, &iff_chunk))
+		{
+			return 0; // Malformed file.
+		}
+
+		// TODO: Find and execute the ' IFF' directive processor.
+		// The processor will parse the chunk data and return a command
+		// to update the session's flags.
+
+		// For now, we just release the chunk.
+		IFF_Chunk_Release(iff_chunk);
+
+		// TODO: After processing the directive, we would start the main
+		// recursive scan on the *next* chunk.
+		// return IFF_Parser_PRIVATE_ScanScope(parser);
+	}
+	else
+	{
+		// --- Case 2: File does NOT start with ' IFF'. ---
+		// Per spec, it's a classic IFF-85 file. The default flags are correct.
+		// The tag we just read is the start of the first container.
+
+		// We must now read the rest of this first chunk.
+		struct IFF_Chunk* first_container_chunk = 0;
+		if (!IFF_Reader_ReadChunk(parser->reader, &current_flags->as_fields, &first_tag, &first_container_chunk))
+		{
+			return 0; // Malformed file.
+		}
+
+		// TODO: Process this first container chunk. This will involve:
+		// 1. Checking if it's a valid container (FORM, LIST, CAT).
+		// 2. Entering a new scope for this container.
+		// 3. Calling the main recursive scan to process its contents.
+		// 4. Leaving the scope.
+
+		// For now, we just release the chunk.
+		IFF_Chunk_Release(first_container_chunk);
+	}
+
+	return 1;
 }

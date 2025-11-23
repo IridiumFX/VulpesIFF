@@ -12,6 +12,8 @@ struct IFF_Parser_Session
 	struct IFF_ChunkDecoder *active_chunk_decoder;
 	struct IFF_Tag active_chunk_tag;
 	void *active_chunk_state;
+
+	void *final_entity;
 };
 
 char IFF_Parser_Session_Allocate

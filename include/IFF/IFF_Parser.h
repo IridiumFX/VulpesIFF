@@ -37,6 +37,5 @@ char IFF_Parser_Release
 
 char IFF_Parser_Scan
 (
-	struct IFF_Parser *parser,
-	struct IFF_Parser_Session *session
+	struct IFF_Parser *parser
 );

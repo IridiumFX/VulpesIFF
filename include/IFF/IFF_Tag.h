@@ -26,14 +26,15 @@ struct IFF_Tag
 extern const struct IFF_Tag IFF_TAG_SYSTEM_IFF;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_SHARD;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_END;
-extern const struct IFF_Tag IFF_TAG_SYSTEM_LIST;
-extern const struct IFF_Tag IFF_TAG_SYSTEM_CAT;
-extern const struct IFF_Tag IFF_TAG_SYSTEM_FORM;
-extern const struct IFF_Tag IFF_TAG_SYSTEM_PROP;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_VER;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_REV;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_CHK;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_SUM;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_LIST;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_CAT;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_FORM;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_PROP;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_WILDCARD;
 
 char IFF_Tag_Allocate
 (

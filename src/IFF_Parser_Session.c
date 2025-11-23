@@ -8,7 +8,6 @@
 #include <IFF/IFF_Tag.h>
 #include <IFF/IFF_Header.h>
 #include <IFF/IFF_Reader.h>
-#include <IFF/IFF_Parser_Factory.h>
 #include <IFF/IFF_ContextualData.h>
 #include <IFF/IFF_Parser_Session.h>
 #include <IFF/IFF_Scope_State.h>
@@ -30,11 +29,6 @@ char IFF_Parser_Session_Allocate
 	if (!state)
 	{
 		return 0;
-	}
-
-	if (!IFF_Reader_Allocate(&state->reader))
-	{
-		goto failure;
 	}
 
 	if (!VPS_List_Allocate(&state->scope_stack))
@@ -61,19 +55,10 @@ failure:
 char IFF_Parser_Session_Construct
 (
 	struct IFF_Parser_Session *item
-	, struct IFF_Parser_Factory *parser
-	, int file_handle
 	, union IFF_Header_Flags flags
 )
 {
 	if (!item)
-	{
-		return 0;
-	}
-
-	item->parser_factory = parser;
-
-	if (!IFF_Reader_Construct(item->reader, file_handle))
 	{
 		return 0;
 	}
@@ -112,7 +97,6 @@ char IFF_Parser_Session_Deconstruct
 		return 0;
 	}
 
-	IFF_Reader_Deconstruct(item->reader);
 	VPS_List_Deconstruct(item->scope_stack);
 	VPS_ScopedDictionary_Deconstruct(item->props);
 
@@ -127,7 +111,6 @@ char IFF_Parser_Session_Release
 	if (item)
 	{
 		IFF_Parser_Session_Deconstruct(item);
-		IFF_Reader_Release(item->reader);
 		VPS_List_Release(item->scope_stack);
 		VPS_ScopedDictionary_Release(item->props);
 		free(item);
@@ -162,14 +145,38 @@ char IFF_Parser_Session_EnterScope
 	struct IFF_Scope_State *scope;
 	struct VPS_List_Node *node;
 
-	IFF_Scope_State_Allocate(&scope);
-	IFF_Scope_State_Construct(scope, item->active_header_flags, 0, container_variant, container_type);
+	IFF_Scope_State_Allocate
+	(
+		&scope
+	);
+	IFF_Scope_State_Construct
+	(
+		scope
+		, item->active_header_flags
+		, 0
+		, container_variant
+		, container_type
+	);
 
-	VPS_List_Node_Allocate(&node);
-	VPS_List_Node_Construct(node, scope);
+	VPS_List_Node_Allocate
+	(
+		&node
+	);
+	VPS_List_Node_Construct
+	(
+		node
+		, scope
+	);
 
-	VPS_List_AddHead(item->scope_stack, node);
-	VPS_ScopedDictionary_EnterScope(item->props);
+	VPS_List_AddHead
+	(
+		item->scope_stack
+		, node
+	);
+	VPS_ScopedDictionary_EnterScope
+	(
+		item->props
+	);
 
 	return 1;
 }
@@ -179,8 +186,15 @@ char IFF_Parser_Session_LeaveScope
 	struct IFF_Parser_Session *item
 )
 {
-	VPS_List_RemoveHead(item->scope_stack, 0);
-	VPS_ScopedDictionary_LeaveScope(item->props);
+	VPS_List_RemoveHead
+	(
+		item->scope_stack,
+		0
+	);
+	VPS_ScopedDictionary_LeaveScope
+	(
+		item->props
+	);
 
 	return 1;
 }
@@ -204,7 +218,9 @@ char IFF_Parser_Session_FindProp
     }
 
     // 2. Fallback to searching for a wildcard property.
-    IFF_Tag_Construct(&key.form, (const unsigned char*)"    ", 4, IFF_TAG_TYPE_TAG);
+    // A direct assignment is safe here because it's a by-value copy and Tags are always constructed in canonical form
+    key.form = IFF_TAG_SYSTEM_WILDCARD;
+
     return VPS_ScopedDictionary_Find(state->props, &key, (void**)out_prop_data);
 }
 

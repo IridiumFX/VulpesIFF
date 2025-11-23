@@ -22,6 +22,7 @@
 #include <IFF/IFF_Chunk_Key.h>
 #include <IFF/IFF_ChunkDecoder.h>
 #include <IFF/IFF_Parser_Session.h>
+#include <IFF/IFF_Parser.h>
 #include <IFF/IFF_Parser_Factory.h>
 #include <IFF/IFF_ContextualData.h>
 #include <IFF/IFF_Scope_State.h>
@@ -208,40 +209,51 @@ char IFF_Parser_Factory_RegisterChunkDecoder
 	return VPS_Dictionary_Add(item->chunk_decoders, key, decoder);
 }
 
-char IFF_Parser_Factory_CreateSession
+char IFF_Parser_Factory_Create
 (
 	struct IFF_Parser_Factory *factory,
 	int file_handle,
-	struct IFF_Parser_Session **state
+	struct IFF_Parser **out_parser
 )
 {
-	struct IFF_Parser_Session *parser_session;
+	struct IFF_Parser *parser;
 	char result;
 
-	if (!factory || !state)
+	if (!factory || !out_parser)
 	{
 		return 0;
 	}
 
-	result = IFF_Parser_Session_Allocate(&parser_session);
+	result = IFF_Parser_Allocate
+	(
+		&parser
+	);
 	if (!result)
 	{
 		return 0;
 	}
 
-	result = IFF_Parser_Session_Construct(parser_session, factory, file_handle, IFF_HEADER_FLAGS_1985);
+	result = IFF_Parser_Construct
+	(
+		parser,
+		factory->form_decoders,
+		factory->chunk_decoders,
+		file_handle
+	);
 	if (!result)
 	{
 		goto failure;
 	}
 
-	*state = parser_session;
+	*out_parser = parser;
 
 	return 1;
 
-	failure:
+failure:
 
-		IFF_Parser_Session_Release(parser_session);
+	IFF_Parser_Release(parser);
+
+	*out_parser = 0;
 
 	return 0;
 }

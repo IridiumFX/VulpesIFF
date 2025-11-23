@@ -41,20 +41,15 @@ char IFF_Parser_Factory_RegisterChunkDecoder
 	, struct IFF_ChunkDecoder *decoder
 );
 
-char IFF_Parser_Factory_CreateSession
+char IFF_Parser_Factory_Create
 (
 	struct IFF_Parser_Factory *factory
 	, int file_handle
-	, struct IFF_Parser_Session **state
+	, struct IFF_Parser **out_parser
 );
 
-char IFF_Parser_Factory_Scan
+char IFF_Parser_Factory_GetFinalEntity
 (
-	struct IFF_Parser_Factory *parser,
-	struct IFF_Parser_Session *state
-);
-
-char IFF_Parser_Factory_GetFinalEntity(
 	struct IFF_Parser_Session* session,
 	void** entity
 );

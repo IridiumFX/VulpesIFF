@@ -28,20 +28,46 @@ static char IFF_Reader_PRIVATE_InterpretSize
 	switch (sizing)
 	{
 		case IFF_Header_Sizing_16:
-			if (is_unsigned) *out_size = is_le ? VPS_Endian_Read16ULE(raw_bytes) : VPS_Endian_Read16UBE(raw_bytes);
-			else *out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_16S)VPS_Endian_Read16ULE(raw_bytes) : (VPS_TYPE_16S)VPS_Endian_Read16UBE(raw_bytes));
-			return 1;
+		{
+			if (is_unsigned)
+			{
+				*out_size = is_le ? VPS_Endian_Read16ULE(raw_bytes) : VPS_Endian_Read16UBE(raw_bytes);
+			}
+			else
+			{
+				*out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_16S)VPS_Endian_Read16ULE(raw_bytes) : (VPS_TYPE_16S)VPS_Endian_Read16UBE(raw_bytes));
+			}
+		}
+		break;
+
 		case IFF_Header_Sizing_64:
-			// On a 32-bit host, this will truncate. This is an accepted limitation of this build configuration.
-			if (is_unsigned) *out_size = (VPS_TYPE_SIZE)(is_le ? VPS_Endian_Read64ULE(raw_bytes) : VPS_Endian_Read64UBE(raw_bytes));
-			else *out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_64S)VPS_Endian_Read64ULE(raw_bytes) : (VPS_TYPE_64S)VPS_Endian_Read64UBE(raw_bytes));
-			return 1;
+		{
+			// On a 32-bit host, this will truncate. The parser needs to either stop or provide a soft 64 bit VPS_TIPE_SIZE implementation
+			if (is_unsigned)
+			{
+				*out_size = (VPS_TYPE_SIZE)(is_le ? VPS_Endian_Read64ULE(raw_bytes) : VPS_Endian_Read64UBE(raw_bytes));
+			}
+			else
+			{
+				*out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_64S)VPS_Endian_Read64ULE(raw_bytes) : (VPS_TYPE_64S)VPS_Endian_Read64UBE(raw_bytes));
+			}
+		}
+		break;
+
 		default: // IFF_Header_Sizing_32
-			if (is_unsigned) *out_size = is_le ? VPS_Endian_Read32ULE(raw_bytes) : VPS_Endian_Read32UBE(raw_bytes);
-			else *out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_32S)VPS_Endian_Read32ULE(raw_bytes) : (VPS_TYPE_32S)VPS_Endian_Read32UBE(raw_bytes));
-			return 1;
+		{
+			if (is_unsigned)
+			{
+				*out_size = is_le ? VPS_Endian_Read32ULE(raw_bytes) : VPS_Endian_Read32UBE(raw_bytes);
+			}
+			else
+			{
+				*out_size = (VPS_TYPE_SIZE)(VPS_TYPE_SPAN)(is_le ? (VPS_TYPE_32S)VPS_Endian_Read32ULE(raw_bytes) : (VPS_TYPE_32S)VPS_Endian_Read32UBE(raw_bytes));
+			}
+		}
 	}
-	return 0; // Should be unreachable
+
+	return 1;
 }
 
 char IFF_Reader_Allocate
@@ -50,20 +76,37 @@ char IFF_Reader_Allocate
 )
 {
 	struct IFF_Reader* reader;
-	if (!item) return 0;
+	if (!item)
+	{
+		return 0;
+	}
 
-	reader = calloc(1, sizeof(struct IFF_Reader));
-	if (!reader) return 0;
+	reader = calloc
+	(
+		1,
+		sizeof(struct IFF_Reader)
+	);
+	if (!reader)
+	{
+		*item = 0;
+		return 0;
+	}
 
 	// Allocate the entire decorator stack that this reader owns.
 	if (!IFF_DataTap_Allocate(&reader->tap))
 	{
-		IFF_Reader_Release(reader);
-		return 0;
+		goto cleanup;
 	}
 
 	*item = reader;
 	return 1;
+
+cleanup:
+
+	*item = 0;
+	IFF_Reader_Release(reader);
+
+	return  0;
 }
 
 char IFF_Reader_Construct

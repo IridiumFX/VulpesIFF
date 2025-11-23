@@ -25,6 +25,7 @@ target_sources(VulpesIFF PRIVATE
 		src/IFF_DataTap.c
 		src/IFF_FormDecoder.c
 		src/IFF_Header.c
+		src/IFF_Parser.c
 		src/IFF_Parser_Factory.c
 		src/IFF_Parser_Session.c
 		src/IFF_Reader.c

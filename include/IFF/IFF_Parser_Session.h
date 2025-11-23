@@ -1,9 +1,5 @@
 struct IFF_Parser_Session
 {
-	// A back-pointer to the factory that created this state.
-	// This provides access to the registered decoders.
-	struct IFF_Parser_Factory *parser_factory;
-
 	// A scoped dictionary to store the decoded properties (chunks) of containers.
 	struct VPS_ScopedDictionary *props;
 
@@ -16,14 +12,6 @@ struct IFF_Parser_Session
 	struct IFF_ChunkDecoder *active_chunk_decoder;
 	struct IFF_Tag active_chunk_tag;
 	void *active_chunk_state;
-
-	// I/O Pipeline
-	struct IFF_Reader *reader;
-
-    // --- Final Output ---
-    // After a successful scan, this will hold the final, assembled object
-    // produced by the root FORM's decoder.
-    void *final_entity;
 };
 
 char IFF_Parser_Session_Allocate
@@ -34,8 +22,6 @@ char IFF_Parser_Session_Allocate
 char IFF_Parser_Session_Construct
 (
 	struct IFF_Parser_Session *item,
-	struct IFF_Parser_Factory *factory,
-	int file_handle,
 	union IFF_Header_Flags flags
 );
 

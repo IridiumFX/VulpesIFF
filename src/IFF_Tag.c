@@ -22,6 +22,30 @@ const struct IFF_Tag IFF_TAG_SYSTEM_END =
     , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'E', 'N', 'D'}
 };
 
+const struct IFF_Tag IFF_TAG_SYSTEM_VER =
+{
+    IFF_TAG_TYPE_DIRECTIVE
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'V', 'E', 'R'}
+};
+
+const struct IFF_Tag IFF_TAG_SYSTEM_REV =
+{
+    IFF_TAG_TYPE_DIRECTIVE
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'R', 'E', 'V'}
+};
+
+const struct IFF_Tag IFF_TAG_SYSTEM_CHK =
+{
+    IFF_TAG_TYPE_DIRECTIVE
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'C', 'H', 'K'}
+};
+
+const struct IFF_Tag IFF_TAG_SYSTEM_SUM =
+{
+    IFF_TAG_TYPE_DIRECTIVE
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'S', 'U', 'M'}
+};
+
 const struct IFF_Tag IFF_TAG_SYSTEM_LIST =
 {
     IFF_TAG_TYPE_TAG
@@ -46,28 +70,10 @@ const struct IFF_Tag IFF_TAG_SYSTEM_PROP =
     , {'P', 'R', 'O', 'P', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 };
 
-const struct IFF_Tag IFF_TAG_SYSTEM_VER =
+const struct IFF_Tag IFF_TAG_SYSTEM_WILDCARD =
 {
-    IFF_TAG_TYPE_DIRECTIVE
-    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'V', 'E', 'R'}
-};
-
-const struct IFF_Tag IFF_TAG_SYSTEM_REV =
-{
-    IFF_TAG_TYPE_DIRECTIVE
-    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'R', 'E', 'V'}
-};
-
-const struct IFF_Tag IFF_TAG_SYSTEM_CHK =
-{
-    IFF_TAG_TYPE_DIRECTIVE
-    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'C', 'H', 'K'}
-};
-
-const struct IFF_Tag IFF_TAG_SYSTEM_SUM =
-{
-    IFF_TAG_TYPE_DIRECTIVE
-    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'S', 'U', 'M'}
+    IFF_TAG_TYPE_TAG
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 };
 
 char IFF_Tag_Allocate

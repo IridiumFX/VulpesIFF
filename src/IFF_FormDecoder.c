@@ -5,7 +5,7 @@ char IFF_FormDecoder_Allocate(struct IFF_FormDecoder **item)
 {
     if (!item) return 0;
     *item = calloc(1, sizeof(struct IFF_FormDecoder));
-    return *item != NULL;
+    return *item != 0;
 }
 
 char IFF_FormDecoder_Construct(

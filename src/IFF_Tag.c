@@ -83,7 +83,7 @@ char IFF_Tag_Allocate
 {
     if (!tag) return 0;
     *tag = calloc(1, sizeof(struct IFF_Tag));
-    return *tag != NULL;
+    return *tag != 0;
 }
 
 char IFF_Tag_Construct

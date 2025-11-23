@@ -17,7 +17,7 @@ char IFF_ChecksumCalculator_Allocate
 
 	*item = calloc(1, sizeof(struct IFF_ChecksumCalculator));
 
-	return *item != NULL;
+	return *item != 0;
 }
 
 char IFF_ChecksumCalculator_Construct

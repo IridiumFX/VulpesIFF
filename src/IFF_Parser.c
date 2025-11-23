@@ -80,6 +80,7 @@ char IFF_Parser_Construct
 	struct IFF_Parser *item,
 	struct VPS_Dictionary *form_decoders,
 	struct VPS_Dictionary *chunk_decoders,
+	struct VPS_Dictionary *directive_processors,
 	int file_handle
 )
 {
@@ -112,6 +113,7 @@ char IFF_Parser_Construct
 
 	item->form_decoders = form_decoders;
 	item->chunk_decoders = chunk_decoders;
+	item->directive_processors = directive_processors;
 
 	return 1;
 }
@@ -138,6 +140,7 @@ char IFF_Parser_Deconstruct
 
 	item->form_decoders = 0;
 	item->chunk_decoders = 0;
+	item->directive_processors = 0;
 
 	// NOTE: This is platform specific. Need a better abstraction
 	item->file_handle = -1;

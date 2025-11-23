@@ -12,7 +12,7 @@ char IFF_Chunk_Allocate
 {
 	if (!item) return 0;
 	*item = calloc(1, sizeof(struct IFF_Chunk));
-	return *item != NULL;
+	return *item != 0;
 }
 
 char IFF_Chunk_Construct
@@ -41,7 +41,7 @@ char IFF_Chunk_Deconstruct
 
 	// Release the data payload that this chunk owns.
 	VPS_Data_Release(item->data);
-	item->data = NULL;
+	item->data = 0;
 
 	return 1;
 }

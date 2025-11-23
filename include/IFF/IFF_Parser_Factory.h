@@ -1,7 +1,10 @@
+#include <IFF/IFF_DirectiveProcessor.h>
+
 struct IFF_Parser_Factory
 {
 	struct VPS_Dictionary *form_decoders;
 	struct VPS_Dictionary *chunk_decoders;
+	struct VPS_Dictionary *directive_processors;
 };
 
 char IFF_Parser_Factory_Allocate
@@ -26,19 +29,23 @@ char IFF_Parser_Factory_Release
 
 char IFF_Parser_Factory_RegisterFormDecoder
 (
-	struct IFF_Parser_Factory *item
-	, const unsigned char *raw_form_tag
-	, VPS_TYPE_8U raw_tag_size
+	struct IFF_Parser_Factory *item,
+	const struct IFF_Tag* form_tag
 	, struct IFF_FormDecoder *decoder
 );
 
 char IFF_Parser_Factory_RegisterChunkDecoder
 (
-	struct IFF_Parser_Factory *item
-	, const unsigned char *raw_form_tag
-	, const unsigned char *raw_chunk_tag
-	, VPS_TYPE_8U raw_tag_size
+	struct IFF_Parser_Factory *item,
+	const struct IFF_Chunk_Key* chunk_key
 	, struct IFF_ChunkDecoder *decoder
+);
+
+char IFF_Parser_Factory_RegisterDirectiveProcessor
+(
+	struct IFF_Parser_Factory* item,
+	const struct IFF_Tag* directive_tag,
+	char (*directive_processor)(struct IFF_Parser*, const struct IFF_Chunk*)
 );
 
 char IFF_Parser_Factory_Create

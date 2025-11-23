@@ -78,14 +78,15 @@ char IFF_Reader_Skip
 );
 
 /**
- * @brief Reads a complete atomic chunk (Tag, Size, and Data).
+ * @brief Reads a chunk data (Size, and Data) for a specified Tag.
  * @details This is the primary high-level primitive for the parser. It internally
- *          calls the granular ReadTag, ReadSize, and ReadData functions, ensuring
+ *          calls the granular ReadSize, and ReadData functions, ensuring
  *          the entire decorator stack (e.g., checksumming) is processed correctly.
  */
 char IFF_Reader_ReadChunk
 (
 	struct IFF_Reader* reader,
 	const struct IFF_Header_Flags_Fields* config,
+	struct IFF_Tag *tag,
 	struct IFF_Chunk** out_chunk
 );

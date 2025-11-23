@@ -12,9 +12,8 @@ char IFF_Chunk_Key_Allocate
 char IFF_Chunk_Key_Construct
 (
 	struct IFF_Chunk_Key *key,
-	const unsigned char *raw_form_tag,
-	const unsigned char *raw_prop_tag,
-	VPS_TYPE_8U raw_tag_size
+	const struct IFF_Tag* form_tag,
+	const struct IFF_Tag* prop_tag
 );
 
 char IFF_Chunk_Key_Deconstruct
@@ -38,4 +37,10 @@ char IFF_Chunk_Key_Compare
 	void *key_1
 	, void *key_2
 	, VPS_TYPE_16S *ordering
+);
+
+char IFF_Chunk_Key_Clone
+(
+	struct IFF_Chunk_Key *key,
+	struct IFF_Chunk_Key **clone
 );

@@ -3,6 +3,7 @@ struct IFF_Parser
 	// NOTE: decoders belong to the factory, not the parser.
 	struct VPS_Dictionary *form_decoders;
 	struct VPS_Dictionary *chunk_decoders;
+	struct VPS_Dictionary *directive_processors;
 
 	struct IFF_Parser_Session *session;
 	struct IFF_Reader *reader;
@@ -20,6 +21,7 @@ char IFF_Parser_Construct
 	struct IFF_Parser *item,
 	struct VPS_Dictionary *form_decoders,
 	struct VPS_Dictionary *chunk_decoders,
+	struct VPS_Dictionary *directive_processors,
 	int file_handle
 );
 

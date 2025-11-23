@@ -22,20 +22,19 @@ char IFF_Chunk_Key_Allocate
 char IFF_Chunk_Key_Construct
 (
 	struct IFF_Chunk_Key *key,
-	const unsigned char *raw_form_tag,
-	const unsigned char *raw_prop_tag,
-	VPS_TYPE_8U raw_tag_size
+	const struct IFF_Tag* form_tag,
+	const struct IFF_Tag* prop_tag
 )
 {
-	if (!key || !raw_form_tag || !raw_prop_tag)
+	if (!key || !form_tag || !prop_tag)
 	{
 		return 0;
 	}
 
-	// Construct the composite key from the raw tag data.
-	// If either fails, the whole construction fails.
-	return IFF_Tag_Construct(&key->form, raw_form_tag, raw_tag_size, IFF_TAG_TYPE_TAG) &&
-	       IFF_Tag_Construct(&key->prop, raw_prop_tag, raw_tag_size, IFF_TAG_TYPE_TAG);
+	key->form = *form_tag;
+	key->prop = *prop_tag;
+
+	return 1;
 }
 
 char IFF_Chunk_Key_Deconstruct
@@ -58,8 +57,10 @@ char IFF_Chunk_Key_Release
 {
 	if (key)
 	{
+		IFF_Chunk_Key_Deconstruct(key);
 		free(key);
 	}
+
 	return 1;
 }
 
@@ -158,4 +159,26 @@ char IFF_Chunk_Key_Compare
     }
 
     return 1;
+}
+
+char IFF_Chunk_Key_Clone
+(
+	struct IFF_Chunk_Key *key,
+	struct IFF_Chunk_Key **clone
+)
+{
+	if (!key || !clone)
+	{
+		return 0;
+	}
+
+	if (!IFF_Chunk_Key_Allocate(&clone))
+	{
+		return 0;
+	}
+
+	// IFF_Chunk_Key is a struct of value-types only, thus we can by-value copy
+	**clone = *key;
+
+	return  1;
 }

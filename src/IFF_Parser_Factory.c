@@ -55,6 +55,11 @@ char IFF_Parser_Factory_Allocate
 		goto failure;
 	}
 
+	if (!VPS_Dictionary_Allocate(&subject->directive_processors, 17))
+	{
+		goto failure;
+	}
+
 	*item = subject;
 
 	return 1;
@@ -98,6 +103,17 @@ char IFF_Parser_Factory_Construct
 		, 7500
 		, 8
 	);
+	VPS_Dictionary_Construct
+	(
+		item->directive_processors,
+		(char(*)(void*, VPS_TYPE_SIZE*)) IFF_Tag_Hash,
+		(char(*)(void*, void*, VPS_TYPE_16S*)) IFF_Tag_Compare,
+		(char(*)(void*)) IFF_Tag_Release,
+		0, // Processors are function pointers, not owned.
+		2,
+		7500,
+		8
+	);
 
 	return 1;
 }
@@ -120,6 +136,10 @@ char IFF_Parser_Factory_Deconstruct
 	(
 		item->chunk_decoders
 	);
+	VPS_Dictionary_Deconstruct
+	(
+		item->directive_processors
+	);
 
 	return 1;
 }
@@ -139,6 +159,10 @@ char IFF_Parser_Factory_Release
 		(
 			item->form_decoders
 		);
+		VPS_Dictionary_Release
+		(
+			item->directive_processors
+		);
 		free(item);
 	}
 
@@ -147,66 +171,65 @@ char IFF_Parser_Factory_Release
 
 char IFF_Parser_Factory_RegisterFormDecoder
 (
-	struct IFF_Parser_Factory *item
-	, const unsigned char *raw_form_tag
-	, VPS_TYPE_8U raw_tag_size
+	struct IFF_Parser_Factory *item,
+	const struct IFF_Tag* form_tag
 	, struct IFF_FormDecoder *decoder
 )
 {
-	struct IFF_Tag *form_tag;
+	struct IFF_Tag *key_clone;
 
-	if (!item || !item->form_decoders || !raw_form_tag || !decoder)
+	if (!item || !item->form_decoders || !form_tag || !decoder)
 	{
 		return 0;
 	}
 
-	// The parser creates and will own the key.
-	if (!IFF_Tag_Allocate(&form_tag))
-	{
-		return 0;
-	}
-
-	if (!IFF_Tag_Construct(form_tag, raw_form_tag, raw_tag_size, IFF_TAG_TYPE_TAG))
-	{
-		IFF_Tag_Release(form_tag);
-		return 0;
-	}
+	// Clone the provided key so the dictionary can own it.
+	if (!IFF_Tag_Clone(form_tag, &key_clone)) return 0;
 
 	// Add to the dictionary. The dictionary now owns the key via its key_release callback.
-	return VPS_Dictionary_Add(item->form_decoders, form_tag, decoder);
+	return VPS_Dictionary_Add(item->form_decoders, key_clone, decoder);
 }
 
 char IFF_Parser_Factory_RegisterChunkDecoder
 (
-	struct IFF_Parser_Factory *item
-	, const unsigned char *raw_form_tag
-	, const unsigned char *raw_chunk_tag
-	, VPS_TYPE_8U raw_tag_size
+	struct IFF_Parser_Factory *item,
+	const struct IFF_Chunk_Key* chunk_key
 	, struct IFF_ChunkDecoder *decoder
 )
 {
-	struct IFF_Chunk_Key *key;
+	struct IFF_Chunk_Key *key_clone;
 
-	if (!item || !item->chunk_decoders || !raw_form_tag || !raw_chunk_tag || !decoder)
+	if (!item || !item->chunk_decoders || !chunk_key || !decoder)
 	{
 		return 0;
 	}
 
-	// The parser creates and will own the key.
-	if (!IFF_Chunk_Key_Allocate(&key))
-	{
-		return 0;
-	}
-
-	// Construct the composite key from the raw tag data.
-	if (!IFF_Chunk_Key_Construct(key, raw_form_tag, raw_chunk_tag, raw_tag_size))
-	{
-		IFF_Chunk_Key_Release(key);
-		return 0;
-	}
+	// Clone the provided key so the dictionary can own it.
+	if (!IFF_Chunk_Key_Allocate(&key_clone)) return 0;
+	*key_clone = *chunk_key; // Safe by-value copy
 
 	// Add to the dictionary. The dictionary now owns the key via its key_release callback.
-	return VPS_Dictionary_Add(item->chunk_decoders, key, decoder);
+	return VPS_Dictionary_Add(item->chunk_decoders, key_clone, decoder);
+}
+
+char IFF_Parser_Factory_RegisterDirectiveProcessor
+(
+	struct IFF_Parser_Factory* item,
+	const struct IFF_Tag* directive_tag,
+	char (*directive_processor)(struct IFF_Parser*, const struct IFF_Chunk*)
+)
+{
+	struct IFF_Tag* key_clone;
+
+	if (!item || !item->directive_processors || !directive_tag || !directive_processor)
+	{
+		return 0;
+	}
+
+	// Clone the provided key so the dictionary can own it.
+	if (!IFF_Tag_Clone(directive_tag, &key_clone)) return 0;
+
+	return VPS_Dictionary_Add(item->directive_processors, key_clone, directive_processor);
 }
 
 char IFF_Parser_Factory_Create
@@ -238,6 +261,7 @@ char IFF_Parser_Factory_Create
 		parser,
 		factory->form_decoders,
 		factory->chunk_decoders,
+		factory->directive_processors,
 		file_handle
 	);
 	if (!result)

@@ -22,10 +22,11 @@
 #include <IFF/IFF_Chunk_Key.h>
 #include <IFF/IFF_ChunkDecoder.h>
 #include <IFF/IFF_Parser_Session.h>
+#include <IFF/IFF_DirectiveResult.h>
+#include <IFF/IFF_Directive_IFF_Processor.h>
 #include <IFF/IFF_Parser.h>
 #include <IFF/IFF_Parser_Factory.h>
 #include <IFF/IFF_ContextualData.h>
-#include <IFF/IFF_Scope_State.h>
 
 char IFF_Parser_Factory_Allocate
 (
@@ -114,6 +115,9 @@ char IFF_Parser_Factory_Construct
 		7500,
 		8
 	);
+
+	// Register the built-in processor for the ' IFF' directive.
+	IFF_Parser_Factory_RegisterDirectiveProcessor(item, &IFF_TAG_SYSTEM_IFF, IFF_Directive_IFF_Process);
 
 	return 1;
 }
@@ -216,12 +220,16 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 (
 	struct IFF_Parser_Factory* item,
 	const struct IFF_Tag* directive_tag,
-	char (*directive_processor)(struct IFF_Parser*, const struct IFF_Chunk*)
+	char (*processor)
+	(
+		const struct IFF_Chunk *chunk,
+		struct IFF_DirectiveResult *result
+	)
 )
 {
 	struct IFF_Tag* key_clone;
 
-	if (!item || !item->directive_processors || !directive_tag || !directive_processor)
+	if (!item || !item->directive_processors || !directive_tag || !processor)
 	{
 		return 0;
 	}
@@ -229,7 +237,7 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 	// Clone the provided key so the dictionary can own it.
 	if (!IFF_Tag_Clone(directive_tag, &key_clone)) return 0;
 
-	return VPS_Dictionary_Add(item->directive_processors, key_clone, directive_processor);
+	return VPS_Dictionary_Add(item->directive_processors, key_clone, processor);
 }
 
 char IFF_Parser_Factory_Create
@@ -259,9 +267,7 @@ char IFF_Parser_Factory_Create
 	result = IFF_Parser_Construct
 	(
 		parser,
-		factory->form_decoders,
-		factory->chunk_decoders,
-		factory->directive_processors,
+		factory,
 		file_handle
 	);
 	if (!result)

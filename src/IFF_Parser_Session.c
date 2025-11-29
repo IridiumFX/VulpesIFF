@@ -8,9 +8,10 @@
 #include <IFF/IFF_Tag.h>
 #include <IFF/IFF_Header.h>
 #include <IFF/IFF_Reader.h>
+#include <IFF/IFF_Boundary.h>
 #include <IFF/IFF_ContextualData.h>
 #include <IFF/IFF_Parser_Session.h>
-#include <IFF/IFF_Scope_State.h>
+#include <IFF/IFF_Scope.h>
 #include <IFF/IFF_Chunk_Key.h>
 
 char IFF_Parser_Session_Allocate
@@ -58,12 +59,14 @@ char IFF_Parser_Session_Construct
 	, union IFF_Header_Flags flags
 )
 {
+	struct IFF_Boundary boundary;
+	
 	if (!item)
 	{
 		return 0;
 	}
 
-	VPS_List_Construct(item->scope_stack, 0, 0, (char (*)(void *))IFF_Scope_State_Release);
+	VPS_List_Construct(item->scope_stack, 0, 0, (char (*)(void *))IFF_Scope_Release);
 
 	// The props dictionary uses a composite IFF_Chunk_Key.
 	// It takes ownership of the keys and the IFF_ContextualData values.
@@ -80,9 +83,10 @@ char IFF_Parser_Session_Construct
 		8     // single_bucket_threshold
 	);
 
-	IFF_Parser_Session_SetFlags(item, flags);
 	// Bootstrap with a root scope.
-	IFF_Parser_Session_EnterScope(item, IFF_TAG_SYSTEM_IFF, IFF_TAG_SYSTEM_IFF);
+	// This creates the initial state for the entire file.
+	item->active_header_flags = flags;
+	IFF_Parser_Session_EnterScope(item, IFF_TAG_SYSTEM_IFF, IFF_TAG_SYSTEM_WILDCARD);
 
 	return 1;
 }
@@ -130,7 +134,14 @@ char IFF_Parser_Session_SetFlags
 		return 0;
 	}
 
+	struct IFF_Scope* current_scope = 0;
+
+	// Update the session's master flags AND the flags for the current scope.
 	item->active_header_flags = flags;
+	if (item->scope_stack->head) {
+		current_scope = item->scope_stack->head->data;
+		current_scope->flags = flags;
+	}
 
 	return 1;
 }
@@ -138,24 +149,29 @@ char IFF_Parser_Session_SetFlags
 char IFF_Parser_Session_EnterScope
 (
 	struct IFF_Parser_Session *item
-	, struct IFF_Tag container_variant
-	, struct IFF_Tag container_type
+	, struct IFF_Tag variant
+	, struct IFF_Tag type
 )
 {
-	struct IFF_Scope_State *scope;
+	struct IFF_Scope *scope;
 	struct VPS_List_Node *node;
+	struct IFF_Boundary new_boundary;
 
-	IFF_Scope_State_Allocate
+	IFF_Scope_Allocate(&scope);
+
+	// When entering a new scope, we construct it with a default, temporary
+	// boundary. The main parser loop is responsible for calculating and
+	// setting the correct, validated boundary on this new scope after it
+	// has read the container's size.
+	IFF_Boundary_Construct(&new_boundary, 0); // Default to unbounded.
+
+	IFF_Scope_Construct
 	(
-		&scope
-	);
-	IFF_Scope_State_Construct
-	(
-		scope
-		, item->active_header_flags
-		, 0
-		, container_variant
-		, container_type
+		scope,
+		item->active_header_flags,
+		new_boundary,
+		variant,
+		type
 	);
 
 	VPS_List_Node_Allocate
@@ -207,7 +223,7 @@ char IFF_Parser_Session_FindProp
 )
 {
     struct IFF_Chunk_Key key;
-    struct IFF_Scope_State *current_scope = state->scope_stack->head->data;
+    struct IFF_Scope *current_scope = state->scope_stack->head->data;
     key.prop = *prop_tag;
 
     // 1. Search for a property specific to the current FORM's type.

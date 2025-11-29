@@ -1,5 +1,3 @@
-#include <IFF/IFF_DirectiveProcessor.h>
-
 struct IFF_Parser_Factory
 {
 	struct VPS_Dictionary *form_decoders;
@@ -45,7 +43,11 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 (
 	struct IFF_Parser_Factory* item,
 	const struct IFF_Tag* directive_tag,
-	char (*directive_processor)(struct IFF_Parser*, const struct IFF_Chunk*)
+	char (*processor)
+	(
+		const struct IFF_Chunk *chunk,
+		struct IFF_DirectiveResult *result
+	)
 );
 
 char IFF_Parser_Factory_Create

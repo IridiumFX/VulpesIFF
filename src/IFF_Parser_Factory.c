@@ -1,32 +1,18 @@
-#include <unistd.h>
-#include <fcntl.h>
-
 #include <stdlib.h>
-#include <string.h>
 
 #include <vulpes/VPS_Types.h>
-#include <vulpes/VPS_DataReader.h>
-#include <vulpes/VPS_Data.h>
-#include <vulpes/VPS_List.h>
-#include <vulpes/VPS_Hash_Utils.h>
-#include <vulpes/VPS_Compare_Utils.h>
 #include <vulpes/VPS_Dictionary.h>
-#include <vulpes/VPS_ScopedDictionary.h>
 
 #include <IFF/IFF.h>
 #include <IFF/IFF_Tag.h>
-#include <IFF/IFF_Header.h>
 #include <IFF/IFF_Chunk.h>
-#include <IFF/IFF_DataPump.h>
 #include <IFF/IFF_FormDecoder.h>
 #include <IFF/IFF_Chunk_Key.h>
 #include <IFF/IFF_ChunkDecoder.h>
-#include <IFF/IFF_Parser_Session.h>
 #include <IFF/IFF_DirectiveResult.h>
 #include <IFF/IFF_Directive_IFF_Processor.h>
 #include <IFF/IFF_Parser.h>
 #include <IFF/IFF_Parser_Factory.h>
-#include <IFF/IFF_ContextualData.h>
 
 char IFF_Parser_Factory_Allocate
 (
@@ -188,7 +174,10 @@ char IFF_Parser_Factory_RegisterFormDecoder
 	}
 
 	// Clone the provided key so the dictionary can own it.
-	if (!IFF_Tag_Clone(form_tag, &key_clone)) return 0;
+	if (!IFF_Tag_Clone(form_tag, &key_clone))
+	{
+		return 0;
+	}
 
 	// Add to the dictionary. The dictionary now owns the key via its key_release callback.
 	return VPS_Dictionary_Add(item->form_decoders, key_clone, decoder);
@@ -235,7 +224,10 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 	}
 
 	// Clone the provided key so the dictionary can own it.
-	if (!IFF_Tag_Clone(directive_tag, &key_clone)) return 0;
+	if (!IFF_Tag_Clone(directive_tag, &key_clone))
+	{
+		return 0;
+	}
 
 	return VPS_Dictionary_Add(item->directive_processors, key_clone, processor);
 }
@@ -267,7 +259,9 @@ char IFF_Parser_Factory_Create
 	result = IFF_Parser_Construct
 	(
 		parser,
-		factory,
+		factory->form_decoders,
+		factory->chunk_decoders,
+		factory->directive_processors,
 		file_handle
 	);
 	if (!result)

@@ -83,12 +83,15 @@ char IFF_Parser_Session_Construct
 		8     // single_bucket_threshold
 	);
 
-	// Bootstrap with a root scope.
-	// This creates the initial state for the entire file.
-	item->active_header_flags = flags;
-	IFF_Parser_Session_EnterScope(item, IFF_TAG_SYSTEM_IFF, IFF_TAG_SYSTEM_WILDCARD);
+	// Bootstrap the session by creating and entering the initial "root" scope.
+	item->current_scope = 0;
+	struct IFF_Scope* root_scope = 0;
+	IFF_Scope_Allocate(&root_scope);
+	struct IFF_Boundary root_boundary;
+	IFF_Boundary_Construct(&root_boundary);
+	IFF_Scope_Construct(root_scope, flags, root_boundary, IFF_TAG_SYSTEM_WILDCARD, IFF_TAG_SYSTEM_WILDCARD);
 
-	return 1;
+	return IFF_Parser_Session_EnterScope(item, root_scope);
 }
 
 char IFF_Parser_Session_Deconstruct
@@ -101,6 +104,10 @@ char IFF_Parser_Session_Deconstruct
 		return 0;
 	}
 
+	// Deconstruct and release the final active scope.
+	IFF_Scope_Release(item->current_scope);
+
+	// The list deconstruction will release all parent scopes on the stack.
 	VPS_List_Deconstruct(item->scope_stack);
 	VPS_ScopedDictionary_Deconstruct(item->props);
 
@@ -123,94 +130,56 @@ char IFF_Parser_Session_Release
 	return 1;
 }
 
-char IFF_Parser_Session_SetFlags
-(
-	struct IFF_Parser_Session *item
-	, union IFF_Header_Flags flags
-)
-{
-	if (!item)
-	{
-		return 0;
-	}
-
-	struct IFF_Scope* current_scope = 0;
-
-	// Update the session's master flags AND the flags for the current scope.
-	item->active_header_flags = flags;
-	if (item->scope_stack->head) {
-		current_scope = item->scope_stack->head->data;
-		current_scope->flags = flags;
-	}
-
-	return 1;
-}
-
 char IFF_Parser_Session_EnterScope
 (
-	struct IFF_Parser_Session *item
-	, struct IFF_Tag variant
-	, struct IFF_Tag type
+	struct IFF_Parser_Session *session,
+	struct IFF_Scope* new_scope
 )
 {
-	struct IFF_Scope *scope;
 	struct VPS_List_Node *node;
-	struct IFF_Boundary new_boundary;
 
-	IFF_Scope_Allocate(&scope);
+	if (!session || !new_scope) return 0;
 
-	// When entering a new scope, we construct it with a default, temporary
-	// boundary. The main parser loop is responsible for calculating and
-	// setting the correct, validated boundary on this new scope after it
-	// has read the container's size.
-	IFF_Boundary_Construct(&new_boundary, 0); // Default to unbounded.
+	// 1. If there is a current scope, push it onto the parent stack.
+	if (session->current_scope)
+	{
+		VPS_List_Node_Allocate(&node);
+		VPS_List_Node_Construct(node, session->current_scope);
+		VPS_List_AddHead(session->scope_stack, node);
+	}
 
-	IFF_Scope_Construct
-	(
-		scope,
-		item->active_header_flags,
-		new_boundary,
-		variant,
-		type
-	);
+	// 2. The new scope becomes the current active scope.
+	session->current_scope = new_scope;
 
-	VPS_List_Node_Allocate
-	(
-		&node
-	);
-	VPS_List_Node_Construct
-	(
-		node
-		, scope
-	);
-
-	VPS_List_AddHead
-	(
-		item->scope_stack
-		, node
-	);
-	VPS_ScopedDictionary_EnterScope
-	(
-		item->props
-	);
+	// 3. Mirror the scope change in the properties dictionary.
+	VPS_ScopedDictionary_EnterScope(session->props);
 
 	return 1;
 }
 
 char IFF_Parser_Session_LeaveScope
 (
-	struct IFF_Parser_Session *item
+	struct IFF_Parser_Session *session
 )
 {
-	VPS_List_RemoveHead
-	(
-		item->scope_stack,
-		0
-	);
-	VPS_ScopedDictionary_LeaveScope
-	(
-		item->props
-	);
+	struct VPS_List_Node *parent_node = 0;
+
+	if (!session) return 0;
+
+	// 1. The current scope is finished, release it.
+	IFF_Scope_Release(session->current_scope);
+	session->current_scope = 0;
+
+	// 2. Pop the parent scope from the stack and make it the new current scope.
+	if (VPS_List_RemoveHead(session->scope_stack, &parent_node))
+	{
+		session->current_scope = parent_node->data;
+		// The list no longer owns the node's data, so we just release the node.
+		VPS_List_Node_Release(parent_node);
+	}
+
+	// 3. Mirror the scope change in the properties dictionary.
+	VPS_ScopedDictionary_LeaveScope(session->props);
 
 	return 1;
 }
@@ -223,7 +192,10 @@ char IFF_Parser_Session_FindProp
 )
 {
     struct IFF_Chunk_Key key;
-    struct IFF_Scope *current_scope = state->scope_stack->head->data;
+    // The current_scope is always the correct one to search from.
+    struct IFF_Scope *current_scope = state->current_scope;
+    if (!current_scope) return 0;
+
     key.prop = *prop_tag;
 
     // 1. Search for a property specific to the current FORM's type.
@@ -261,3 +233,4 @@ char IFF_Parser_Session_AddProp
 	// The dictionary takes ownership of both the key and the data.
 	return VPS_ScopedDictionary_Add(state->props, key, prop_data);
 }
+

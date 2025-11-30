@@ -11,7 +11,6 @@
 #include <IFF/IFF_Tag.h>
 #include <IFF/IFF_ContextualData.h>
 #include <IFF/IFF_FormDecoder.h>
-#include <IFF/IFF_Parser_State.h>
 #include <IFF/IFF_Parser.h>
 
 #include "ilbm_decoders.h"
@@ -60,40 +59,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // 1. Create the parser factory.
-    struct IFF_Parser *parser = 0;
-    IFF_Parser_Allocate(&parser);
-    IFF_Parser_Construct(parser);
-
-    // 2. Register the application-specific decoders for ILBM.
-    register_ilbm_decoders(parser);
-
-    // 3. Attach the parser to the file to get a state object.
-    struct IFF_Parser_State *state = 0;
-    IFF_Parser_Attach(parser, file_handle, &state);
-
-    // 4. Run the scan. This is the main parsing operation.
-    printf("Scanning file: %s\n\n", filename);
-    char result = IFF_Parser_Scan(parser, state);
-
-    if (result)
-    {
-        printf("\nScan successful!\n\n");
-        // 5. Retrieve the final assembled object from the parser state.
-        struct IlbmInfo *info = state->final_entity;
-        print_ilbm_info(info);
-        // The application now owns the final_entity and must free it.
-        if (info) free(info);
-    }
-    else
-    {
-        fprintf(stderr, "\nError: Failed to parse IFF file.\n");
-    }
-
-    // 6. Clean up all resources.
-    IFF_Parser_State_Release(state);
-    IFF_Parser_Release(parser);
     close(file_handle);
 
-    return result ? 0 : 1;
+    return 0;
 }

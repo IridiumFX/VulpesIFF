@@ -1,9 +1,8 @@
 struct IFF_Parser
 {
-	// A back-pointer to the factory that created this parser.
-	struct IFF_Parser_Factory* factory;
-
-	// NOTE: decoders belong to the factory, not the parser.
+	struct VPS_Dictionary *form_decoders;
+	struct VPS_Dictionary *chunk_decoders;
+	struct VPS_Dictionary *directive_processors;
 
 	struct IFF_Parser_Session *session;
 	struct IFF_Reader *reader;
@@ -18,9 +17,11 @@ char IFF_Parser_Allocate
 
 char IFF_Parser_Construct
 (
-	struct IFF_Parser *item,
-	struct IFF_Parser_Factory* factory,
-	int file_handle
+	struct IFF_Parser *item
+	, struct VPS_Dictionary *form_decoders
+	, struct VPS_Dictionary *chunk_decoders
+	, struct VPS_Dictionary *directive_processors
+	, int file_handle
 );
 
 char IFF_Parser_Deconstruct
@@ -31,6 +32,12 @@ char IFF_Parser_Deconstruct
 char IFF_Parser_Release
 (
 	struct IFF_Parser *item
+);
+
+char IFF_Parser_ExecuteDirective
+(
+	struct IFF_Parser *parser,
+	struct IFF_Chunk *directive_chunk
 );
 
 char IFF_Parser_Scan

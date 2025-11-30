@@ -2,13 +2,7 @@ struct IFF_Parser_Session
 {
 	// A single stack that manages all scope-related state (flags, boundaries, etc.).
 	struct VPS_List *scope_stack;
-	union IFF_Header_Flags active_header_flags;
-
-	// --- Active Chunk State for Sharding/Progressive Decode ---
-	// These fields track the chunk currently being processed across multiple shards.
-	struct IFF_ChunkDecoder *active_chunk_decoder;
-	struct IFF_Tag active_chunk_tag;
-	void *active_chunk_state;
+	struct IFF_Scope* current_scope; // Always points to the active scope for the current parsing context.
 
 	// A scoped dictionary to store the decoded properties (chunks) of containers.
 	struct VPS_ScopedDictionary* props;
@@ -39,20 +33,13 @@ char IFF_Parser_Session_Release
 
 char IFF_Parser_Session_EnterScope
 (
-	struct IFF_Parser_Session *state
-	, struct IFF_Tag variant
-	, struct IFF_Tag type
+	struct IFF_Parser_Session *session,
+	struct IFF_Scope* new_scope
 );
 
 char IFF_Parser_Session_LeaveScope
 (
 	struct IFF_Parser_Session *state
-);
-
-char IFF_Parser_Session_SetFlags
-(
-	struct IFF_Parser_Session *state
-	, union IFF_Header_Flags flags
 );
 
 char IFF_Parser_Session_FindProp

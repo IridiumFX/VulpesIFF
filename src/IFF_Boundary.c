@@ -21,8 +21,7 @@ char IFF_Boundary_Allocate
 
 char IFF_Boundary_Construct
 (
-	struct IFF_Boundary *item,
-	VPS_TYPE_8U bounded
+	struct IFF_Boundary *item
 )
 {
 	if (!item)
@@ -32,7 +31,6 @@ char IFF_Boundary_Construct
 
 	item->limit = 0;
 	item->level = 0;
-	item->bounded = bounded;
 
 	return 1;
 }

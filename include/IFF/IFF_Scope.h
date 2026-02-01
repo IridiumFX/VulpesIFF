@@ -10,6 +10,11 @@ struct IFF_Scope
 	// --- Active Form Decoder State ---
 	struct IFF_FormDecoder *form_decoder;
 	void *form_state;
+
+	// --- Active Chunk Decoder State (for sharding) ---
+	struct IFF_ChunkDecoder *last_chunk_decoder;
+	void *last_chunk_state;
+	struct IFF_Tag last_chunk_tag;
 };
 
 char IFF_Scope_Allocate

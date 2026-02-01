@@ -46,27 +46,39 @@ const struct IFF_Tag IFF_TAG_SYSTEM_SUM =
     , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'S', 'U', 'M'}
 };
 
+const struct IFF_Tag IFF_TAG_SYSTEM_REF =
+{
+    IFF_TAG_TYPE_DIRECTIVE
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'R', 'E', 'F'}
+};
+
+const struct IFF_Tag IFF_TAG_SYSTEM_DEF =
+{
+    IFF_TAG_TYPE_DIRECTIVE
+    , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'D', 'E', 'F'}
+};
+
 const struct IFF_Tag IFF_TAG_SYSTEM_LIST =
 {
-    IFF_TAG_TYPE_TAG
+    IFF_TAG_TYPE_CONTAINER
     , {'L', 'I', 'S', 'T', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 };
 
 const struct IFF_Tag IFF_TAG_SYSTEM_CAT =
 {
-    IFF_TAG_TYPE_TAG
+    IFF_TAG_TYPE_CONTAINER
     , {'C', 'A', 'T', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 };
 
 const struct IFF_Tag IFF_TAG_SYSTEM_FORM =
 {
-    IFF_TAG_TYPE_TAG
+    IFF_TAG_TYPE_CONTAINER
     , {'F', 'O', 'R', 'M', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 };
 
 const struct IFF_Tag IFF_TAG_SYSTEM_PROP =
 {
-    IFF_TAG_TYPE_TAG
+    IFF_TAG_TYPE_SUBCONTAINER
     , {'P', 'R', 'O', 'P', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 };
 
@@ -102,13 +114,13 @@ char IFF_Tag_Construct
     tag->type = type;
     memset(tag->data, ' ', IFF_TAG_CANONICAL_SIZE);
 
-    if (type == IFF_TAG_TYPE_TAG)
-    {
-        memcpy(tag->data, raw_data, raw_size);
-    }
-    else // IFF_TAG_TYPE_DIRECTIVE
+    if (type == IFF_TAG_TYPE_DIRECTIVE)
     {
         memcpy(tag->data + IFF_TAG_CANONICAL_SIZE - raw_size, raw_data, raw_size);
+    }
+    else // IFF_TAG_TYPE_TAG, IFF_TAG_TYPE_CONTAINER, IFF_TAG_TYPE_SUBCONTAINER
+    {
+        memcpy(tag->data, raw_data, raw_size);
     }
 
     return 1;

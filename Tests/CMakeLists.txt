@@ -2,21 +2,24 @@ cmake_minimum_required(VERSION 3.10)
 
 project(VulpesIFF_Tests)
 
-# Define the test executable
-add_executable(ilbm_info
-    ilbm_info/main.c
-    ilbm_info/ilbm_decoders.c
+add_executable(VulpesIFF_Tests
+	test_main.c
+	test_parse_basic.c
+	test_generate_basic.c
+	test_parse_containers.c
+	test_generate_containers.c
+	test_parse_segments.c
+	test_parse_decoders.c
+	test_parse_flags.c
+	test_parse_checksum.c
+	test_harness/IFF_TestBuilder.c
+	test_harness/IFF_TestDecoders.c
+	test_harness/IFF_TestChecksumAlgorithm.c
 )
 
-# Include the IFF library's include directory and the test directory itself
-target_include_directories(ilbm_info PRIVATE
-    ../include
-    ilbm_info
+target_include_directories(VulpesIFF_Tests PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/test_harness
 )
 
-# Link the test executable against the main IFF library
-target_link_libraries(ilbm_info PRIVATE VulpesIFF)
-
-# Optional: Add this directory to the main project's build
-# This would typically be done in the parent CMakeLists.txt with:
-# add_subdirectory(Tests)
+target_link_libraries(VulpesIFF_Tests PRIVATE VulpesIFF)

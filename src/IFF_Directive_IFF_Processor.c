@@ -2,6 +2,7 @@
 #include <vulpes/VPS_Data.h>
 #include <vulpes/VPS_DataReader.h>
 
+#include <IFF/IFF_Tag.h>
 #include <IFF/IFF_Header.h>
 #include <IFF/IFF_Chunk.h>
 #include <IFF/IFF_DirectiveResult.h>

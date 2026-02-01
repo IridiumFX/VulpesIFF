@@ -12,8 +12,10 @@
 
 enum IFF_Tag_Type
 {
-    IFF_TAG_TYPE_TAG,       // A standard tag, right-padded (e.g., 'FORM' -> 'FORM    ')
-    IFF_TAG_TYPE_DIRECTIVE  // A directive, left-padded (e.g., ' IFF' -> '    IFF')
+    IFF_TAG_TYPE_TAG,			// A standard tag, right-padded (e.g., 'ILBM' -> 'ILBM    ')
+    IFF_TAG_TYPE_CONTAINER,		// A container tag, right-padded (e.g., 'FORM' -> 'FORM    ')
+    IFF_TAG_TYPE_SUBCONTAINER,	// sub-container. PROP only 'PROP' -> 'PROP    ')
+    IFF_TAG_TYPE_DIRECTIVE		// A directive, left-padded (e.g., ' IFF' -> '    IFF')
 };
 
 struct IFF_Tag
@@ -30,6 +32,8 @@ extern const struct IFF_Tag IFF_TAG_SYSTEM_VER;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_REV;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_CHK;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_SUM;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_REF;
+extern const struct IFF_Tag IFF_TAG_SYSTEM_DEF;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_LIST;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_CAT;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_FORM;

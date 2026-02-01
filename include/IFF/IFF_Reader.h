@@ -26,6 +26,12 @@ char IFF_Reader_Construct
 	, int fh
 );
 
+char IFF_Reader_ConstructFromData
+(
+	struct IFF_Reader* item
+	, const struct VPS_Data *source
+);
+
 char IFF_Reader_Deconstruct
 (
 	struct IFF_Reader* item
@@ -89,4 +95,52 @@ char IFF_Reader_ReadChunk
 	const struct IFF_Header_Flags_Fields* config,
 	struct IFF_Tag *tag,
 	struct IFF_Chunk** out_chunk
+);
+
+char IFF_Reader_IsActive
+(
+	struct IFF_Reader* reader
+);
+
+/**
+ * @brief Parses a ' CHK' directive payload and starts a checksum span.
+ * @details Decodes the binary payload format (version, algorithm identifiers),
+ *          builds a VPS_Set of identifiers, and delegates to IFF_DataTap_StartSpan.
+ * @param reader The reader whose DataTap owns the checksum state.
+ * @param config Current scope flags (for interpreting size fields in the payload).
+ * @param chk_payload The raw data from the ' CHK' directive chunk.
+ * @return 1 on success, 0 on failure.
+ */
+/**
+ * @brief Reads a size field from a VPS_DataReader using the provided config.
+ */
+char IFF_Reader_ReadPayloadSize
+(
+	struct VPS_DataReader* dr,
+	const struct IFF_Header_Flags_Fields* config,
+	VPS_TYPE_SIZE* out_size
+);
+
+char IFF_Reader_StartChecksumSpan
+(
+	struct IFF_Reader* reader
+	, const struct IFF_Header_Flags_Fields* config
+	, const struct VPS_Data* chk_payload
+);
+
+/**
+ * @brief Parses a ' SUM' directive payload and ends the current checksum span.
+ * @details Decodes the binary payload format (version, algorithm identifiers +
+ *          expected checksums), builds a VPS_Dictionary of expected values, and
+ *          delegates to IFF_DataTap_EndSpan for verification.
+ * @param reader The reader whose DataTap owns the checksum state.
+ * @param config Current scope flags (for interpreting size fields in the payload).
+ * @param sum_payload The raw data from the ' SUM' directive chunk.
+ * @return 1 if all checksums match, 0 on mismatch or failure.
+ */
+char IFF_Reader_EndChecksumSpan
+(
+	struct IFF_Reader* reader
+	, const struct IFF_Header_Flags_Fields* config
+	, const struct VPS_Data* sum_payload
 );

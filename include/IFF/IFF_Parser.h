@@ -1,3 +1,12 @@
+struct VPS_Data;
+
+typedef char (*IFF_SegmentResolverFn)
+(
+	void *context,
+	const struct VPS_Data *identifier,
+	int *out_file_handle
+);
+
 struct IFF_Parser
 {
 	struct VPS_Dictionary *form_decoders;
@@ -8,6 +17,10 @@ struct IFF_Parser
 	struct IFF_Reader *reader;
 
 	int file_handle;
+
+	IFF_SegmentResolverFn segment_resolver;
+	void *resolver_context;
+	struct VPS_List *reader_stack;
 };
 
 char IFF_Parser_Allocate
@@ -22,6 +35,15 @@ char IFF_Parser_Construct
 	, struct VPS_Dictionary *chunk_decoders
 	, struct VPS_Dictionary *directive_processors
 	, int file_handle
+);
+
+char IFF_Parser_ConstructFromData
+(
+	struct IFF_Parser *item
+	, struct VPS_Dictionary *form_decoders
+	, struct VPS_Dictionary *chunk_decoders
+	, struct VPS_Dictionary *directive_processors
+	, const struct VPS_Data *source
 );
 
 char IFF_Parser_Deconstruct
@@ -43,4 +65,11 @@ char IFF_Parser_ExecuteDirective
 char IFF_Parser_Scan
 (
 	struct IFF_Parser *parser
+);
+
+char IFF_Parser_SetSegmentResolver
+(
+	struct IFF_Parser *parser,
+	IFF_SegmentResolverFn resolver,
+	void *context
 );

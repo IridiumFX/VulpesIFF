@@ -123,6 +123,36 @@ char IFF_DataTap_Construct
 	return 1;
 }
 
+char IFF_DataTap_ConstructFromData
+(
+	struct IFF_DataTap *item
+	, const struct VPS_Data *source
+)
+{
+	if (!item)
+	{
+		return 0;
+	}
+
+	if (!IFF_DataPump_ConstructFromData(item->pump, source)) return 0;
+
+	VPS_Dictionary_Construct(
+		item->registered_algorithms,
+		(char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_String,
+		(char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_String,
+		0, 0,
+		2, 75, 8
+	);
+
+	VPS_List_Construct(
+		item->active_spans,
+		0, 0,
+		(char(*)(void*))IFF_ChecksumSpan_Release
+	);
+
+	return 1;
+}
+
 char IFF_DataTap_Deconstruct
 (
 	struct IFF_DataTap *item

@@ -149,6 +149,69 @@ char IFF_DataPump_Construct
 	return 1;
 }
 
+char IFF_DataPump_ConstructFromData
+(
+	struct IFF_DataPump *item
+	, const struct VPS_Data *source
+)
+{
+	if (!item || !source)
+	{
+		return 0;
+	}
+
+	// Release the stream reader — not needed for memory mode.
+	VPS_StreamReader_Release(item->stream_reader);
+	item->stream_reader = 0;
+
+	// Resize the data buffer to fit the source data.
+	if (!VPS_Data_Resize(item->data_buffer, source->limit))
+	{
+		return 0;
+	}
+
+	if (!VPS_Data_Construct(item->data_buffer))
+	{
+		return 0;
+	}
+
+	// Copy source bytes into the data buffer.
+	memcpy
+	(
+		item->data_buffer->bytes
+		, source->bytes
+		, source->limit
+	);
+	item->data_buffer->limit = source->limit;
+
+	// Construct the data reader over the filled buffer.
+	if
+	(
+		!VPS_DataReader_Construct
+		(
+			item->data_reader
+			, item->data_buffer
+		)
+	)
+	{
+		return 0;
+	}
+
+	// Construct the base256 decoder for API consistency.
+	if
+	(
+		!VPS_Decoder_Base256_Construct
+		(
+			item->base256_decoder
+		)
+	)
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
 char IFF_DataPump_Deconstruct
 (
 	struct IFF_DataPump *item
@@ -235,6 +298,11 @@ static char IFF_DataPump_PRIVATE_EnsureDataAvailable
 	if (pump->data_buffer->limit >= bytes_needed)
 	{
 		return 1;
+	}
+
+	if (!pump->stream_reader)
+	{
+		return 0; // Memory mode: no more data available
 	}
 
 	if

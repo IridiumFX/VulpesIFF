@@ -1,3 +1,5 @@
+struct VPS_Data;
+
 struct IFF_Parser_Factory
 {
 	struct VPS_Dictionary *form_decoders;
@@ -54,6 +56,13 @@ char IFF_Parser_Factory_Create
 (
 	struct IFF_Parser_Factory *factory
 	, int file_handle
+	, struct IFF_Parser **out_parser
+);
+
+char IFF_Parser_Factory_CreateFromData
+(
+	struct IFF_Parser_Factory *factory
+	, const struct VPS_Data *source
 	, struct IFF_Parser **out_parser
 );
 

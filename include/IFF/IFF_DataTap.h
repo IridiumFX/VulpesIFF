@@ -35,6 +35,12 @@ char IFF_DataTap_Construct
 	, int fh
 );
 
+char IFF_DataTap_ConstructFromData
+(
+	struct IFF_DataTap *item
+	, const struct VPS_Data *source
+);
+
 char IFF_DataTap_Deconstruct
 (
 	struct IFF_DataTap *item

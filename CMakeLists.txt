@@ -17,22 +17,36 @@ target_sources(VulpesIFF PRIVATE
 		src/IFF_ChecksumAlgorithm.c
 		src/IFF_ChecksumCalculator.c
 		src/IFF_ChecksumSpan.c
+		src/IFF_Checksum_CRC32C.c
+		src/IFF_Checksum_CRC64ECMA.c
+		src/IFF_Checksum_LRC.c
+		src/IFF_Checksum_RFC1071.c
 		src/IFF_Chunk.c
 		src/IFF_Chunk_Key.c
 		src/IFF_ChunkDecoder.c
+		src/IFF_ChunkEncoder.c
 		src/IFF_Container.c
 		src/IFF_ContextualData.c
 		src/IFF_Directive_IFF_Processor.c
 		src/IFF_DataPump.c
 		src/IFF_DataTap.c
 		src/IFF_FormDecoder.c
+		src/IFF_FormEncoder.c
+		src/IFF_Generator.c
+		src/IFF_Generator_Factory.c
 		src/IFF_Header.c
 		src/IFF_Parser.c
 		src/IFF_Parser_Factory.c
 		src/IFF_Parser_Session.c
+		src/IFF_Parser_State.c
 		src/IFF_Reader.c
+		src/IFF_ReaderFrame.c
 		src/IFF_Scope.c
 		src/IFF_Tag.c
+		src/IFF_WritePump.c
+		src/IFF_WriteScope.c
+		src/IFF_WriteTap.c
+		src/IFF_Writer.c
 )
 
 # Define the public include directory.
@@ -46,3 +60,4 @@ target_link_libraries(VulpesIFF PUBLIC VulpesCore)
 
 # Add the test subdirectory to the build.
 add_subdirectory(Tests)
+

@@ -1,10 +1,12 @@
 #include <stdlib.h>
 
 #include <vulpes/VPS_Types.h>
+#include <vulpes/VPS_Data.h>
 #include <vulpes/VPS_Dictionary.h>
 
 #include <IFF/IFF.h>
 #include <IFF/IFF_Tag.h>
+#include <IFF/IFF_Header.h>
 #include <IFF/IFF_Chunk.h>
 #include <IFF/IFF_FormDecoder.h>
 #include <IFF/IFF_Chunk_Key.h>
@@ -280,4 +282,45 @@ failure:
 	*out_parser = 0;
 
 	return 0;
+}
+
+char IFF_Parser_Factory_CreateFromData
+(
+	struct IFF_Parser_Factory *factory
+	, const struct VPS_Data *source
+	, struct IFF_Parser **out_parser
+)
+{
+	struct IFF_Parser *parser;
+
+	if (!factory || !source || !out_parser)
+	{
+		return 0;
+	}
+
+	if (!IFF_Parser_Allocate(&parser))
+	{
+		return 0;
+	}
+
+	if
+	(
+		!IFF_Parser_ConstructFromData
+		(
+			parser
+			, factory->form_decoders
+			, factory->chunk_decoders
+			, factory->directive_processors
+			, source
+		)
+	)
+	{
+		IFF_Parser_Release(parser);
+		*out_parser = 0;
+		return 0;
+	}
+
+	*out_parser = parser;
+
+	return 1;
 }

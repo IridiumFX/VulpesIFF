@@ -17,6 +17,12 @@ char IFF_DataPump_Construct
 	, int fh
 );
 
+char IFF_DataPump_ConstructFromData
+(
+	struct IFF_DataPump *item
+	, const struct VPS_Data *source
+);
+
 char IFF_DataPump_Deconstruct
 (
 	struct IFF_DataPump *item

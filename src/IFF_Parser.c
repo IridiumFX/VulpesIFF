@@ -212,6 +212,7 @@ char IFF_Parser_Construct
 
 	item->segment_resolver = 0;
 	item->resolver_context = 0;
+	item->strict_references = 0;
 
 	return 1;
 }
@@ -269,6 +270,7 @@ char IFF_Parser_ConstructFromData
 
 	item->segment_resolver = 0;
 	item->resolver_context = 0;
+	item->strict_references = 0;
 
 	return 1;
 }
@@ -538,6 +540,13 @@ char IFF_Parser_ExecuteDirective
 					}
 
 					parser->session->current_scope->flags = directive_result.payload.new_flags;
+				}
+				break;
+
+				case IFF_ACTION_LOCK_IFF85:
+				{
+					parser->session->iff85_locked = 1;
+					parser->session->current_scope->flags.as_int = 0;
 				}
 				break;
 
@@ -936,6 +945,10 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 		return 0;
 	}
 
+	// Type tags are content identifiers, not structural markers.
+	// ReadTag may misclassify all-space types as DIRECTIVE; force to TAG.
+	form_type.type = IFF_TAG_TYPE_TAG;
+
 	// Validate: FORM type must not be blank.
 	{
 		VPS_TYPE_16S type_ordering;
@@ -1219,6 +1232,9 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 		return 0;
 	}
 
+	// Type tags are content identifiers; force classification to TAG.
+	prop_type.type = IFF_TAG_TYPE_TAG;
+
 	// 3. Create and enter child scope.
 	IFF_Boundary_Construct(&child_boundary);
 	child_boundary.limit = container_size;
@@ -1379,6 +1395,9 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 		return 0;
 	}
 
+	// Type tags are content identifiers; force classification to TAG.
+	list_type.type = IFF_TAG_TYPE_TAG;
+
 	// 3. Create and enter child scope.
 	IFF_Boundary_Construct(&child_boundary);
 	child_boundary.limit = container_size;
@@ -1536,6 +1555,9 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 	{
 		return 0;
 	}
+
+	// Type tags are content identifiers; force classification to TAG.
+	cat_type.type = IFF_TAG_TYPE_TAG;
 
 	// 3. Create and enter child scope.
 	IFF_Boundary_Construct(&child_boundary);
@@ -1990,9 +2012,48 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 		scope->boundary.level += 1;
 	}
 
-	// If no resolver registered, consume silently.
+	// If no resolver registered:
+	// - strict_references mode: parse the payload to check if any option
+	//   is mandatory (id_size > 0). If so, fail.
+	// - default mode: consume silently for forward compatibility.
 	if (!parser->segment_resolver)
 	{
+		if (parser->strict_references)
+		{
+			struct VPS_DataReader *sr = 0;
+			VPS_TYPE_SIZE sr_num = 0;
+			VPS_TYPE_SIZE sr_i;
+			char has_mandatory = 0;
+
+			if (VPS_DataReader_Allocate(&sr) && VPS_DataReader_Construct(sr, chunk->data))
+			{
+				if (IFF_Reader_ReadPayloadSize(sr, &flags.as_fields, &sr_num))
+				{
+					for (sr_i = 0; sr_i < sr_num; ++sr_i)
+					{
+						VPS_TYPE_SIZE sr_id_size = 0;
+						if (!IFF_Reader_ReadPayloadSize(sr, &flags.as_fields, &sr_id_size))
+						{
+							break;
+						}
+						if (sr_id_size > 0)
+						{
+							has_mandatory = 1;
+							break;
+						}
+					}
+				}
+			}
+
+			VPS_DataReader_Release(sr);
+
+			if (has_mandatory)
+			{
+				IFF_Chunk_Release(chunk);
+				return 0;
+			}
+		}
+
 		IFF_Chunk_Release(chunk);
 		return 1;
 	}

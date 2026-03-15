@@ -117,10 +117,11 @@ static char CRC64_Finalize
 
 	final_crc = state->crc;
 
-	if (!VPS_Data_Resize(out_checksum, 8))
-	{
-		return 0;
-	}
+	out_checksum->bytes = calloc(1, 8);
+	if (!out_checksum->bytes) return 0;
+	out_checksum->size = 8;
+	out_checksum->limit = 8;
+	out_checksum->own_bytes = 1;
 
 	// Store big-endian.
 	out_checksum->bytes[0] = (unsigned char)((final_crc >> 56) & 0xFF);

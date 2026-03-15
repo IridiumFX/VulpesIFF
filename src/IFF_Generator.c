@@ -534,16 +534,25 @@ static char PRIVATE_IFF_Generator_ValidateContainerAllowed
 
 	if (!scope)
 	{
-		/* Top-level: any container is allowed */
+		/* Top-level: FORM, LIST, CAT allowed. PROP only valid inside LIST. */
+		if (PRIVATE_IFF_Generator_IsVariant(variant, &IFF_TAG_SYSTEM_PROP))
+		{
+			return 0;
+		}
 		return 1;
 	}
 
-	/* FORM and PROP do not allow nested containers */
+	/* FORM allows nested containers (FORM, LIST, CAT) but not PROP */
 	if (PRIVATE_IFF_Generator_IsVariant(&scope->container_variant, &IFF_TAG_SYSTEM_FORM))
 	{
-		return 0;
+		if (PRIVATE_IFF_Generator_IsVariant(variant, &IFF_TAG_SYSTEM_PROP))
+		{
+			return 0;
+		}
+		goto strict_check;
 	}
 
+	/* PROP does not allow nested containers */
 	if (PRIVATE_IFF_Generator_IsVariant(&scope->container_variant, &IFF_TAG_SYSTEM_PROP))
 	{
 		return 0;
@@ -1561,6 +1570,48 @@ char IFF_Generator_EndChecksumSpan
 	}
 	else
 	{
+		/*
+		 * Feed SUM tag bytes to active spans before ending. The parser's
+		 * content loop reads the SUM tag through the DataTap before
+		 * Parse_Directive pauses the span, so those tag bytes are included
+		 * in the parser's checksum. We include them here too so both sides
+		 * agree on which bytes are checksummed. (Mirrors the blobbed path
+		 * at PRIVATE_IFF_Generator_EndBlobbedSpan lines 195-228.)
+		 */
+		{
+			VPS_TYPE_8U tag_length = IFF_Header_Flags_GetTagLength(config->tag_sizing);
+
+			if (tag_length > 0)
+			{
+				unsigned char sum_tag_buf[IFF_TAG_CANONICAL_SIZE];
+				struct VPS_Data sum_tag_wrapper;
+				struct VPS_List_Node *span_node;
+
+				memcpy(sum_tag_buf, IFF_TAG_SYSTEM_SUM.data + (IFF_TAG_CANONICAL_SIZE - tag_length), tag_length);
+				memset(&sum_tag_wrapper, 0, sizeof(sum_tag_wrapper));
+				sum_tag_wrapper.bytes = sum_tag_buf;
+				sum_tag_wrapper.size = tag_length;
+				sum_tag_wrapper.limit = tag_length;
+
+				span_node = gen->writer->tap->active_spans->head;
+				while (span_node)
+				{
+					struct IFF_ChecksumSpan *span = span_node->data;
+					struct VPS_List_Node *calc_node = span->calculators->head;
+					while (calc_node)
+					{
+						struct IFF_ChecksumCalculator *calc = calc_node->data;
+						if (calc->algorithm && calc->algorithm->update)
+						{
+							calc->algorithm->update(calc->context, &sum_tag_wrapper);
+						}
+						calc_node = calc_node->next;
+					}
+					span_node = span_node->next;
+				}
+			}
+		}
+
 		if (!IFF_WriteTap_EndSpan(gen->writer->tap, &computed_checksums))
 		{
 			return 0;

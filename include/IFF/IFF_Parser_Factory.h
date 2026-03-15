@@ -1,4 +1,11 @@
 struct VPS_Data;
+struct IFF_Tag;
+struct IFF_Chunk_Key;
+struct IFF_Chunk;
+struct IFF_FormDecoder;
+struct IFF_ChunkDecoder;
+struct IFF_DirectiveResult;
+struct IFF_Parser;
 
 struct IFF_Parser_Factory
 {

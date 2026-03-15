@@ -99,10 +99,11 @@ static char RFC1071_Finalize
 
 	result = (VPS_TYPE_16U)~sum;
 
-	if (!VPS_Data_Resize(out_checksum, 2))
-	{
-		return 0;
-	}
+	out_checksum->bytes = calloc(1, 2);
+	if (!out_checksum->bytes) return 0;
+	out_checksum->size = 2;
+	out_checksum->limit = 2;
+	out_checksum->own_bytes = 1;
 
 	// Store big-endian.
 	out_checksum->bytes[0] = (unsigned char)(result >> 8);

@@ -1,4 +1,5 @@
 struct VPS_Data;
+struct IFF_Chunk;
 
 typedef char (*IFF_SegmentResolverFn)
 (
@@ -21,6 +22,13 @@ struct IFF_Parser
 	IFF_SegmentResolverFn segment_resolver;
 	void *resolver_context;
 	struct VPS_List *reader_stack;
+
+	/**
+	 * @brief When set, mandatory ' REF' directives fail if no resolver
+	 *        is registered. When clear (default), unresolved REFs are
+	 *        silently consumed for forward compatibility.
+	 */
+	char strict_references;
 };
 
 char IFF_Parser_Allocate

@@ -1,3 +1,7 @@
+struct IFF_ChecksumAlgorithm;
+struct VPS_Set;
+struct VPS_Dictionary;
+
 /**
  * @brief A decorator reader that transparently calculates checksums.
  * @details This reader acts as a "tap" on the I/O stream. It wraps a lower-level

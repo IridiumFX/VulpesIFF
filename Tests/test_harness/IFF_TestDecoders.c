@@ -14,6 +14,9 @@
 
 #include "IFF_TestDecoders.h"
 
+// Global shard call counter for ShardCountingChunkDecoder.
+int IFF_TestDecoders_ShardCallCount = 0;
+
 // ===================================================================
 // TestChunkDecoder — passthrough wrapping raw data as ContextualData
 // ===================================================================
@@ -116,6 +119,49 @@ char IFF_TestDecoders_CreateChunkDecoder
 }
 
 // ===================================================================
+// ShardCountingChunkDecoder — increments global counter per shard
+// ===================================================================
+
+static char ShardCounting_ProcessShard
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, const struct VPS_Data *chunk_data
+)
+{
+	IFF_TestDecoders_ShardCallCount++;
+
+	return TestChunk_ProcessShard(state, custom_state, chunk_data);
+}
+
+char IFF_TestDecoders_CreateShardCountingChunkDecoder
+(
+	struct IFF_ChunkDecoder **out_decoder
+)
+{
+	struct IFF_ChunkDecoder *dec = 0;
+
+	if (!out_decoder) return 0;
+
+	if (!IFF_ChunkDecoder_Allocate(&dec)) return 0;
+
+	if (!IFF_ChunkDecoder_Construct
+	(
+		dec
+		, TestChunk_BeginDecode
+		, ShardCounting_ProcessShard
+		, TestChunk_EndDecode
+	))
+	{
+		IFF_ChunkDecoder_Release(dec);
+		return 0;
+	}
+
+	*out_decoder = dec;
+	return 1;
+}
+
+// ===================================================================
 // TestFormDecoder — collects chunks, produces TestFormState
 // ===================================================================
 
@@ -131,6 +177,7 @@ static char TestForm_BeginDecode
 	fs->chunk_count = 0;
 	fs->has_bmhd = 0;
 	fs->prop_found = 0;
+	fs->nested_form_count = 0;
 
 	*custom_state = fs;
 	return 1;
@@ -239,6 +286,7 @@ static char PropAwareForm_BeginDecode
 	fs->chunk_count = 0;
 	fs->has_bmhd = 0;
 	fs->prop_found = 0;
+	fs->nested_form_count = 0;
 
 	// Attempt to pull BMHD from PROP scope.
 	IFF_Tag_Construct(&bmhd_tag, (const unsigned char *)"BMHD", 4, IFF_TAG_TYPE_TAG);
@@ -269,6 +317,102 @@ char IFF_TestDecoders_CreatePropAwareFormDecoder
 		, PropAwareForm_BeginDecode
 		, TestForm_ProcessChunk
 		, TestForm_ProcessNestedForm
+		, TestForm_EndDecode
+	))
+	{
+		IFF_FormDecoder_Release(dec);
+		return 0;
+	}
+
+	*out_decoder = dec;
+	return 1;
+}
+
+// ===================================================================
+// FailingFormDecoder — begin_decode returns 0
+// ===================================================================
+
+static char FailingForm_BeginDecode
+(
+	struct IFF_Parser_State *state
+	, void **custom_state
+)
+{
+	return 0;
+}
+
+char IFF_TestDecoders_CreateFailingFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+)
+{
+	struct IFF_FormDecoder *dec = 0;
+
+	if (!out_decoder) return 0;
+
+	if (!IFF_FormDecoder_Allocate(&dec)) return 0;
+
+	if (!IFF_FormDecoder_Construct
+	(
+		dec
+		, FailingForm_BeginDecode
+		, TestForm_ProcessChunk
+		, TestForm_ProcessNestedForm
+		, TestForm_EndDecode
+	))
+	{
+		IFF_FormDecoder_Release(dec);
+		return 0;
+	}
+
+	*out_decoder = dec;
+	return 1;
+}
+
+// ===================================================================
+// NestingAwareFormDecoder — tracks nested forms
+// ===================================================================
+
+static char NestingAware_ProcessNestedForm
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_Tag *form_type
+	, void *final_entity
+)
+{
+	struct TestFormState *fs = custom_state;
+
+	if (!fs) return 0;
+
+	fs->nested_form_count++;
+
+	// Free the nested entity if it was produced (TestFormState from inner FORM).
+	if (final_entity)
+	{
+		free(final_entity);
+	}
+
+	return 1;
+}
+
+char IFF_TestDecoders_CreateNestingAwareFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+)
+{
+	struct IFF_FormDecoder *dec = 0;
+
+	if (!out_decoder) return 0;
+
+	if (!IFF_FormDecoder_Allocate(&dec)) return 0;
+
+	if (!IFF_FormDecoder_Construct
+	(
+		dec
+		, TestForm_BeginDecode
+		, TestForm_ProcessChunk
+		, NestingAware_ProcessNestedForm
 		, TestForm_EndDecode
 	))
 	{

@@ -4,9 +4,11 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # --- Dependency Management ---
-# We use Git submodules for dependencies. VulpesCore is expected to be
-# in the 'dependencies' directory. This makes its targets available.
-add_subdirectory(dependencies/VulpesCore)
+# When built standalone, VulpesCore comes from the dependencies submodule.
+# When built as part of the Vulpes engine, VulpesCore is already defined.
+if(NOT TARGET VulpesCore)
+    add_subdirectory(dependencies/VulpesCore)
+endif()
 
 # Define the 'VulpesIFF' library target.
 add_library(VulpesIFF STATIC)
@@ -47,14 +49,23 @@ target_sources(VulpesIFF PRIVATE
 		src/IFF_WriteScope.c
 		src/IFF_WriteTap.c
 		src/IFF_Writer.c
+		Codecs/ILBM/ILBM_Decompression.c
+		Codecs/ILBM/ILBM_Conversion.c
+		Codecs/ILBM/ILBM_Codec.c
+		Codecs/ILBM/ILBM_Loader.c
+		Codecs/SVX8/SVX8_Decompression.c
+		Codecs/SVX8/SVX8_Codec.c
+		Codecs/SVX8/SVX8_Loader.c
 )
 
 # Define the public include directory.
 target_include_directories(VulpesIFF PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Codecs>
 		$<INSTALL_INTERFACE:include>
 )
 
+# Link this module to its dependencies.
 # Link this module to its dependencies.
 target_link_libraries(VulpesIFF PUBLIC VulpesCore)
 

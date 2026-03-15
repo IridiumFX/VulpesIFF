@@ -14,6 +14,8 @@ enum IFF_Directive_Action
 	IFF_ACTION_START_CHECKSUM,
 	// End the current checksum span and verify (for ' SUM').
 	IFF_ACTION_END_CHECKSUM,
+	// Lock to IFF-85 mode (for ' IFF' with version=0).
+	IFF_ACTION_LOCK_IFF85,
 	// Halt all parsing due to a critical, unrecoverable error.
 	IFF_ACTION_HALT
 };

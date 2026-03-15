@@ -123,6 +123,8 @@ static char PRIVATE_WritePadding
 {
 	static const unsigned char zero = 0;
 
+	if (b->no_padding) return 1;
+
 	if (data_size & 1)
 	{
 		return VPS_DataWriter_WriteBytes(b->writer, &zero, 1);
@@ -181,6 +183,7 @@ char IFF_TestBuilder_Construct
 	b->size_length = 4;
 	b->is_le = 0;
 	b->is_progressive = 0;
+	b->no_padding = 0;
 	b->depth = 0;
 
 	return 1;
@@ -245,6 +248,7 @@ char IFF_TestBuilder_AddHeader
 	b->size_length = IFF_Header_Flags_GetSizeLength(header->flags.as_fields.sizing);
 	b->is_le = (header->flags.as_fields.typing & IFF_Header_Flag_Typing_LITTLE_ENDIAN) ? 1 : 0;
 	b->is_progressive = (header->flags.as_fields.operating == IFF_Header_Operating_PROGRESSIVE) ? 1 : 0;
+	b->no_padding = (header->flags.as_fields.structuring & IFF_Header_Flag_Structuring_NO_PADDING) ? 1 : 0;
 
 	return 1;
 }

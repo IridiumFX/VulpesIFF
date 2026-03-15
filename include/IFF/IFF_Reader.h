@@ -1,3 +1,6 @@
+struct IFF_Chunk;
+struct VPS_DataReader;
+
 /**
  * @brief A stateful decorator that interprets a raw IFF byte stream.
  * @details This reader wraps a lower-level reader (like IFF_CheckedReader)

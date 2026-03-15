@@ -1,3 +1,7 @@
+struct IFF_Parser_State;
+struct VPS_Data;
+struct IFF_ContextualData;
+
 /**
  * @brief Defines the interface for a chunk decoder.
  *

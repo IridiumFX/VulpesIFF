@@ -25,6 +25,7 @@ struct IFF_TestBuilder
 	VPS_TYPE_8U size_length;
 	char is_le;
 	char is_progressive;
+	char no_padding;
 
 	VPS_TYPE_SIZE patch_offsets[IFF_TEST_BUILDER_MAX_DEPTH];
 	int depth;

@@ -172,7 +172,7 @@ char IFF_Chunk_Key_Clone
 		return 0;
 	}
 
-	if (!IFF_Chunk_Key_Allocate(&clone))
+	if (!IFF_Chunk_Key_Allocate(clone))
 	{
 		return 0;
 	}

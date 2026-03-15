@@ -1,3 +1,5 @@
+struct VPS_Data;
+
 /**
  * @brief Defines the interface for a pluggable checksum algorithm.
  * @details This struct follows a C-style virtual table pattern, similar to

@@ -1,3 +1,7 @@
+struct IFF_Tag;
+struct IFF_ContextualData;
+union IFF_Header_Flags;
+
 enum IFF_Parser_SessionState
 {
 	IFF_Parser_SessionState_Idle,

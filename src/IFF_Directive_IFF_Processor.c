@@ -36,6 +36,22 @@ char IFF_Directive_IFF_Process
 		return 1;
 	}
 
+	// --- Version Validation ---
+	// Version=0 means IFF-85: lock to IFF-85 mode with default flags.
+	if (header.version == IFF_Header_Version_1985)
+	{
+		result->action = IFF_ACTION_LOCK_IFF85;
+		return 1;
+	}
+
+	// Only version 40 (IFF-2025) is supported beyond IFF-85.
+	if (header.version != IFF_Header_Version_2025)
+	{
+		result->action = IFF_ACTION_HALT;
+		result->payload.error_code = IFF_ERROR_UNSUPPORTED_FEATURE;
+		return 1;
+	}
+
 	// --- Host Capability Check ---
 	// Before applying the flags, check if the host can support the request.
 	if (header.flags.as_fields.sizing == IFF_Header_Sizing_64 && sizeof(VPS_TYPE_SIZE) < 8)

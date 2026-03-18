@@ -72,3 +72,8 @@ target_link_libraries(VulpesIFF PUBLIC VulpesCore)
 # Add the test subdirectory to the build.
 add_subdirectory(Tests)
 
+# Codec demo CLI.
+add_executable(VulpesIFF_CodecDemo Codecs/demo_codecs.c)
+target_include_directories(VulpesIFF_CodecDemo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Codecs)
+target_link_libraries(VulpesIFF_CodecDemo PRIVATE VulpesIFF m)
+

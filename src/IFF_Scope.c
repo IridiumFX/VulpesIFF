@@ -35,6 +35,7 @@ char IFF_Scope_Construct
 	item->container_type = type;
 	item->form_decoder = 0;
 	item->form_state = 0;
+	item->receiving_form_scope = 0;
 	item->last_chunk_decoder = 0;
 	item->last_chunk_state = 0;
 	memset(&item->last_chunk_tag, 0, sizeof(struct IFF_Tag));

@@ -60,3 +60,5 @@ void test_suite_generate_flags_advanced(void);
 void test_suite_roundtrip(void);
 void test_suite_parse_version(void);
 void test_suite_generate_bytes_written(void);
+void test_suite_parse_container_delivery(void);
+void test_suite_generate_container_groups(void);

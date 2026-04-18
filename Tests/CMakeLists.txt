@@ -44,6 +44,8 @@ add_executable(VulpesIFF_Tests
 	test_roundtrip.c
 	test_parse_version.c
 	test_generate_bytes_written.c
+	test_parse_container_delivery.c
+	test_generate_container_groups.c
 	test_harness/IFF_TestBuilder.c
 	test_harness/IFF_TestDecoders.c
 	test_harness/IFF_TestChecksumAlgorithm.c

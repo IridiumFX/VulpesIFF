@@ -423,3 +423,166 @@ char IFF_TestDecoders_CreateNestingAwareFormDecoder
 	*out_decoder = dec;
 	return 1;
 }
+
+// ===================================================================
+// ContainerAwareFormDecoder — tracks container lifecycle + entities
+// ===================================================================
+
+static void ContainerAware_LogEvent
+(
+	struct ContainerAwareFormState *fs,
+	enum ContainerEventType type,
+	const struct IFF_Tag *tag,
+	int depth
+)
+{
+	if (!fs || fs->event_count >= CONTAINER_EVENT_MAX) return;
+
+	struct ContainerEvent *ev = &fs->events[fs->event_count++];
+	ev->type = type;
+	ev->depth = depth;
+
+	// Copy first 4 bytes of canonical tag as readable string.
+	ev->tag[0] = (char)tag->data[0];
+	ev->tag[1] = (char)tag->data[1];
+	ev->tag[2] = (char)tag->data[2];
+	ev->tag[3] = (char)tag->data[3];
+	ev->tag[4] = '\0';
+}
+
+static char ContainerAware_BeginDecode
+(
+	struct IFF_Parser_State *state
+	, void **custom_state
+)
+{
+	struct ContainerAwareFormState *fs = calloc(1, sizeof(struct ContainerAwareFormState));
+	if (!fs) return 0;
+
+	*custom_state = fs;
+	return 1;
+}
+
+static char ContainerAware_ProcessChunk
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_Tag *chunk_tag
+	, struct IFF_ContextualData *contextual_data
+)
+{
+	struct ContainerAwareFormState *fs = custom_state;
+	if (!fs) return 0;
+
+	fs->chunk_count++;
+
+	if (contextual_data) IFF_ContextualData_Release(contextual_data);
+	return 1;
+}
+
+static char ContainerAware_ProcessNestedForm
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_Tag *form_type
+	, void *final_entity
+)
+{
+	struct ContainerAwareFormState *fs = custom_state;
+	if (!fs) return 0;
+
+	fs->nested_form_count++;
+	ContainerAware_LogEvent(fs, CONTAINER_EVENT_ENTITY, form_type, fs->container_depth);
+
+	if (final_entity) free(final_entity);
+	return 1;
+}
+
+static char ContainerAware_EnterContainer
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_Tag *container_variant
+	, struct IFF_Tag *container_type
+)
+{
+	struct ContainerAwareFormState *fs = custom_state;
+	if (!fs) return 0;
+
+	fs->container_depth++;
+	ContainerAware_LogEvent(fs, CONTAINER_EVENT_ENTER, container_type, fs->container_depth);
+	return 1;
+}
+
+static char ContainerAware_LeaveContainer
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_Tag *container_variant
+	, struct IFF_Tag *container_type
+)
+{
+	struct ContainerAwareFormState *fs = custom_state;
+	if (!fs) return 0;
+
+	ContainerAware_LogEvent(fs, CONTAINER_EVENT_LEAVE, container_type, fs->container_depth);
+	fs->container_depth--;
+	return 1;
+}
+
+static char ContainerAware_EndDecode
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, void **out_final_entity
+)
+{
+	*out_final_entity = custom_state;
+	return 1;
+}
+
+char IFF_TestDecoders_CreateContainerAwareFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+)
+{
+	struct IFF_FormDecoder *dec = 0;
+
+	if (!out_decoder) return 0;
+
+	if (!IFF_FormDecoder_Allocate(&dec)) return 0;
+
+	if (!IFF_FormDecoder_Construct
+	(
+		dec
+		, ContainerAware_BeginDecode
+		, ContainerAware_ProcessChunk
+		, ContainerAware_ProcessNestedForm
+		, ContainerAware_EndDecode
+	))
+	{
+		IFF_FormDecoder_Release(dec);
+		return 0;
+	}
+
+	// Set the new optional callbacks.
+	dec->enter_container = ContainerAware_EnterContainer;
+	dec->leave_container = ContainerAware_LeaveContainer;
+
+	*out_decoder = dec;
+	return 1;
+}
+
+// ===================================================================
+// InnerFormDecoder — simple decoder for child FORMs inside CAT/LIST
+// ===================================================================
+
+char IFF_TestDecoders_CreateInnerFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+)
+{
+	// Reuse the standard TestFormDecoder — it produces a TestFormState
+	// that the ContainerAwareFormDecoder will receive and free.
+	return IFF_TestDecoders_CreateFormDecoder(out_decoder);
+}

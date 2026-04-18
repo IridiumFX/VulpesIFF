@@ -142,7 +142,25 @@ char IFF_Parser_Session_EnterScope
 
 	if (!item || !new_scope) return 0;
 
-	// 1. If there is a current scope, push it onto the parent stack.
+	// 1. Compute receiving_form_scope for the new scope.
+	//    If the current (parent) scope is a FORM, it becomes the receiver.
+	//    Otherwise, inherit the parent's receiving_form_scope.
+	if (item->current_scope)
+	{
+		VPS_TYPE_16S variant_ordering;
+		IFF_Tag_Compare(&item->current_scope->container_variant, &IFF_TAG_SYSTEM_FORM, &variant_ordering);
+
+		if (variant_ordering == 0)
+		{
+			new_scope->receiving_form_scope = item->current_scope;
+		}
+		else
+		{
+			new_scope->receiving_form_scope = item->current_scope->receiving_form_scope;
+		}
+	}
+
+	// 2. If there is a current scope, push it onto the parent stack.
 	if (item->current_scope)
 	{
 		VPS_List_Node_Allocate(&node);
@@ -150,10 +168,10 @@ char IFF_Parser_Session_EnterScope
 		VPS_List_AddHead(item->scope_stack, node);
 	}
 
-	// 2. The new scope becomes the current active scope.
+	// 3. The new scope becomes the current active scope.
 	item->current_scope = new_scope;
 
-	// 3. Mirror the scope change in the properties dictionary.
+	// 4. Mirror the scope change in the properties dictionary.
 	VPS_ScopedDictionary_EnterScope(item->props);
 
 	return 1;

@@ -49,6 +49,30 @@ struct IFF_FormDecoder
         void *custom_state,
         void **out_final_entity
     );
+
+    /**
+     * @brief Called when a child CAT or LIST container is entered.
+     * @details Optional. Allows the FORM decoder to track container grouping
+     *          boundaries for nested FORMs that arrive through intermediate
+     *          CAT/LIST containers.
+     */
+    char (*enter_container)(
+        struct IFF_Parser_State *state,
+        void *custom_state,
+        struct IFF_Tag *container_variant,
+        struct IFF_Tag *container_type
+    );
+
+    /**
+     * @brief Called when a child CAT or LIST container is exited.
+     * @details Optional. Pairs with enter_container.
+     */
+    char (*leave_container)(
+        struct IFF_Parser_State *state,
+        void *custom_state,
+        struct IFF_Tag *container_variant,
+        struct IFF_Tag *container_type
+    );
 };
 
 char IFF_FormDecoder_Allocate(struct IFF_FormDecoder **item);

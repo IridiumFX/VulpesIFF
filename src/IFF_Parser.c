@@ -1139,11 +1139,13 @@ form_done:
 	// 7. Leave scope — parent is restored.
 	IFF_Parser_Session_LeaveScope(parser->session);
 
-	// 8. Pass the result to the parent's form decoder, or store as session result.
+	// 8. Pass the result to the nearest form decoder, or store as session result.
 	if (final_entity)
 	{
 		struct IFF_Scope* restored_parent = parser->session->current_scope;
+		char delivered = 0;
 
+		// Direct parent is a FORM with a decoder (common case: FORM-in-FORM).
 		if (restored_parent
 			&& restored_parent->form_decoder
 			&& restored_parent->form_decoder->process_nested_form)
@@ -1157,8 +1159,32 @@ form_done:
 				&form_type,
 				final_entity
 			);
+			delivered = 1;
 		}
-		else
+
+		// Parent is a transparent container (CAT/LIST). Bubble up to the
+		// nearest ancestor FORM scope that can receive entities.
+		if (!delivered
+			&& restored_parent
+			&& restored_parent->receiving_form_scope
+			&& restored_parent->receiving_form_scope->form_decoder
+			&& restored_parent->receiving_form_scope->form_decoder->process_nested_form)
+		{
+			struct IFF_Scope *receiver = restored_parent->receiving_form_scope;
+
+			parser_state.session = parser->session;
+
+			receiver->form_decoder->process_nested_form
+			(
+				&parser_state,
+				receiver->form_state,
+				&form_type,
+				final_entity
+			);
+			delivered = 1;
+		}
+
+		if (!delivered)
 		{
 			parser->session->final_entity = final_entity;
 		}
@@ -1419,6 +1445,27 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 
 	IFF_Parser_Session_EnterScope(parser->session, child_scope);
 
+	// 3b. Notify the receiving FORM's decoder that a LIST container has opened.
+	if (child_scope->receiving_form_scope
+		&& child_scope->receiving_form_scope->form_decoder
+		&& child_scope->receiving_form_scope->form_decoder->enter_container)
+	{
+		struct IFF_Parser_State parser_state;
+		parser_state.session = parser->session;
+
+		if (!child_scope->receiving_form_scope->form_decoder->enter_container
+		(
+			&parser_state,
+			child_scope->receiving_form_scope->form_state,
+			&child_scope->container_variant,
+			&list_type
+		))
+		{
+			IFF_Parser_Session_LeaveScope(parser->session);
+			return 0;
+		}
+	}
+
 	// 4. Content loop — PROPs, containers, and directives. No direct data chunks.
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
@@ -1502,6 +1549,23 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 
 list_done:
 
+	// 5. Notify the receiving FORM's decoder that the LIST container is closing.
+	if (child_scope->receiving_form_scope
+		&& child_scope->receiving_form_scope->form_decoder
+		&& child_scope->receiving_form_scope->form_decoder->leave_container)
+	{
+		struct IFF_Parser_State parser_state;
+		parser_state.session = parser->session;
+
+		child_scope->receiving_form_scope->form_decoder->leave_container
+		(
+			&parser_state,
+			child_scope->receiving_form_scope->form_state,
+			&child_scope->container_variant,
+			&list_type
+		);
+	}
+
 	IFF_Parser_Session_LeaveScope(parser->session);
 
 	return 1;
@@ -1580,6 +1644,27 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 
 	IFF_Parser_Session_EnterScope(parser->session, child_scope);
 
+	// 3b. Notify the receiving FORM's decoder that a CAT container has opened.
+	if (child_scope->receiving_form_scope
+		&& child_scope->receiving_form_scope->form_decoder
+		&& child_scope->receiving_form_scope->form_decoder->enter_container)
+	{
+		struct IFF_Parser_State parser_state;
+		parser_state.session = parser->session;
+
+		if (!child_scope->receiving_form_scope->form_decoder->enter_container
+		(
+			&parser_state,
+			child_scope->receiving_form_scope->form_state,
+			&child_scope->container_variant,
+			&cat_type
+		))
+		{
+			IFF_Parser_Session_LeaveScope(parser->session);
+			return 0;
+		}
+	}
+
 	// 4. Content loop — nested containers and directives only.
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
@@ -1648,6 +1733,23 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 	}
 
 cat_done:
+
+	// 5. Notify the receiving FORM's decoder that the CAT container is closing.
+	if (child_scope->receiving_form_scope
+		&& child_scope->receiving_form_scope->form_decoder
+		&& child_scope->receiving_form_scope->form_decoder->leave_container)
+	{
+		struct IFF_Parser_State parser_state;
+		parser_state.session = parser->session;
+
+		child_scope->receiving_form_scope->form_decoder->leave_container
+		(
+			&parser_state,
+			child_scope->receiving_form_scope->form_state,
+			&child_scope->container_variant,
+			&cat_type
+		);
+	}
 
 	IFF_Parser_Session_LeaveScope(parser->session);
 

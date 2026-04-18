@@ -54,6 +54,35 @@ struct IFF_FormEncoder
 		struct IFF_Generator_State *state
 		, void *custom_state
 	);
+
+	/**
+	 * @brief Called to produce the next container group wrapping nested FORMs.
+	 * @details Optional. Called in a loop after produce_chunk and before
+	 *          produce_nested_form. Each invocation opens one CAT or LIST.
+	 *          Sets out_done=1 when no more container groups.
+	 */
+	char (*begin_container_group)
+	(
+		struct IFF_Generator_State *state
+		, void *custom_state
+		, struct IFF_Tag *out_container_variant
+		, struct IFF_Tag *out_container_type
+		, char *out_done
+	);
+
+	/**
+	 * @brief Called to produce the next FORM inside a container group.
+	 * @details Optional. Called in a loop after begin_container_group opens
+	 *          a container. Sets out_done=1 when the group is complete.
+	 */
+	char (*produce_grouped_form)
+	(
+		struct IFF_Generator_State *state
+		, void *custom_state
+		, struct IFF_Tag *out_form_type
+		, void **out_nested_entity
+		, char *out_done
+	);
 };
 
 char IFF_FormEncoder_Allocate

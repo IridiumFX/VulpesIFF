@@ -1863,6 +1863,88 @@ char IFF_Generator_EncodeForm
 		}
 	}
 
+	/* Produce container groups (CAT/LIST wrapping nested forms) */
+	if (encoder->begin_container_group && encoder->produce_grouped_form)
+	{
+		done = 0;
+		while (!done)
+		{
+			struct IFF_Tag container_variant;
+			struct IFF_Tag container_type;
+			VPS_TYPE_16S cat_ordering;
+			VPS_TYPE_16S list_ordering;
+
+			memset(&container_variant, 0, sizeof(container_variant));
+			memset(&container_type, 0, sizeof(container_type));
+
+			if (!encoder->begin_container_group(&state, custom_state,
+				&container_variant, &container_type, &done))
+			{
+				goto encode_failure;
+			}
+
+			if (!done)
+			{
+				/* Determine container variant and open it. */
+				IFF_Tag_Compare(&container_variant, &IFF_TAG_SYSTEM_CAT, &cat_ordering);
+				IFF_Tag_Compare(&container_variant, &IFF_TAG_SYSTEM_LIST, &list_ordering);
+
+				if (cat_ordering == 0)
+				{
+					if (!IFF_Generator_BeginCat(gen, &container_type))
+						goto encode_failure;
+				}
+				else if (list_ordering == 0)
+				{
+					if (!IFF_Generator_BeginList(gen, &container_type))
+						goto encode_failure;
+				}
+				else
+				{
+					goto encode_failure;
+				}
+
+				/* Produce grouped forms inside this container. */
+				{
+					char group_done = 0;
+					while (!group_done)
+					{
+						struct IFF_Tag grouped_type;
+						void *grouped_entity = 0;
+
+						memset(&grouped_type, 0, sizeof(grouped_type));
+
+						if (!encoder->produce_grouped_form(&state, custom_state,
+							&grouped_type, &grouped_entity, &group_done))
+						{
+							goto encode_failure;
+						}
+
+						if (!group_done)
+						{
+							if (!IFF_Generator_EncodeForm(gen, &grouped_type, grouped_entity))
+							{
+								goto encode_failure;
+							}
+						}
+					}
+				}
+
+				/* Close the container. */
+				if (cat_ordering == 0)
+				{
+					if (!IFF_Generator_EndCat(gen))
+						goto encode_failure;
+				}
+				else
+				{
+					if (!IFF_Generator_EndList(gen))
+						goto encode_failure;
+				}
+			}
+		}
+	}
+
 	/* Produce nested forms */
 	if (encoder->produce_nested_form)
 	{

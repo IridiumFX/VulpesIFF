@@ -89,3 +89,60 @@ char IFF_TestDecoders_CreateNestingAwareFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 );
+
+/* ================================================================== */
+/* Container-aware test decoder for entity routing conformance tests   */
+/* ================================================================== */
+
+#define CONTAINER_EVENT_MAX 32
+
+enum ContainerEventType
+{
+	CONTAINER_EVENT_ENTER,
+	CONTAINER_EVENT_LEAVE,
+	CONTAINER_EVENT_ENTITY
+};
+
+struct ContainerEvent
+{
+	enum ContainerEventType type;
+	char tag[5];  /* e.g. "BBBB", "CCCC" — the container or form type */
+	int depth;    /* nesting depth at time of event */
+};
+
+/**
+ * @brief Final entity produced by ContainerAwareFormDecoder.
+ * @details Tracks a sequential event log of enter_container,
+ *          leave_container, and process_nested_form calls with
+ *          type tags and nesting depth.
+ */
+struct ContainerAwareFormState
+{
+	int chunk_count;
+	int nested_form_count;
+	int container_depth;
+	int event_count;
+	struct ContainerEvent events[CONTAINER_EVENT_MAX];
+};
+
+/**
+ * @brief Creates a ContainerAwareFormDecoder.
+ * @details Implements enter_container, leave_container, and process_nested_form.
+ *          Logs all events with type tags and nesting depth into an event array
+ *          on ContainerAwareFormState.
+ */
+char IFF_TestDecoders_CreateContainerAwareFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+);
+
+/**
+ * @brief Creates a simple inner FormDecoder for child FORMs.
+ * @details Produces a heap-allocated TestFormState as final_entity.
+ *          Used inside CAT/LIST to generate entities that bubble up
+ *          to the ContainerAwareFormDecoder.
+ */
+char IFF_TestDecoders_CreateInnerFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+);

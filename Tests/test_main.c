@@ -40,6 +40,8 @@ int main(int argc, char *argv[])
 	RUN_TEST_SUITE(test_suite_generate_directives);
 	RUN_TEST_SUITE(test_suite_generate_checksum_span);
 	RUN_TEST_SUITE(test_suite_generate_encoders_advanced);
+	RUN_TEST_SUITE(test_suite_parse_container_delivery);
+	RUN_TEST_SUITE(test_suite_generate_container_groups);
 	RUN_TEST_SUITE(test_suite_parse_checksum_advanced);
 	RUN_TEST_SUITE(test_suite_parse_checksum_algorithms);
 	RUN_TEST_SUITE(test_suite_parse_midstream_sharding);

@@ -220,7 +220,8 @@ The decoded result is then routed by the parser:
 ### 9.1 The FormDecoder Vtable
 
 A `FormDecoder` assembles a high-level entity from the chunks and nested forms
-within a FORM container. It has four callbacks:
+within a FORM container. It has four required callbacks and two optional
+container lifecycle callbacks:
 
 ```c
 struct IFF_FormDecoder {
@@ -238,7 +239,7 @@ struct IFF_FormDecoder {
         , struct IFF_ContextualData *contextual_data
     );
 
-    // Called for each decoded nested FORM
+    // Called for each decoded nested FORM (direct or bubbled through CAT/LIST)
     char (*process_nested_form)(
         struct IFF_Parser_State *state
         , void *custom_state
@@ -252,10 +253,66 @@ struct IFF_FormDecoder {
         , void *custom_state
         , void **out_final_entity
     );
+
+    // OPTIONAL: Called when a child CAT or LIST container is entered.
+    // Allows tracking container grouping boundaries.
+    char (*enter_container)(
+        struct IFF_Parser_State *state
+        , void *custom_state
+        , struct IFF_Tag *container_variant   // CAT or LIST
+        , struct IFF_Tag *container_type
+    );
+
+    // OPTIONAL: Called when a child CAT or LIST container is exited.
+    char (*leave_container)(
+        struct IFF_Parser_State *state
+        , void *custom_state
+        , struct IFF_Tag *container_variant
+        , struct IFF_Tag *container_type
+    );
 };
 ```
 
-### 9.2 Registration
+### 9.2 Container Entity Routing
+
+Entities produced by FORMs nested inside CAT or LIST containers are
+automatically routed to the nearest ancestor FORM that has a `FormDecoder`
+with a `process_nested_form` callback. This routing is transparent --- the
+decoder does not need to know whether a nested FORM was a direct child or
+arrived through an intermediate container.
+
+To distinguish grouping, decoders can implement the optional
+`enter_container` / `leave_container` callbacks. The parser calls these when
+entering and leaving any CAT or LIST that sits between the decoder's FORM
+and the nested FORMs. This produces a SAX-like event stream:
+
+```
+begin_decode
+  process_chunk(BMHD, ...)
+  enter_container(CAT, BBBB)        // group 1 opens
+    process_nested_form(BBBB, e1)
+    process_nested_form(BBBB, e2)
+  leave_container(CAT, BBBB)        // group 1 closes
+  enter_container(CAT, CCCC)        // group 2 opens
+    process_nested_form(CCCC, e3)
+  leave_container(CAT, CCCC)        // group 2 closes
+end_decode
+```
+
+Nesting is tracked correctly at any depth:
+
+```
+  enter_container(LIST, XXXX)       // depth 1
+    enter_container(CAT, BBBB)      // depth 2
+      process_nested_form(BBBB, e1)
+    leave_container(CAT, BBBB)
+  leave_container(LIST, XXXX)
+```
+
+Root-level containers (no parent FORM) route entities to
+`session->final_entity` as before. No container events are dispatched.
+
+### 9.3 Registration
 
 Form decoders are registered by form type tag:
 
@@ -263,7 +320,7 @@ Form decoders are registered by form type tag:
 IFF_Parser_Factory_RegisterFormDecoder(factory, &ILBM_tag, ilbm_decoder);
 ```
 
-### 9.3 PROP Resolution from Within a Decoder
+### 9.4 PROP Resolution from Within a Decoder
 
 Both `process_chunk` and `end_decode` receive a `Parser_State` that exposes
 `FindProp`. This allows decoders to pull shared properties:
@@ -285,7 +342,7 @@ char ilbm_end(IFF_Parser_State *state, void *cs, void **out_entity):
     return 1
 ```
 
-### 9.4 Example: Decoding an ILBM Image
+### 9.5 Example: Decoding an ILBM Image
 
 ```
 struct ILBM_State {
@@ -349,7 +406,8 @@ the encoder produces the complete chunk data in one call.
 
 ### 11.1 The FormEncoder Vtable
 
-A `FormEncoder` mirrors `FormDecoder` with four callbacks:
+A `FormEncoder` mirrors `FormDecoder` with four required callbacks and two
+optional container group callbacks:
 
 ```c
 struct IFF_FormEncoder {
@@ -383,6 +441,26 @@ struct IFF_FormEncoder {
         struct IFF_Generator_State *state
         , void *custom_state
     );
+
+    // OPTIONAL: Produce container groups (CAT/LIST) wrapping nested FORMs.
+    // Called in a loop after produce_chunk, before produce_nested_form.
+    char (*begin_container_group)(
+        struct IFF_Generator_State *state
+        , void *custom_state
+        , struct IFF_Tag *out_container_variant  // CAT or LIST
+        , struct IFF_Tag *out_container_type
+        , char *out_done
+    );
+
+    // OPTIONAL: Produce the next FORM inside a container group.
+    // Called in a loop after begin_container_group opens a container.
+    char (*produce_grouped_form)(
+        struct IFF_Generator_State *state
+        , void *custom_state
+        , struct IFF_Tag *out_form_type
+        , void **out_nested_entity
+        , char *out_done
+    );
 };
 ```
 
@@ -390,31 +468,19 @@ struct IFF_FormEncoder {
 
 The generator's `EncodeForm` function drives the encoding lifecycle:
 
-```mermaid
-graph TD
-    START["EncodeForm(type, entity)"] --> LOOKUP["Lookup FormEncoder<br/>by type tag"]
-    LOOKUP --> BEGIN["BeginForm(type)"]
-    BEGIN --> BEGENC["encoder.begin_encode()<br/>-> custom_state"]
-    BEGENC --> CHUNKS["Loop: produce_chunk()"]
-    CHUNKS --> CHKDONE{"done?"}
-    CHKDONE -->|No| CHKENC{"ChunkEncoder<br/>registered for tag?"}
-    CHKENC -->|Yes| TRANSCODE["Transcode via<br/>chunk_encoder.encode()"]
-    CHKENC -->|No| DIRECT["Use data as-is"]
-    TRANSCODE --> WRITE["WriteChunk(tag, data)"]
-    DIRECT --> WRITE
-    WRITE --> CHUNKS
-    CHKDONE -->|Yes| NESTED["Loop: produce_nested_form()"]
-
-    NESTED --> NESTDONE{"done?"}
-    NESTDONE -->|No| RECURSE["Recurse: EncodeForm(type, entity)"]
-    RECURSE --> NESTED
-    NESTDONE -->|Yes| ENDENC["encoder.end_encode()"]
-
-    ENDENC --> ENDFORM["EndForm()"]
-
-    style START fill:#4a90d9,color:#fff
-    style ENDFORM fill:#7ab648,color:#fff
 ```
+1. begin_encode(entity) → custom_state
+2. Loop: produce_chunk()           → WriteChunk for each
+3. Loop: begin_container_group()   → BeginCat/BeginList
+     Loop: produce_grouped_form()  → EncodeForm for each
+     EndCat/EndList
+4. Loop: produce_nested_form()     → EncodeForm for each (direct, no wrapper)
+5. end_encode()
+```
+
+Steps 3-4 allow encoders to produce both grouped (CAT/LIST-wrapped) and
+direct nested FORMs. Encoders that don't need container groups leave
+`begin_container_group` and `produce_grouped_form` as NULL (steps 3 skipped).
 
 ### 11.3 Example: Encoding an ILBM Image
 

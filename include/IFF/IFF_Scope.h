@@ -11,6 +11,12 @@ struct IFF_Scope
 	struct IFF_FormDecoder *form_decoder;
 	void *form_state;
 
+	// --- Container Entity Routing ---
+	// Points to the nearest ancestor FORM scope that can receive entities
+	// produced by FORMs nested inside intermediate CAT/LIST containers.
+	// NULL if no such ancestor exists (entities go to session->final_entity).
+	struct IFF_Scope *receiving_form_scope;
+
 	// --- Active Chunk Decoder State (for sharding) ---
 	struct IFF_ChunkDecoder *last_chunk_decoder;
 	void *last_chunk_state;

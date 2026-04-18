@@ -56,6 +56,8 @@ char IFF_FormEncoder_Deconstruct
 		item->produce_chunk = 0;
 		item->produce_nested_form = 0;
 		item->end_encode = 0;
+		item->begin_container_group = 0;
+		item->produce_grouped_form = 0;
 	}
 
 	return 1;

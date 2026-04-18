@@ -31,6 +31,8 @@ char IFF_FormDecoder_Deconstruct(struct IFF_FormDecoder *item)
     item->process_chunk = 0;
     item->process_nested_form = 0;
     item->end_decode = 0;
+    item->enter_container = 0;
+    item->leave_container = 0;
     return 1;
 }
 

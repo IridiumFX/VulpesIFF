@@ -15,40 +15,40 @@ add_library(VulpesIFF STATIC)
 
 # Add the source files for this library.
 target_sources(VulpesIFF PRIVATE
-		src/IFF_Boundary.c
-		src/IFF_ChecksumAlgorithm.c
-		src/IFF_ChecksumCalculator.c
-		src/IFF_ChecksumSpan.c
-		src/IFF_Checksum_CRC32C.c
-		src/IFF_Checksum_CRC64ECMA.c
-		src/IFF_Checksum_LRC.c
-		src/IFF_Checksum_RFC1071.c
-		src/IFF_Chunk.c
-		src/IFF_Chunk_Key.c
-		src/IFF_ChunkDecoder.c
-		src/IFF_ChunkEncoder.c
-		src/IFF_Container.c
-		src/IFF_ContextualData.c
-		src/IFF_Directive_IFF_Processor.c
-		src/IFF_DataPump.c
-		src/IFF_DataTap.c
-		src/IFF_FormDecoder.c
-		src/IFF_FormEncoder.c
-		src/IFF_Generator.c
-		src/IFF_Generator_Factory.c
-		src/IFF_Header.c
-		src/IFF_Parser.c
-		src/IFF_Parser_Factory.c
-		src/IFF_Parser_Session.c
-		src/IFF_Parser_State.c
-		src/IFF_Reader.c
-		src/IFF_ReaderFrame.c
-		src/IFF_Scope.c
-		src/IFF_Tag.c
-		src/IFF_WritePump.c
-		src/IFF_WriteScope.c
-		src/IFF_WriteTap.c
-		src/IFF_Writer.c
+		src/main/c/IFF_Boundary.c
+		src/main/c/IFF_ChecksumAlgorithm.c
+		src/main/c/IFF_ChecksumCalculator.c
+		src/main/c/IFF_ChecksumSpan.c
+		src/main/c/IFF_Checksum_CRC32C.c
+		src/main/c/IFF_Checksum_CRC64ECMA.c
+		src/main/c/IFF_Checksum_LRC.c
+		src/main/c/IFF_Checksum_RFC1071.c
+		src/main/c/IFF_Chunk.c
+		src/main/c/IFF_Chunk_Key.c
+		src/main/c/IFF_ChunkDecoder.c
+		src/main/c/IFF_ChunkEncoder.c
+		src/main/c/IFF_Container.c
+		src/main/c/IFF_ContextualData.c
+		src/main/c/IFF_Directive_IFF_Processor.c
+		src/main/c/IFF_DataPump.c
+		src/main/c/IFF_DataTap.c
+		src/main/c/IFF_FormDecoder.c
+		src/main/c/IFF_FormEncoder.c
+		src/main/c/IFF_Generator.c
+		src/main/c/IFF_Generator_Factory.c
+		src/main/c/IFF_Header.c
+		src/main/c/IFF_Parser.c
+		src/main/c/IFF_Parser_Factory.c
+		src/main/c/IFF_Parser_Session.c
+		src/main/c/IFF_Parser_State.c
+		src/main/c/IFF_Reader.c
+		src/main/c/IFF_ReaderFrame.c
+		src/main/c/IFF_Scope.c
+		src/main/c/IFF_Tag.c
+		src/main/c/IFF_WritePump.c
+		src/main/c/IFF_WriteScope.c
+		src/main/c/IFF_WriteTap.c
+		src/main/c/IFF_Writer.c
 		Codecs/ILBM/ILBM_Decompression.c
 		Codecs/ILBM/ILBM_Conversion.c
 		Codecs/ILBM/ILBM_Codec.c
@@ -70,7 +70,7 @@ target_include_directories(VulpesIFF PUBLIC
 target_link_libraries(VulpesIFF PUBLIC VulpesCore)
 
 # Add the test subdirectory to the build.
-add_subdirectory(Tests)
+add_subdirectory(src/test/c)
 
 # Codec demo CLI.
 add_executable(VulpesIFF_CodecDemo Codecs/demo_codecs.c)

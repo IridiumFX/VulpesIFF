@@ -16,8 +16,8 @@
 #include <IFF/IFF_Generator_Factory.h>
 
 #include "Test.h"
-#include "test_harness/IFF_TestBuilder.h"
-#include "test_harness/IFF_TestEncoders.h"
+#include "IFF_TestBuilder.h"
+#include "IFF_TestEncoders.h"
 
 /**
  * Test 24: EncodeForm drives FormEncoder callbacks

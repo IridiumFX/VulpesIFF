@@ -14,7 +14,7 @@
 #include <IFF/IFF_Generator_Factory.h>
 
 #include "Test.h"
-#include "test_harness/IFF_TestBuilder.h"
+#include "IFF_TestBuilder.h"
 
 /**
  * Test 21: Generator progressive mode round-trip

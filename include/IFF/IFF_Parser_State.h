@@ -27,3 +27,16 @@ char IFF_Parser_State_FindProp
 	, struct IFF_Tag *prop_tag
 	, struct IFF_ContextualData **out_prop_data
 );
+
+/**
+ * @brief Retrieves the application context attached to the session.
+ * @details The context is set by the application on the session before
+ *          scanning (session->user_data); decoders use it to reach their
+ *          sink without global state. out_user_data receives NULL when no
+ *          context was attached.
+ */
+char IFF_Parser_State_GetUserData
+(
+	struct IFF_Parser_State *state
+	, void **out_user_data
+);

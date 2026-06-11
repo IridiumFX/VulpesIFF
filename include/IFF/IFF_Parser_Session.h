@@ -37,6 +37,11 @@ struct IFF_Parser_Session
 	struct VPS_ScopedDictionary* props;
 
 	void *final_entity;
+
+	// Opaque application context, surfaced to decoders through
+	// IFF_Parser_State_GetUserData. Never touched by the parser itself;
+	// the caller sets it before Scan (e.g. a sink the decoders report to).
+	void *user_data;
 };
 
 char IFF_Parser_Session_Allocate

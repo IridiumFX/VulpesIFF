@@ -2254,6 +2254,41 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 		goto rollback;
 	}
 
+	// Carry the registered checksum algorithms into the included segment's
+	// tap. Each reader owns its own tap, so without this every ' CHK' span
+	// inside an included segment would build with zero calculators and its
+	// ' SUM' would verify trivially — integrity must not weaken across an
+	// inclusion boundary.
+	{
+		struct VPS_Dictionary *registered = parser->reader->tap->registered_algorithms;
+		VPS_TYPE_SIZE bucket_index;
+
+		for (bucket_index = 0; bucket_index < registered->buckets; ++bucket_index)
+		{
+			struct VPS_List_Node *entry_node = registered->bucket_vector[bucket_index]->head;
+
+			while (entry_node)
+			{
+				struct VPS_Dictionary_Entry *entry = entry_node->data;
+
+				if
+				(
+					!IFF_DataTap_RegisterAlgorithm
+					(
+						new_reader->tap
+						, (const struct IFF_ChecksumAlgorithm *)entry->data
+					)
+				)
+				{
+					IFF_Reader_Release(new_reader);
+					goto rollback;
+				}
+
+				entry_node = entry_node->next;
+			}
+		}
+	}
+
 	parser->reader = new_reader;
 	parser->file_handle = new_file_handle;
 	session->iff85_locked = 0;

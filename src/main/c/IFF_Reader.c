@@ -525,6 +525,42 @@ cleanup:
 	return 0;
 }
 
+/**
+ * @brief Frees the detached identifier strings used as keys in the expected-
+ *        checksums dictionary (it is constructed without a key_release).
+ */
+static char PRIVATE_IFF_Reader_FreeChecksumKeys
+(
+	struct VPS_Dictionary* dict
+)
+{
+	VPS_TYPE_SIZE b;
+
+	if (!dict)
+	{
+		return 1;
+	}
+
+	for (b = 0; b < dict->buckets; ++b)
+	{
+		struct VPS_List* bucket = dict->bucket_vector[b];
+		struct VPS_List_Node* node;
+
+		if (!bucket) continue;
+
+		node = bucket->head;
+		while (node)
+		{
+			struct VPS_Dictionary_Entry* entry = node->data;
+			free(entry->key);
+			entry->key = 0;
+			node = node->next;
+		}
+	}
+
+	return 1;
+}
+
 char IFF_Reader_EndChecksumSpan
 (
 	struct IFF_Reader* reader
@@ -638,6 +674,15 @@ char IFF_Reader_EndChecksumSpan
 			}
 		}
 
+		// A duplicate identifier in the SUM payload is malformed (and would
+		// orphan the new key bytes, since Add keeps the existing key).
+		if (VPS_Dictionary_Find(expected_checksums, id_data->bytes, 0))
+		{
+			VPS_Data_Release(id_data);
+			VPS_Data_Release(sum_data);
+			goto cleanup;
+		}
+
 		// Add to dictionary. Key is the string pointer inside id_data.
 		// EndSpan looks up by algorithm->identifier (a const char*), so we
 		// use string hash/compare. The key is id_data->bytes (the null-terminated string).
@@ -660,29 +705,9 @@ char IFF_Reader_EndChecksumSpan
 	// Delegate to DataTap for verification.
 	result = IFF_DataTap_EndSpan(reader->tap, expected_checksums);
 
-	// Clean up. The dictionary release will free the expected checksum VPS_Data values.
-	// The keys (string pointers) were detached from id_data and need manual cleanup.
-	// Since the dictionary has no key_release, we need to handle this.
-	// Actually, since we set own_bytes=0 and released the VPS_Data wrappers, the raw
-	// bytes are still allocated on the heap (from VPS_Data_Allocate). We need to free
-	// them. Let's iterate the dictionary and free the keys.
-	{
-		VPS_TYPE_SIZE b;
-		for (b = 0; b < expected_checksums->buckets; ++b)
-		{
-			struct VPS_List* bucket = expected_checksums->bucket_vector[b];
-			if (!bucket) continue;
-			struct VPS_List_Node* node = bucket->head;
-			while (node)
-			{
-				struct VPS_Dictionary_Entry* entry = node->data;
-				free(entry->key);
-				entry->key = 0;
-				node = node->next;
-			}
-		}
-	}
-
+	// Clean up. The dictionary release frees the expected checksum VPS_Data
+	// values; the detached identifier keys need the manual sweep.
+	PRIVATE_IFF_Reader_FreeChecksumKeys(expected_checksums);
 	VPS_Dictionary_Release(expected_checksums);
 	VPS_DataReader_Release(dr);
 
@@ -690,6 +715,9 @@ char IFF_Reader_EndChecksumSpan
 
 cleanup:
 
+	// Keys already inserted before the failure are detached heap buffers and
+	// must be swept here too.
+	PRIVATE_IFF_Reader_FreeChecksumKeys(expected_checksums);
 	VPS_Dictionary_Release(expected_checksums);
 	VPS_DataReader_Release(dr);
 

@@ -382,6 +382,43 @@ char IFF_Parser_Release
  * that deferred finalization and routes the result through the same
  * PROP-vs-FORM logic as Parse_Chunk.
  */
+/**
+ * @brief Checks that a child item declaring `declared` content bytes (plus
+ *        its size field) fits in the boundary's remaining capacity.
+ * @details An unbounded boundary (limit 0: progressive containers and the
+ *          root scope) always has room. Catching over-declared child sizes
+ *          here keeps a malformed size from pulling sibling or parent bytes
+ *          into the child's payload.
+ */
+static char PRIVATE_IFF_Parser_BoundaryHasRoom
+(
+	const struct IFF_Boundary *boundary
+	, VPS_TYPE_SIZE size_len
+	, VPS_TYPE_SIZE declared
+)
+{
+	VPS_TYPE_SIZE remaining;
+
+	if (boundary->limit == 0)
+	{
+		return 1;
+	}
+
+	if (boundary->level > boundary->limit)
+	{
+		return 0;
+	}
+
+	remaining = boundary->limit - boundary->level;
+
+	if (size_len > remaining)
+	{
+		return 0;
+	}
+
+	return declared <= remaining - size_len;
+}
+
 static char PRIVATE_IFF_Parser_FlushLastDecoder
 (
 	struct IFF_Parser *parser
@@ -423,13 +460,22 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 	{
 		if (contextual_data)
 		{
-			IFF_Parser_Session_AddProp
+			if
 			(
-				session,
-				&scope->container_type,
-				&scope->last_chunk_tag,
-				contextual_data
-			);
+				!IFF_Parser_Session_AddProp
+				(
+					session,
+					&scope->container_type,
+					&scope->last_chunk_tag,
+					contextual_data
+				)
+			)
+			{
+				IFF_ContextualData_Release(contextual_data);
+				scope->last_chunk_decoder = 0;
+				scope->last_chunk_state = 0;
+				return 0;
+			}
 			contextual_data = 0;
 		}
 	}
@@ -496,20 +542,29 @@ char IFF_Parser_ExecuteDirective
 	{
 		struct IFF_DirectiveResult directive_result;
 
+		// A registered processor that fails means the directive payload is
+		// malformed — fail the parse. (Unregistered directives are skipped
+		// below for forward compatibility.)
 		result = processor(directive_chunk, &directive_result);
-		if (result)
+		if (!result)
+		{
+			return 0;
+		}
+
 		{
 			switch (directive_result.action)
 			{
 				case IFF_ACTION_UPDATE_FLAGS:
 				{
 					// Scope guards: validate that the new flags do not exceed
-					// the parent scope's constraints.
+					// the parent scope's constraints. The scope stack holds
+					// the ancestors of current_scope, so its head IS the
+					// immediate parent.
 					struct VPS_List_Node* head_node = parser->session->scope_stack->head;
 
-					if (head_node && head_node->next)
+					if (head_node)
 					{
-						struct IFF_Scope* parent_scope = head_node->next->data;
+						struct IFF_Scope* parent_scope = head_node->data;
 						union IFF_Header_Flags new_flags = directive_result.payload.new_flags;
 						union IFF_Header_Flags parent_flags = parent_scope->flags;
 
@@ -592,6 +647,19 @@ static char PRIVATE_IFF_Parser_ReadAndExecuteDirective
 	if (!result)
 	{
 		return 0;
+	}
+
+	// The declared payload must fit the scope's remaining boundary.
+	{
+		VPS_TYPE_SIZE size_len = IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing);
+		VPS_TYPE_SIZE padding = (!(flags.as_fields.structuring & IFF_Header_Flag_Structuring_NO_PADDING)
+			&& (chunk->size & 1)) ? 1 : 0;
+
+		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, size_len, chunk->size + padding))
+		{
+			IFF_Chunk_Release(chunk);
+			return 0;
+		}
 	}
 
 	// Track boundary: size field + data payload
@@ -697,6 +765,19 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			return 0;
 		}
 
+		// The declared payload must fit the scope's remaining boundary.
+		{
+			VPS_TYPE_SIZE chk_size_len = IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing);
+			VPS_TYPE_SIZE chk_padding = (!(flags.as_fields.structuring & IFF_Header_Flag_Structuring_NO_PADDING)
+				&& (chunk->size & 1)) ? 1 : 0;
+
+			if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, chk_size_len, chunk->size + chk_padding))
+			{
+				IFF_Chunk_Release(chunk);
+				return 0;
+			}
+		}
+
 		scope->boundary.level += IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing)
 			+ chunk->size;
 
@@ -753,6 +834,23 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			return 0;
 		}
 
+		// The declared payload must fit the scope's remaining boundary.
+		{
+			VPS_TYPE_SIZE sum_size_len = IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing);
+			VPS_TYPE_SIZE sum_padding = (!(flags.as_fields.structuring & IFF_Header_Flag_Structuring_NO_PADDING)
+				&& (chunk->size & 1)) ? 1 : 0;
+
+			if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, sum_size_len, chunk->size + sum_padding))
+			{
+				if (paused_span_node)
+				{
+					VPS_List_AddHead(parser->reader->tap->active_spans, paused_span_node);
+				}
+				IFF_Chunk_Release(chunk);
+				return 0;
+			}
+		}
+
 		scope->boundary.level += IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing)
 			+ chunk->size;
 
@@ -801,6 +899,19 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			if (!result)
 			{
 				return 0;
+			}
+
+			// The declared payload must fit the scope's remaining boundary.
+			{
+				VPS_TYPE_SIZE shard_size_len = IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing);
+				VPS_TYPE_SIZE shard_padding = (!(flags.as_fields.structuring & IFF_Header_Flag_Structuring_NO_PADDING)
+					&& (chunk->size & 1)) ? 1 : 0;
+
+				if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, shard_size_len, chunk->size + shard_padding))
+				{
+					IFF_Chunk_Release(chunk);
+					return 0;
+				}
 			}
 
 			scope->boundary.level += IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing)
@@ -926,6 +1037,21 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 			&container_size
 		);
 		if (!result)
+		{
+			return 0;
+		}
+
+		// A blobbed container must at least hold its type tag; smaller
+		// declared sizes are malformed (0 would alias the unbounded
+		// sentinel in the child boundary and swallow the rest of the
+		// stream).
+		if (container_size < tag_size)
+		{
+			return 0;
+		}
+
+		// The declared container must fit the parent's remaining boundary.
+		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&parent_scope->boundary, size_len, container_size))
 		{
 			return 0;
 		}
@@ -1120,6 +1246,14 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 
 form_done:
 
+	// A bounded container must close exactly at its declared boundary;
+	// anything else means a child over- or under-ran the declared size.
+	if (child_scope->boundary.limit > 0
+		&& child_scope->boundary.level != child_scope->boundary.limit)
+	{
+		goto form_cleanup;
+	}
+
 	// Flush any pending shard decoder before ending the form.
 	PRIVATE_IFF_Parser_FlushLastDecoder(parser);
 
@@ -1206,6 +1340,14 @@ form_cleanup:
 
 	IFF_Parser_Session_LeaveScope(parser->session);
 
+	// The parser cannot release an opaque entity. Stash it on the session
+	// (when the slot is free) so the caller can still retrieve and release
+	// it after the failed parse instead of leaking it.
+	if (final_entity && !parser->session->final_entity)
+	{
+		parser->session->final_entity = final_entity;
+	}
+
 	return 0;
 }
 
@@ -1239,6 +1381,18 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 			&container_size
 		);
 		if (!result)
+		{
+			return 0;
+		}
+
+		// A blobbed container must at least hold its type tag (0 would alias
+		// the unbounded sentinel) and must fit the parent's boundary.
+		if (container_size < tag_size)
+		{
+			return 0;
+		}
+
+		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&parent_scope->boundary, size_len, container_size))
 		{
 			return 0;
 		}
@@ -1361,6 +1515,16 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 
 prop_done:
 
+	// A bounded container must close exactly at its declared boundary.
+	if (child_scope->boundary.limit > 0
+		&& child_scope->boundary.level != child_scope->boundary.limit)
+	{
+		PRIVATE_IFF_Parser_FlushLastDecoder(parser);
+		VPS_ScopedDictionary_EnterScope(parser->session->props);
+		IFF_Parser_Session_LeaveScope(parser->session);
+		return 0;
+	}
+
 	// Flush any pending shard decoder before leaving PROP scope.
 	PRIVATE_IFF_Parser_FlushLastDecoder(parser);
 
@@ -1402,6 +1566,18 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 			&container_size
 		);
 		if (!result)
+		{
+			return 0;
+		}
+
+		// A blobbed container must at least hold its type tag (0 would alias
+		// the unbounded sentinel) and must fit the parent's boundary.
+		if (container_size < tag_size)
+		{
+			return 0;
+		}
+
+		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&parent_scope->boundary, size_len, container_size))
 		{
 			return 0;
 		}
@@ -1549,6 +1725,14 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 
 list_done:
 
+	// A bounded container must close exactly at its declared boundary.
+	if (child_scope->boundary.limit > 0
+		&& child_scope->boundary.level != child_scope->boundary.limit)
+	{
+		IFF_Parser_Session_LeaveScope(parser->session);
+		return 0;
+	}
+
 	// 5. Notify the receiving FORM's decoder that the LIST container is closing.
 	if (child_scope->receiving_form_scope
 		&& child_scope->receiving_form_scope->form_decoder
@@ -1601,6 +1785,18 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 			&container_size
 		);
 		if (!result)
+		{
+			return 0;
+		}
+
+		// A blobbed container must at least hold its type tag (0 would alias
+		// the unbounded sentinel) and must fit the parent's boundary.
+		if (container_size < tag_size)
+		{
+			return 0;
+		}
+
+		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&parent_scope->boundary, size_len, container_size))
 		{
 			return 0;
 		}
@@ -1734,6 +1930,14 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 
 cat_done:
 
+	// A bounded container must close exactly at its declared boundary.
+	if (child_scope->boundary.limit > 0
+		&& child_scope->boundary.level != child_scope->boundary.limit)
+	{
+		IFF_Parser_Session_LeaveScope(parser->session);
+		return 0;
+	}
+
 	// 5. Notify the receiving FORM's decoder that the CAT container is closing.
 	if (child_scope->receiving_form_scope
 		&& child_scope->receiving_form_scope->form_decoder
@@ -1789,7 +1993,20 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		return 0;
 	}
 
-	// 2. Track boundary: size field + data payload.
+	// 2. The declared payload must fit the scope's remaining boundary.
+	{
+		VPS_TYPE_SIZE chunk_size_len = IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing);
+		VPS_TYPE_SIZE chunk_padding = (!(flags.as_fields.structuring & IFF_Header_Flag_Structuring_NO_PADDING)
+			&& (chunk->size & 1)) ? 1 : 0;
+
+		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, chunk_size_len, chunk->size + chunk_padding))
+		{
+			IFF_Chunk_Release(chunk);
+			return 0;
+		}
+	}
+
+	// Track boundary: size field + data payload.
 	scope->boundary.level += IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing)
 		+ chunk->size;
 
@@ -1832,6 +2049,13 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 
 			if (!decoder->process_shard(&parser_state, custom_state, chunk->data))
 			{
+				// Give the decoder its end call so custom_state is released.
+				if (decoder->end_decode)
+				{
+					struct IFF_ContextualData* discarded = 0;
+					decoder->end_decode(&parser_state, custom_state, &discarded);
+					IFF_ContextualData_Release(discarded);
+				}
 				IFF_Chunk_Release(chunk);
 				return 0;
 			}
@@ -1858,6 +2082,13 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 
 		if (!decoder->process_shard(&parser_state, custom_state, chunk->data))
 		{
+			// Give the decoder its end call so custom_state is released.
+			if (decoder->end_decode)
+			{
+				struct IFF_ContextualData* discarded = 0;
+				decoder->end_decode(&parser_state, custom_state, &discarded);
+				IFF_ContextualData_Release(discarded);
+			}
 			IFF_Chunk_Release(chunk);
 			return 0;
 		}
@@ -1866,6 +2097,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		{
 			if (!decoder->end_decode(&parser_state, custom_state, &contextual_data))
 			{
+				IFF_ContextualData_Release(contextual_data);
 				IFF_Chunk_Release(chunk);
 				return 0;
 			}
@@ -1895,7 +2127,12 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		struct VPS_Data* data_clone = 0;
 		if (chunk->data)
 		{
-			VPS_Data_Clone(&data_clone, chunk->data, 0, chunk->data->size);
+			if (!VPS_Data_Clone(&data_clone, chunk->data, 0, chunk->data->limit))
+			{
+				IFF_ContextualData_Release(contextual_data);
+				IFF_Chunk_Release(chunk);
+				return 0;
+			}
 		}
 
 		IFF_ContextualData_Construct(contextual_data, flags, data_clone);
@@ -1909,13 +2146,21 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		// We are inside a PROP — store as a property.
 		if (contextual_data)
 		{
-			IFF_Parser_Session_AddProp
+			if
 			(
-				session,
-				&scope->container_type,
-				&tag,
-				contextual_data
-			);
+				!IFF_Parser_Session_AddProp
+				(
+					session,
+					&scope->container_type,
+					&tag,
+					contextual_data
+				)
+			)
+			{
+				IFF_ContextualData_Release(contextual_data);
+				IFF_Chunk_Release(chunk);
+				return 0;
+			}
 			contextual_data = 0; // Dictionary takes ownership.
 		}
 	}
@@ -1963,15 +2208,19 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 	struct VPS_List_Node *node = 0;
 	struct IFF_Reader *new_reader = 0;
 
+	// This function owns new_file_handle: every failure path must close it.
+
 	// Circular inclusion guard.
 	if (parser->reader_stack->count >= 16)
 	{
+		close(new_file_handle);
 		return 0;
 	}
 
 	// Save current state into a frame.
 	if (!IFF_ReaderFrame_Allocate(&frame))
 	{
+		close(new_file_handle);
 		return 0;
 	}
 
@@ -1986,6 +2235,7 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 	if (!VPS_List_Node_Allocate(&node))
 	{
 		IFF_ReaderFrame_Release(frame);
+		close(new_file_handle);
 		return 0;
 	}
 
@@ -2033,6 +2283,8 @@ rollback:
 			VPS_List_Node_Release(popped);
 		}
 	}
+
+	close(new_file_handle);
 
 	return 0;
 }

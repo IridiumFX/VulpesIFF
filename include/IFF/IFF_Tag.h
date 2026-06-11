@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * NOTE:
  * All tags are normalized to a 16-byte canonical representation before being used for processor lookups.

@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_ChecksumAlgorithm;
 struct VPS_Set;
 struct VPS_Dictionary;

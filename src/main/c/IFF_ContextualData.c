@@ -49,7 +49,10 @@ char IFF_ContextualData_Deconstruct
 		return 0;
 	}
 
-	VPS_Data_Deconstruct(item->data);
+	// The owned payload is released here (not in Release) so that a
+	// Deconstruct-only user does not leak it; nulling keeps it idempotent.
+	VPS_Data_Release(item->data);
+	item->data = 0;
 
 	return 1;
 }
@@ -61,7 +64,7 @@ char IFF_ContextualData_Release
 {
 	if (item)
 	{
-		VPS_Data_Release(item->data);
+		IFF_ContextualData_Deconstruct(item);
 
 		free(item);
 	}

@@ -27,11 +27,20 @@ static void print_ilbm_info(const char *path)
 
 	printf("  Dimensions : %u x %u pixels\n", img->width, img->height);
 	printf("  Baseline   : %u\n", img->baseline);
-	printf("  Pixel data : %u bytes (RGBA8888)\n",
-		(unsigned)(img->width * img->height * 4));
+	printf("  Pixel data : %llu bytes (RGBA8888)\n",
+		(unsigned long long)img->width * img->height * 4);
 
 	/* Scan for unique colors and basic statistics. */
 	VPS_TYPE_32U total = (VPS_TYPE_32U)img->width * img->height;
+
+	/* A zero-area image has no statistics or preview to show. */
+	if (total == 0)
+	{
+		printf("  (empty image)\n\n");
+		free(img->pixels);
+		free(img);
+		return;
+	}
 	VPS_TYPE_32U transparent = 0;
 	VPS_TYPE_64U r_sum = 0, g_sum = 0, b_sum = 0;
 

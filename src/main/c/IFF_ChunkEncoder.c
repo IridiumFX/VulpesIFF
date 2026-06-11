@@ -33,7 +33,9 @@ char IFF_ChunkEncoder_Construct
 	)
 )
 {
-	if (!item)
+	// encode is the interface's only operation: an encoder without it would
+	// register fine and then be silently skipped by the generator.
+	if (!item || !encode)
 	{
 		return 0;
 	}

@@ -221,7 +221,9 @@ char IFF_WriteTap_RegisterAlgorithm
 	, const struct IFF_ChecksumAlgorithm *algorithm
 )
 {
-	if (!tap || !algorithm || !algorithm->identifier)
+	// All three callbacks are invoked unguarded by the span machinery.
+	if (!tap || !algorithm || !algorithm->identifier
+		|| !algorithm->create_context || !algorithm->update || !algorithm->finalize)
 	{
 		return 0;
 	}

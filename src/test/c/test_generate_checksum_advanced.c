@@ -21,6 +21,7 @@
 #include <IFF/IFF_Parser_Session.h>
 #include <IFF/IFF_Parser_Factory.h>
 #include <IFF/IFF_Checksum_LRC.h>
+#include <IFF/IFF_Checksum_RFC1071.h>
 
 #include "Test.h"
 #include "IFF_TestChecksumAlgorithm.h"
@@ -396,6 +397,136 @@ cleanup:
 	return result;
 }
 
+/**
+ * W66: checksum_span_nested_progressive
+ *
+ * Two nested CHK..SUM spans in PROGRESSIVE mode, verified with the additive
+ * RFC-1071 algorithm. Guards two regressions at once:
+ * - the generator must feed the inner SUM tag only to the span being ended
+ *   (the outer span receives the whole SUM chunk through the WriteTap once);
+ *   with an order-independent XOR algorithm a double-feed cancels out, so
+ *   this test deliberately uses an additive checksum;
+ * - RFC-1071 must carry its byte-offset parity across update calls, because
+ *   the parser and generator split the same stream into different buffers.
+ */
+static char test_gen_checksum_nested_progressive(void)
+{
+	struct IFF_Generator_Factory *gf = 0;
+	struct IFF_Generator *gen = 0;
+	struct IFF_Parser_Factory *pf = 0;
+	struct IFF_Parser *parser = 0;
+	struct VPS_Data *output = 0;
+	struct VPS_Set *outer = 0, *inner = 0;
+	char result = 0;
+
+	unsigned char data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	struct IFF_Header header;
+	struct IFF_Tag ilbm, body;
+	struct VPS_Data wrap;
+
+	const struct IFF_ChecksumAlgorithm *rfc_algo = IFF_Checksum_RFC1071_Get();
+
+	header.version = IFF_Header_Version_2025;
+	header.revision = 0;
+	header.flags.as_int = 0;
+	header.flags.as_fields.operating = IFF_Header_Operating_PROGRESSIVE;
+
+	IFF_Tag_Construct(&ilbm, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
+	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
+	wrap = PRIVATE_Wrap(data, 10);
+
+	outer = PRIVATE_CreateAlgoSet("RFC-1071", 9);
+	inner = PRIVATE_CreateAlgoSet("RFC-1071", 9);
+	if (!outer || !inner) goto cleanup;
+
+	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, rfc_algo)) goto cleanup;
+
+	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (!IFF_Generator_BeginChecksumSpan(gen, outer)) goto cleanup;
+	if (!IFF_Generator_BeginChecksumSpan(gen, inner)) goto cleanup;
+	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	if (!IFF_Generator_Flush(gen)) goto cleanup;
+
+	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+
+	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, rfc_algo)) goto cleanup;
+
+	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
+
+	result = 1;
+
+cleanup:
+	IFF_Parser_Release(parser);
+	IFF_Parser_Factory_Release(pf);
+	IFF_Generator_Release(gen);
+	IFF_Generator_Factory_Release(gf);
+	VPS_Set_Release(outer);
+	VPS_Set_Release(inner);
+	return result;
+}
+
+/**
+ * W67: malformed_container_boundaries
+ *
+ * Hand-crafted malformed blobbed streams must fail the parse:
+ * - a FORM declaring size 0 (smaller than its own type tag) must not be
+ *   treated as unbounded;
+ * - a FORM whose contents are truncated before the declared boundary must
+ *   not report success.
+ */
+static char test_gen_malformed_container_boundaries(void)
+{
+	struct IFF_Parser_Factory *pf = 0;
+	struct IFF_Parser *parser = 0;
+	struct VPS_Data wrap;
+	char result = 0;
+
+	/* "FORM" + size 0: no room for the type tag. */
+	unsigned char zero_size_form[] =
+	{
+		'F', 'O', 'R', 'M', 0x00, 0x00, 0x00, 0x00
+	};
+
+	/* "FORM" + size 20 + type "ILBM": 16 more content bytes are declared
+	 * but the stream ends here. */
+	unsigned char truncated_form[] =
+	{
+		'F', 'O', 'R', 'M', 0x00, 0x00, 0x00, 0x14,
+		'I', 'L', 'B', 'M'
+	};
+
+	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
+
+	wrap = PRIVATE_Wrap(zero_size_form, sizeof(zero_size_form));
+	if (!IFF_Parser_Factory_CreateFromData(pf, &wrap, &parser)) goto cleanup;
+	TEST_ASSERT(!IFF_Parser_Scan(parser));
+	IFF_Parser_Release(parser);
+	parser = 0;
+
+	wrap = PRIVATE_Wrap(truncated_form, sizeof(truncated_form));
+	if (!IFF_Parser_Factory_CreateFromData(pf, &wrap, &parser)) goto cleanup;
+	TEST_ASSERT(!IFF_Parser_Scan(parser));
+
+	result = 1;
+
+cleanup:
+	IFF_Parser_Release(parser);
+	IFF_Parser_Factory_Release(pf);
+	return result;
+}
+
 void test_suite_generate_checksum_advanced(void)
 {
 	int success_count = 0;
@@ -405,6 +536,8 @@ void test_suite_generate_checksum_advanced(void)
 	RUN_TEST(test_gen_checksum_multiple_algorithms);
 	RUN_TEST(test_gen_checksum_binary_layout_chk);
 	RUN_TEST(test_gen_checksum_binary_layout_sum);
+	RUN_TEST(test_gen_checksum_nested_progressive);
+	RUN_TEST(test_gen_malformed_container_boundaries);
 
 	printf("\n  Results: %d passed, %d failed\n", success_count, failure_count);
 }

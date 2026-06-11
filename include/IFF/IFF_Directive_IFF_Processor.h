@@ -1,3 +1,5 @@
+#pragma once
+
 
 char IFF_Directive_IFF_Process
 (

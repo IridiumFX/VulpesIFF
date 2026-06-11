@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief RFC-1071 Internet Checksum algorithm.
  * @details One's complement sum of 16-bit words. 16-bit output.

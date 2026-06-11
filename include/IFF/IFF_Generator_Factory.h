@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_Tag;
 struct IFF_FormEncoder;
 struct IFF_ChunkEncoder;

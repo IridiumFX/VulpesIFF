@@ -100,7 +100,9 @@ static char svx8_chunk(struct IFF_Parser_State* state, void* cs, struct IFF_Tag*
 		struct IFF_Tag vhdr_tag;
 		IFF_Tag_Construct(&vhdr_tag, (const unsigned char*)"VHDR", 4, IFF_TAG_TYPE_TAG);
 		IFF_Tag_Compare(tag, &vhdr_tag, &ord);
-		if (ord == 0 && cd && cd->data)
+		// A VHDR shorter than the 20-byte header is malformed; fall through
+		// so the chunk is released as unknown and has_vhdr stays unset.
+		if (ord == 0 && cd && cd->data && cd->data->limit >= 20)
 		{
 			struct VPS_DataReader r;
 			VPS_DataReader_Construct(&r, cd->data);
@@ -124,7 +126,17 @@ static char svx8_chunk(struct IFF_Parser_State* state, void* cs, struct IFF_Tag*
 		IFF_Tag_Compare(tag, &body_tag, &ord);
 		if (ord == 0 && cd && cd->data)
 		{
-			VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->size);
+			/* A duplicate BODY replaces the previous clone. */
+			if (s->body_data)
+			{
+				VPS_Data_Release(s->body_data);
+				s->body_data = NULL;
+			}
+			if (!VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->limit))
+			{
+				IFF_ContextualData_Release(cd);
+				return 0;
+			}
 			s->has_body = 1;
 			IFF_ContextualData_Release(cd);
 			return 1;
@@ -162,8 +174,9 @@ static char svx8_end(struct IFF_Parser_State* state, void* cs, void** out)
 
 	if (s->vhdr.sCompression == 1)
 	{
-		/* Fibonacci delta decompression. */
-		VPS_TYPE_SIZE num_samples = s->vhdr.oneShotHiSamples + s->vhdr.repeatHiSamples;
+		/* Fibonacci delta decompression. Widen before adding: the two 32-bit
+		 * sample counts can sum past 32 bits. */
+		VPS_TYPE_SIZE num_samples = (VPS_TYPE_SIZE)s->vhdr.oneShotHiSamples + s->vhdr.repeatHiSamples;
 		if (num_samples == 0) num_samples = s->body_data->size * 2; /* Estimate if header is zero. */
 
 		VPS_Data_Allocate(&result->samples, num_samples, num_samples);
@@ -218,6 +231,9 @@ char SVX8_RegisterDecoders(struct IFF_Parser_Factory* factory)
 		IFF_ChunkDecoder_Construct(dec, pt8_begin, pt8_shard, pt8_end);
 
 		IFF_Parser_Factory_RegisterChunkDecoder(factory, key, dec);
+
+		/* The registration clones the key; this one stays ours. */
+		IFF_Chunk_Key_Release(key);
 	}
 
 	/* Form decoder. */

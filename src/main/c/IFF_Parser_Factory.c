@@ -76,7 +76,7 @@ char IFF_Parser_Factory_Construct
 		, (char (*)(void *, VPS_TYPE_SIZE *)) IFF_Tag_Hash
 		, (char (*)(void *, void *, VPS_TYPE_16S *)) IFF_Tag_Compare
 		, (char (*)(void *)) IFF_Tag_Release
-		, 0 // Processors are not owned by the dictionary
+		, (char (*)(void *)) IFF_FormDecoder_Release // Registered decoders are owned by the factory
 		, 2
 		, 7500
 		, 8
@@ -87,7 +87,7 @@ char IFF_Parser_Factory_Construct
 		, (char (*)(void *, VPS_TYPE_SIZE *)) IFF_Chunk_Key_Hash
 		, (char (*)(void *, void *, VPS_TYPE_16S *)) IFF_Chunk_Key_Compare
 		, (char (*)(void *)) IFF_Chunk_Key_Release
-		, 0 // Processors are not owned by the dictionary
+		, (char (*)(void *)) IFF_ChunkDecoder_Release // Registered decoders are owned by the factory
 		, 2
 		, 7500
 		, 8
@@ -104,10 +104,9 @@ char IFF_Parser_Factory_Construct
 		8
 	);
 
-	// Register the built-in processor for the ' IFF' directive.
-	IFF_Parser_Factory_RegisterDirectiveProcessor(item, &IFF_TAG_SYSTEM_IFF, IFF_Directive_IFF_Process);
-
-	return 1;
+	// Register the built-in processor for the ' IFF' directive. Without it
+	// every IFF-2025 stream would silently parse with IFF-85 defaults.
+	return IFF_Parser_Factory_RegisterDirectiveProcessor(item, &IFF_TAG_SYSTEM_IFF, IFF_Directive_IFF_Process);
 }
 
 char IFF_Parser_Factory_Deconstruct
@@ -169,6 +168,8 @@ char IFF_Parser_Factory_RegisterFormDecoder
 )
 {
 	struct IFF_Tag *key_clone;
+	char existed;
+	char result;
 
 	if (!item || !item->form_decoders || !form_tag || !decoder)
 	{
@@ -181,8 +182,18 @@ char IFF_Parser_Factory_RegisterFormDecoder
 		return 0;
 	}
 
-	// Add to the dictionary. The dictionary now owns the key via its key_release callback.
-	return VPS_Dictionary_Add(item->form_decoders, key_clone, decoder);
+	// Add consumes the clone only when it creates a new entry; on the
+	// re-registration path the dictionary keeps its original key (and
+	// releases the replaced decoder), and on failure nothing is stored.
+	existed = VPS_Dictionary_Find(item->form_decoders, key_clone, 0);
+	result = VPS_Dictionary_Add(item->form_decoders, key_clone, decoder);
+
+	if (existed || !result)
+	{
+		IFF_Tag_Release(key_clone);
+	}
+
+	return result;
 }
 
 char IFF_Parser_Factory_RegisterChunkDecoder
@@ -193,6 +204,8 @@ char IFF_Parser_Factory_RegisterChunkDecoder
 )
 {
 	struct IFF_Chunk_Key *key_clone;
+	char existed;
+	char result;
 
 	if (!item || !item->chunk_decoders || !chunk_key || !decoder)
 	{
@@ -203,8 +216,17 @@ char IFF_Parser_Factory_RegisterChunkDecoder
 	if (!IFF_Chunk_Key_Allocate(&key_clone)) return 0;
 	*key_clone = *chunk_key; // Safe by-value copy
 
-	// Add to the dictionary. The dictionary now owns the key via its key_release callback.
-	return VPS_Dictionary_Add(item->chunk_decoders, key_clone, decoder);
+	// Add consumes the clone only when it creates a new entry (see
+	// RegisterFormDecoder).
+	existed = VPS_Dictionary_Find(item->chunk_decoders, key_clone, 0);
+	result = VPS_Dictionary_Add(item->chunk_decoders, key_clone, decoder);
+
+	if (existed || !result)
+	{
+		IFF_Chunk_Key_Release(key_clone);
+	}
+
+	return result;
 }
 
 char IFF_Parser_Factory_RegisterDirectiveProcessor
@@ -219,6 +241,8 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 )
 {
 	struct IFF_Tag* key_clone;
+	char existed;
+	char result;
 
 	if (!item || !item->directive_processors || !directive_tag || !processor)
 	{
@@ -231,7 +255,17 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 		return 0;
 	}
 
-	return VPS_Dictionary_Add(item->directive_processors, key_clone, processor);
+	// Add consumes the clone only when it creates a new entry (see
+	// RegisterFormDecoder).
+	existed = VPS_Dictionary_Find(item->directive_processors, key_clone, 0);
+	result = VPS_Dictionary_Add(item->directive_processors, key_clone, processor);
+
+	if (existed || !result)
+	{
+		IFF_Tag_Release(key_clone);
+	}
+
+	return result;
 }
 
 char IFF_Parser_Factory_Create

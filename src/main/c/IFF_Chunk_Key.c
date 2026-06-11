@@ -103,8 +103,9 @@ char IFF_Chunk_Key_Hash
         return 0;
     }
 
-    // Combine the two hashes. A simple XOR is usually sufficient.
-    *key_hash = form_hash ^ prop_hash;
+    // Combine the two hashes asymmetrically: a plain XOR would collide
+    // (A,B) with (B,A) and hash every (X,X) key to the same bucket.
+    *key_hash = (form_hash * 0x100000001B3ULL) ^ prop_hash;
 
     return 1;
 }

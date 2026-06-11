@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief Per-container write state, inverse of IFF_Scope.
  * @details Tracks the configuration flags, container variant/type,

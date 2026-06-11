@@ -65,7 +65,7 @@ char IFF_Generator_Factory_Construct
 		, (char (*)(void *, VPS_TYPE_SIZE *)) IFF_Tag_Hash
 		, (char (*)(void *, void *, VPS_TYPE_16S *)) IFF_Tag_Compare
 		, (char (*)(void *)) IFF_Tag_Release
-		, 0
+		, (char (*)(void *)) IFF_FormEncoder_Release // Registered encoders are owned by the factory
 		, 2
 		, 7500
 		, 8
@@ -77,7 +77,7 @@ char IFF_Generator_Factory_Construct
 		, (char (*)(void *, VPS_TYPE_SIZE *)) IFF_Tag_Hash
 		, (char (*)(void *, void *, VPS_TYPE_16S *)) IFF_Tag_Compare
 		, (char (*)(void *)) IFF_Tag_Release
-		, 0
+		, (char (*)(void *)) IFF_ChunkEncoder_Release // Registered encoders are owned by the factory
 		, 2
 		, 7500
 		, 8
@@ -126,6 +126,8 @@ char IFF_Generator_Factory_RegisterFormEncoder
 )
 {
 	struct IFF_Tag *key_clone;
+	char existed;
+	char result;
 
 	if (!item || !item->form_encoders || !form_tag || !encoder)
 	{
@@ -137,7 +139,18 @@ char IFF_Generator_Factory_RegisterFormEncoder
 		return 0;
 	}
 
-	return VPS_Dictionary_Add(item->form_encoders, key_clone, encoder);
+	// Add consumes the clone only when it creates a new entry; on the
+	// re-registration path the dictionary keeps its original key (and
+	// releases the replaced encoder), and on failure nothing is stored.
+	existed = VPS_Dictionary_Find(item->form_encoders, key_clone, 0);
+	result = VPS_Dictionary_Add(item->form_encoders, key_clone, encoder);
+
+	if (existed || !result)
+	{
+		IFF_Tag_Release(key_clone);
+	}
+
+	return result;
 }
 
 char IFF_Generator_Factory_RegisterChunkEncoder
@@ -148,6 +161,8 @@ char IFF_Generator_Factory_RegisterChunkEncoder
 )
 {
 	struct IFF_Tag *key_clone;
+	char existed;
+	char result;
 
 	if (!item || !item->chunk_encoders || !chunk_tag || !encoder)
 	{
@@ -159,7 +174,17 @@ char IFF_Generator_Factory_RegisterChunkEncoder
 		return 0;
 	}
 
-	return VPS_Dictionary_Add(item->chunk_encoders, key_clone, encoder);
+	// Add consumes the clone only when it creates a new entry (see
+	// RegisterFormEncoder).
+	existed = VPS_Dictionary_Find(item->chunk_encoders, key_clone, 0);
+	result = VPS_Dictionary_Add(item->chunk_encoders, key_clone, encoder);
+
+	if (existed || !result)
+	{
+		IFF_Tag_Release(key_clone);
+	}
+
+	return result;
 }
 
 char IFF_Generator_Factory_Create

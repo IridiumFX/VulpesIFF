@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_DataPump
 {
 	struct VPS_Decoder *base256_decoder;

@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_Chunk;
 struct VPS_DataReader;
 

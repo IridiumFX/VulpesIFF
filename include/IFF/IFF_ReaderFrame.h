@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_Reader;
 
 struct IFF_ReaderFrame

@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief CRC-64/ECMA-182 checksum algorithm.
  * @details Uses polynomial 0x42F0E1EBA9EA3693. 64-bit output, big-endian.

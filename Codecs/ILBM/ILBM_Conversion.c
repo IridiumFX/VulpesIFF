@@ -57,7 +57,7 @@ char ILBM_ConvertPlanarToRGBA
 		for (int x = 0; x < w; x++)
 		{
 			VPS_TYPE_8U ci = read_planar_pixel(src, x, y, w, nPlanes);
-			int o = (y * w + x) * 4;
+			VPS_TYPE_SIZE o = ((VPS_TYPE_SIZE)y * w + x) * 4;
 
 			if (ci < max_colors)
 			{
@@ -99,7 +99,7 @@ char ILBM_ConvertEHBToRGBA
 
 			if (ci & 32) { r /= 2; g /= 2; b /= 2; }
 
-			int o = (y * w + x) * 4;
+			VPS_TYPE_SIZE o = ((VPS_TYPE_SIZE)y * w + x) * 4;
 			dest[o + 0] = r; dest[o + 1] = g; dest[o + 2] = b; dest[o + 3] = 255;
 		}
 	}
@@ -140,7 +140,7 @@ char ILBM_ConvertHAM6ToRGBA
 			case 3: lg = (VPS_TYPE_8U)(data << 4 | data); break;
 			}
 
-			int o = (y * w + x) * 4;
+			VPS_TYPE_SIZE o = ((VPS_TYPE_SIZE)y * w + x) * 4;
 			dest[o + 0] = lr; dest[o + 1] = lg; dest[o + 2] = lb; dest[o + 3] = 255;
 		}
 	}
@@ -181,7 +181,7 @@ char ILBM_ConvertHAM8ToRGBA
 			case 3: lg = (VPS_TYPE_8U)(data << 2); break;
 			}
 
-			int o = (y * w + x) * 4;
+			VPS_TYPE_SIZE o = ((VPS_TYPE_SIZE)y * w + x) * 4;
 			dest[o + 0] = lr; dest[o + 1] = lg; dest[o + 2] = lb; dest[o + 3] = 255;
 		}
 	}

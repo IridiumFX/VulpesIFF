@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_Boundary
 {
 	VPS_TYPE_SIZE limit;

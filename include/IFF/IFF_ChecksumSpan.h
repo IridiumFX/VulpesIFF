@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief Represents a single, active checksum span initiated by a 'CHK' directive.
  * @details This struct acts as a container for all the concurrent checksum

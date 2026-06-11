@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief Represents a single, complete IFF chunk read from the stream.
  * @details This is a simple data container that holds the tag, the interpreted

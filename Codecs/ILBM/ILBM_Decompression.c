@@ -38,5 +38,7 @@ char ILBM_DecompressByteRun1
 		/* c == -128: NOP (no operation). */
 	}
 
-	return 1;
+	/* Success requires the destination to be completely filled; running out
+	 * of input first means the compressed stream was truncated. */
+	return di == dest_size;
 }

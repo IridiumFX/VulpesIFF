@@ -20,6 +20,10 @@
 struct RFC1071_State
 {
 	VPS_TYPE_32U sum;
+	// Parity of the stream offset for the next byte. Carried across update
+	// calls so the checksum is independent of how the stream is split into
+	// buffers (callers feed tags, sizes, payloads and pads separately).
+	char odd_offset;
 };
 
 static char RFC1071_CreateContext
@@ -62,16 +66,18 @@ static void RFC1071_Update
 
 	for (i = 0; i < raw_data->size; ++i)
 	{
-		if (i & 1)
+		if (state->odd_offset)
 		{
-			// Odd byte: low byte of a 16-bit word.
+			// Odd stream offset: low byte of a 16-bit word.
 			state->sum += raw_data->bytes[i];
 		}
 		else
 		{
-			// Even byte: high byte of a 16-bit word.
+			// Even stream offset: high byte of a 16-bit word.
 			state->sum += (VPS_TYPE_32U)raw_data->bytes[i] << 8;
 		}
+
+		state->odd_offset = !state->odd_offset;
 	}
 }
 

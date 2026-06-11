@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief A stateful decorator that writes IFF primitives to a byte stream.
  * @details Inverse of IFF_Reader. Serializes tags, sizes, and data payloads

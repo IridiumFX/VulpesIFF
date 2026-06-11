@@ -1,3 +1,5 @@
+#pragma once
+
 struct VPS_Data;
 struct IFF_Tag;
 struct IFF_Chunk_Key;
@@ -71,10 +73,4 @@ char IFF_Parser_Factory_CreateFromData
 	struct IFF_Parser_Factory *factory
 	, const struct VPS_Data *source
 	, struct IFF_Parser **out_parser
-);
-
-char IFF_Parser_Factory_GetFinalEntity
-(
-	struct IFF_Parser_Session* session,
-	void** entity
 );

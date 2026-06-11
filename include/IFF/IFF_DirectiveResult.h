@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief Defines the set of actions a directive can request from the parser.
  * @details These represent the "Ok" variants of a directive processing result.

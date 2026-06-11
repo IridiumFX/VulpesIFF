@@ -1,3 +1,7 @@
+#pragma once
+
+#include <vulpes/VPS_Types.h>
+
 enum IFF_Header_Version
 {
 	IFF_Header_Version_1985 = 0,
@@ -10,7 +14,11 @@ enum IFF_Header_Version
 // The default value for all flags is 0, which correctly corresponds to the
 // classic IFF-85 standard (32-bit, big-endian, padded, blob-mode, one-shot).
 
-enum IFF_Header_Sizing
+// Fixed underlying types (C23) keep the 8-bit bitfields below unsigned on
+// every compiler; a plain enum bitfield has implementation-defined
+// signedness, which would turn IFF_Header_Sizing_16 (255) into -1 on some.
+
+enum IFF_Header_Sizing : VPS_TYPE_8U
 {
 	// Default
 	IFF_Header_Sizing_32 = 0,
@@ -18,7 +26,7 @@ enum IFF_Header_Sizing
 	IFF_Header_Sizing_16 = 255
 };
 
-enum IFF_Header_TagSizing
+enum IFF_Header_TagSizing : VPS_TYPE_8U
 {
 	// Default
 	IFF_Header_TagSizing_4 = 0,
@@ -26,7 +34,7 @@ enum IFF_Header_TagSizing
 	IFF_Header_TagSizing_16 = 2
 };
 
-enum IFF_Header_Operating
+enum IFF_Header_Operating : VPS_TYPE_8U
 {
 	// Standard mode: all chunks, including containers, have a declared size.
 	IFF_Header_Operating_BLOBBED = 0,
@@ -34,19 +42,19 @@ enum IFF_Header_Operating
 	IFF_Header_Operating_PROGRESSIVE = 1
 };
 
-enum IFF_Header_Encoding
+enum IFF_Header_Encoding : VPS_TYPE_8U
 {
 	IFF_Header_Encoding_BASE_256 = 0
 };
 
-enum IFF_Header_Flag_Typing
+enum IFF_Header_Flag_Typing : VPS_TYPE_8U
 {
 	IFF_Header_Flag_Typing_DEFAULT = 0,        // Big-endian, signed sizes
 	IFF_Header_Flag_Typing_UNSIGNED_SIZES = 1, // Bit 0
 	IFF_Header_Flag_Typing_LITTLE_ENDIAN = 2   // Bit 1 (Applies to sizes only. Tags are invariants)
 };
 
-enum IFF_Header_Flag_Structuring
+enum IFF_Header_Flag_Structuring : VPS_TYPE_8U
 {
 	IFF_Header_Flag_Structuring_DEFAULT = 0,			// Pad odd-length chunks with a byte
 	IFF_Header_Flag_Structuring_NO_PADDING = 1,			// Bit 0

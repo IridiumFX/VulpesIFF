@@ -202,6 +202,13 @@ char IFF_Writer_WriteSize
 		return 0;
 	}
 
+	// Refuse sizes the selected width cannot represent instead of wrapping
+	// silently on the wire.
+	if (size_length < 8 && (size >> (size_length * 8)) != 0)
+	{
+		return 0;
+	}
+
 	is_le = typing & IFF_Header_Flag_Typing_LITTLE_ENDIAN;
 
 	switch (sizing)

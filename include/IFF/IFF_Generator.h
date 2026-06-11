@@ -1,3 +1,5 @@
+#pragma once
+
 struct VPS_Data;
 struct VPS_Set;
 

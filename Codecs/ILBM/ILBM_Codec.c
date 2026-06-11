@@ -126,7 +126,9 @@ static char ilbm_process_chunk
 		struct IFF_Tag tag;
 		IFF_Tag_Construct(&tag, (const unsigned char*)"BMHD", 4, IFF_TAG_TYPE_TAG);
 		IFF_Tag_Compare(chunk_tag, &tag, &ordering);
-		if (ordering == 0 && cd && cd->data)
+		// A BMHD shorter than the 20-byte header is malformed; fall through
+		// so the chunk is released as unknown and has_bmhd stays unset.
+		if (ordering == 0 && cd && cd->data && cd->data->limit >= 20)
 		{
 			struct VPS_DataReader reader;
 			VPS_DataReader_Construct(&reader, cd->data);
@@ -193,8 +195,18 @@ static char ilbm_process_chunk
 		IFF_Tag_Compare(chunk_tag, &tag, &ordering);
 		if (ordering == 0 && cd && cd->data)
 		{
-			/* Clone BODY data — we need it for the final conversion in end_decode. */
-			VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->size);
+			/* Clone BODY data — we need it for the final conversion in end_decode.
+			 * A duplicate BODY replaces the previous clone. */
+			if (s->body_data)
+			{
+				VPS_Data_Release(s->body_data);
+				s->body_data = NULL;
+			}
+			if (!VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->limit))
+			{
+				IFF_ContextualData_Release(cd);
+				return 0;
+			}
 			s->has_body = 1;
 			IFF_ContextualData_Release(cd);
 			return 1;
@@ -229,7 +241,8 @@ static char ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** 
 				VPS_DataReader_Read8U(&reader, &s->palette[i].g);
 				VPS_DataReader_Read8U(&reader, &s->palette[i].b);
 			}
-			IFF_ContextualData_Release(prop);
+			/* prop is borrowed: the session's props dictionary owns it and
+			 * releases it at scope exit. Releasing it here double-frees. */
 		}
 	}
 
@@ -267,6 +280,17 @@ static char ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** 
 	}
 	else
 	{
+		/* Uncompressed BODY: the converters read exactly decompressed_size
+		 * bytes, so a shorter chunk would over-read the buffer. (Interleaved
+		 * mask planes, masking == 1, are not skipped by the converters yet:
+		 * such images decode in-bounds but garbled.) */
+		if (s->body_data->limit < decompressed_size)
+		{
+			VPS_Data_Release(s->body_data);
+			free(s);
+			*out_final_entity = NULL;
+			return 1;
+		}
 		body_pixels = s->body_data->bytes;
 	}
 
@@ -357,6 +381,9 @@ char ILBM_RegisterDecoders(struct IFF_Parser_Factory* factory)
 		}
 
 		IFF_Parser_Factory_RegisterChunkDecoder(factory, key, dec);
+
+		/* The registration clones the key; this one stays ours. */
+		IFF_Chunk_Key_Release(key);
 	}
 
 	/* Form decoder. */

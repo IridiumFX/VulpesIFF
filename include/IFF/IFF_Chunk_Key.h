@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_Chunk_Key
 {
 	struct IFF_Tag form;

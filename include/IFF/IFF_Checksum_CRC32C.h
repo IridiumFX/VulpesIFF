@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief CRC-32C (Castagnoli) checksum algorithm.
  * @details Uses polynomial 0x1EDC6F41. 32-bit output, big-endian.

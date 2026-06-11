@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief A concrete instance of a checksum calculator for a single span.
  * @details This struct pairs a specific algorithm's function table with its

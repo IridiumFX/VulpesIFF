@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_Tag;
 struct IFF_ContextualData;
 union IFF_Header_Flags;

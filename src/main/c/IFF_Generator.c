@@ -52,6 +52,41 @@ static char PRIVATE_IFF_Generator_ReleaseBlobbedSpan
 	return 1;
 }
 
+/**
+ * @brief Invalidates blobbed spans whose accumulator belongs to a dying scope.
+ * @details A span left open across the end of its container can never
+ *          complete: its bytes live in the scope's accumulator, which is
+ *          about to be released. Clearing the borrowed pointer turns a
+ *          use-after-free in EndChecksumSpan into a clean failure (the
+ *          orphaned span is still counted, so Flush keeps failing too).
+ */
+static char PRIVATE_IFF_Generator_InvalidateScopeSpans
+(
+	struct IFF_Generator *gen
+	, const struct VPS_Data *accumulator
+)
+{
+	struct VPS_List_Node *node;
+
+	if (!gen || !accumulator)
+	{
+		return 0;
+	}
+
+	node = gen->blobbed_spans->head;
+	while (node)
+	{
+		struct IFF_WriteBlobbedSpan *bs = node->data;
+		if (bs && bs->accumulator == accumulator)
+		{
+			bs->accumulator = 0;
+		}
+		node = node->next;
+	}
+
+	return 1;
+}
+
 static char PRIVATE_IFF_Generator_BeginBlobbedSpan
 (
 	struct IFF_Generator *gen
@@ -165,6 +200,14 @@ static char PRIVATE_IFF_Generator_EndBlobbedSpan
 	}
 
 	bs = bs_node->data;
+
+	/* The span's container was already closed: its accumulator is gone. */
+	if (!bs->accumulator)
+	{
+		PRIVATE_IFF_Generator_ReleaseBlobbedSpan(bs);
+		VPS_List_Node_Release(bs_node);
+		return 0;
+	}
 
 	/* Feed the accumulated bytes to calculators */
 	span_size = bs->accumulator->limit - bs->start_offset;
@@ -327,6 +370,13 @@ static char PRIVATE_IFF_Generator_WriteSizeTo
 	char is_le = typing & IFF_Header_Flag_Typing_LITTLE_ENDIAN;
 
 	if (size_length == 0)
+	{
+		return 0;
+	}
+
+	// Refuse sizes the selected width cannot represent instead of wrapping
+	// silently on the wire.
+	if (size_length < 8 && (size >> (size_length * 8)) != 0)
 	{
 		return 0;
 	}
@@ -862,6 +912,12 @@ static char PRIVATE_IFF_Generator_EndContainer
 	scope = node->data;
 	config = &scope->flags.as_fields;
 
+	/* Any checksum span still open on this scope can never complete. */
+	if (scope->accumulator)
+	{
+		PRIVATE_IFF_Generator_InvalidateScopeSpans(gen, scope->accumulator);
+	}
+
 	if (config->operating == IFF_Header_Operating_PROGRESSIVE)
 	{
 		/* Write END directive: tag + size=0 */
@@ -972,6 +1028,70 @@ failure:
 	VPS_List_Node_Release(node);
 
 	return 0;
+}
+
+/**
+ * @brief Discards the current scope after a failed encode.
+ * @details Blobbed mode: the accumulated bytes are dropped, so nothing of
+ *          the failed container reaches the parent or the wire. Progressive
+ *          mode: the container's opening tags are already on the wire, so
+ *          emit the END directive to keep the stream structurally valid.
+ */
+static char PRIVATE_IFF_Generator_AbortContainer
+(
+	struct IFF_Generator *gen
+)
+{
+	struct VPS_List_Node *node = 0;
+	struct IFF_WriteScope *scope = 0;
+	const struct IFF_Header_Flags_Fields *config;
+	char result = 1;
+
+	if (!gen || gen->scope_stack->count == 0)
+	{
+		return 0;
+	}
+
+	if (!VPS_List_RemoveTail(gen->scope_stack, &node))
+	{
+		return 0;
+	}
+
+	scope = node->data;
+	config = &scope->flags.as_fields;
+
+	/* Any checksum span still open on this scope can never complete. */
+	if (scope->accumulator)
+	{
+		PRIVATE_IFF_Generator_InvalidateScopeSpans(gen, scope->accumulator);
+	}
+
+	if (config->operating == IFF_Header_Operating_PROGRESSIVE)
+	{
+		if
+		(
+			!IFF_Writer_WriteTag(gen->writer, config->tag_sizing, &IFF_TAG_SYSTEM_END)
+			|| !IFF_Writer_WriteSize(gen->writer, config->sizing, config->typing, 0)
+		)
+		{
+			result = 0;
+		}
+		else
+		{
+			struct IFF_WriteScope *parent = PRIVATE_IFF_Generator_CurrentScope(gen);
+			if (parent)
+			{
+				VPS_TYPE_SIZE tag_len = IFF_Header_Flags_GetTagLength(config->tag_sizing);
+				VPS_TYPE_SIZE size_len = IFF_Header_Flags_GetSizeLength(config->sizing);
+				parent->bytes_written += tag_len + tag_len + scope->bytes_written + tag_len + size_len;
+			}
+		}
+	}
+
+	IFF_WriteScope_Release(scope);
+	VPS_List_Node_Release(node);
+
+	return result;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1469,6 +1589,50 @@ char IFF_Generator_BeginChecksumSpan
 
 	config = &gen->flags.as_fields;
 
+	/*
+	 * Validate BEFORE emitting anything: once the CHK directive is on the
+	 * stream there is no way to retract it, and a CHK whose span never
+	 * starts (or that advertises algorithms the span will not compute)
+	 * produces output the parser rejects.
+	 */
+	if (PRIVATE_IFF_Generator_IsBlobbed(gen))
+	{
+		struct IFF_WriteScope *scope = PRIVATE_IFF_Generator_CurrentScope(gen);
+		if (!scope || !scope->accumulator)
+		{
+			/* Blobbed spans accumulate inside a container scope. */
+			return 0;
+		}
+	}
+
+	for (i = 0; i < algorithm_ids->buckets; ++i)
+	{
+		struct VPS_List_Node *entry_node = algorithm_ids->bucket_vector[i]->head;
+
+		while (entry_node)
+		{
+			struct VPS_Set_Entry *set_entry = entry_node->data;
+			struct VPS_Data *id_data = set_entry->item;
+			struct IFF_ChecksumAlgorithm *algo = 0;
+
+			if
+			(
+				!VPS_Dictionary_Find
+				(
+					gen->writer->tap->registered_algorithms
+					, (void *)id_data->bytes
+					, (void **)&algo
+				)
+			)
+			{
+				/* Refuse to advertise an algorithm we cannot compute. */
+				return 0;
+			}
+
+			entry_node = entry_node->next;
+		}
+	}
+
 	/* Count entries in the set */
 	for (i = 0; i < algorithm_ids->buckets; ++i)
 	{
@@ -1571,21 +1735,26 @@ char IFF_Generator_EndChecksumSpan
 	else
 	{
 		/*
-		 * Feed SUM tag bytes to active spans before ending. The parser's
-		 * content loop reads the SUM tag through the DataTap before
-		 * Parse_Directive pauses the span, so those tag bytes are included
-		 * in the parser's checksum. We include them here too so both sides
-		 * agree on which bytes are checksummed. (Mirrors the blobbed path
-		 * at PRIVATE_IFF_Generator_EndBlobbedSpan lines 195-228.)
+		 * Feed SUM tag bytes to the span being ended (the head span) before
+		 * ending it. The parser's content loop reads the SUM tag through the
+		 * DataTap before Parse_Directive pauses the head span, so those tag
+		 * bytes are included in that span's checksum. Outer spans must NOT be
+		 * fed here: they receive the SUM tag (with size, payload and padding)
+		 * exactly once, when the SUM chunk is emitted through the WriteTap
+		 * below — feeding them now would double-count the tag and diverge
+		 * from the parser. (Mirrors the blobbed path, which feeds bs->span
+		 * only.)
 		 */
 		{
 			VPS_TYPE_8U tag_length = IFF_Header_Flags_GetTagLength(config->tag_sizing);
+			struct VPS_List_Node *span_node = gen->writer->tap->active_spans->head;
 
-			if (tag_length > 0)
+			if (tag_length > 0 && span_node)
 			{
 				unsigned char sum_tag_buf[IFF_TAG_CANONICAL_SIZE];
 				struct VPS_Data sum_tag_wrapper;
-				struct VPS_List_Node *span_node;
+				struct IFF_ChecksumSpan *span = span_node->data;
+				struct VPS_List_Node *calc_node = span->calculators->head;
 
 				memcpy(sum_tag_buf, IFF_TAG_SYSTEM_SUM.data + (IFF_TAG_CANONICAL_SIZE - tag_length), tag_length);
 				memset(&sum_tag_wrapper, 0, sizeof(sum_tag_wrapper));
@@ -1593,21 +1762,14 @@ char IFF_Generator_EndChecksumSpan
 				sum_tag_wrapper.size = tag_length;
 				sum_tag_wrapper.limit = tag_length;
 
-				span_node = gen->writer->tap->active_spans->head;
-				while (span_node)
+				while (calc_node)
 				{
-					struct IFF_ChecksumSpan *span = span_node->data;
-					struct VPS_List_Node *calc_node = span->calculators->head;
-					while (calc_node)
+					struct IFF_ChecksumCalculator *calc = calc_node->data;
+					if (calc->algorithm && calc->algorithm->update)
 					{
-						struct IFF_ChecksumCalculator *calc = calc_node->data;
-						if (calc->algorithm && calc->algorithm->update)
-						{
-							calc->algorithm->update(calc->context, &sum_tag_wrapper);
-						}
-						calc_node = calc_node->next;
+						calc->algorithm->update(calc->context, &sum_tag_wrapper);
 					}
-					span_node = span_node->next;
+					calc_node = calc_node->next;
 				}
 			}
 		}
@@ -1699,10 +1861,21 @@ char IFF_Generator_WriteFiller
 		return 0;
 	}
 
+	/*
+	 * With SHARDING enabled the '    ' tag means shard continuation: the
+	 * parser feeds its payload to the pending chunk decoder, so a filler
+	 * would be injected into the previous chunk's data. Refuse it.
+	 */
+	if (gen->flags.as_fields.structuring & IFF_Header_Flag_Structuring_SHARDING)
+	{
+		return 0;
+	}
+
 	if (size > 0)
 	{
-		if (!VPS_Data_Allocate(&filler, size, size))
+		if (!VPS_Data_Allocate(&filler, size, size) || !VPS_Data_Construct(filler))
 		{
+			VPS_Data_Release(filler);
 			return 0;
 		}
 
@@ -1784,6 +1957,7 @@ char IFF_Generator_EncodeForm
 	void *custom_state = 0;
 	struct IFF_Tag chunk_tag;
 	struct VPS_Data *chunk_data = 0;
+	char group_open = 0;
 	char done = 0;
 
 	if (!gen || !form_type || !gen->form_encoders)
@@ -1811,7 +1985,7 @@ char IFF_Generator_EncodeForm
 	{
 		if (!encoder->begin_encode(&state, source_entity, &custom_state))
 		{
-			IFF_Generator_EndForm(gen);
+			PRIVATE_IFF_Generator_AbortContainer(gen);
 			return 0;
 		}
 	}
@@ -1904,6 +2078,8 @@ char IFF_Generator_EncodeForm
 					goto encode_failure;
 				}
 
+				group_open = 1;
+
 				/* Produce grouped forms inside this container. */
 				{
 					char group_done = 0;
@@ -1941,6 +2117,8 @@ char IFF_Generator_EncodeForm
 					if (!IFF_Generator_EndList(gen))
 						goto encode_failure;
 				}
+
+				group_open = 0;
 			}
 		}
 	}
@@ -1971,22 +2149,36 @@ char IFF_Generator_EncodeForm
 		}
 	}
 
-	/* End encode */
+	/* End encode — a failing finalizer aborts the FORM like any other step
+	 * (end_encode has already run, so don't jump to encode_failure). */
 	if (encoder->end_encode)
 	{
-		encoder->end_encode(&state, custom_state);
+		if (!encoder->end_encode(&state, custom_state))
+		{
+			PRIVATE_IFF_Generator_AbortContainer(gen);
+			return 0;
+		}
 	}
 
 	return IFF_Generator_EndForm(gen);
 
 encode_failure:
 
+	/* Give the encoder its teardown call so custom_state is released. */
 	if (encoder->end_encode)
 	{
 		encoder->end_encode(&state, custom_state);
 	}
 
-	IFF_Generator_EndForm(gen);
+	/* Discard the open group container (if any), then the FORM itself,
+	 * so the failure does not leave partial containers on the stack or
+	 * half-built content in the output. */
+	if (group_open)
+	{
+		PRIVATE_IFF_Generator_AbortContainer(gen);
+	}
+
+	PRIVATE_IFF_Generator_AbortContainer(gen);
 
 	return 0;
 }
@@ -2011,8 +2203,13 @@ char IFF_Generator_Flush
 		return 0;
 	}
 
-	/* Fail if checksum spans are still open */
+	/* Fail if checksum spans are still open (blobbed or progressive) */
 	if (gen->blobbed_spans->count > 0)
+	{
+		return 0;
+	}
+
+	if (gen->writer->tap->active_spans->count > 0)
 	{
 		return 0;
 	}

@@ -62,6 +62,13 @@ char IFF_WritePump_Construct
 		return 0;
 	}
 
+	// Release the memory-mode members — a populated data_writer is the
+	// discriminator the write paths use to select memory mode.
+	VPS_DataWriter_Release(item->data_writer);
+	item->data_writer = 0;
+	VPS_Data_Release(item->output_buffer);
+	item->output_buffer = 0;
+
 	if (!VPS_StreamWriter_Construct(item->stream_writer, file_handle))
 	{
 		return 0;

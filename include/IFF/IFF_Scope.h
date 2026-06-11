@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_Scope
 {
 	union IFF_Header_Flags flags;

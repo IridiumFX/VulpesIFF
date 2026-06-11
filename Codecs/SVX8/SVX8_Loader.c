@@ -30,7 +30,12 @@ struct SVX8_Result* VPS_SVX8_LoadFromFile(const char* filepath)
 	VPS_Data_Allocate(&data, (VPS_TYPE_SIZE)file_size, (VPS_TYPE_SIZE)file_size);
 	if (!data) { fclose(f); return NULL; }
 
-	fread(data->bytes, 1, (size_t)file_size, f);
+	if (fread(data->bytes, 1, (size_t)file_size, f) != (size_t)file_size)
+	{
+		fclose(f);
+		VPS_Data_Release(data);
+		return NULL;
+	}
 	fclose(f);
 
 	struct IFF_Parser_Factory* factory = NULL;

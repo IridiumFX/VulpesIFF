@@ -1,3 +1,5 @@
+#pragma once
+
 struct IFF_Parser_Session;
 struct IFF_Tag;
 struct IFF_ContextualData;

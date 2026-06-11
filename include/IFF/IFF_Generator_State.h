@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief Encoder-facing view into the generator's state.
  * @details Mirrors IFF_Parser_State for the read-side. Passed to

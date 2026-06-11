@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief The lowest-level write I/O layer, inverse of IFF_DataPump.
  * @details Wraps a VPS_StreamWriter to provide buffered output to a file handle.

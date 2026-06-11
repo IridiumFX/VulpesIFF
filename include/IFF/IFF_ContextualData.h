@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @brief Encapsulates a block of data along with the parsing context (flags)
  *        that was active at the time of its creation.

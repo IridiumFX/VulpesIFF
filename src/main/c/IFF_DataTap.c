@@ -194,7 +194,9 @@ char IFF_DataTap_RegisterAlgorithm
 	const struct IFF_ChecksumAlgorithm* algorithm
 )
 {
-	if (!tap || !algorithm || !algorithm->identifier)
+	// All three callbacks are invoked unguarded by the span machinery.
+	if (!tap || !algorithm || !algorithm->identifier
+		|| !algorithm->create_context || !algorithm->update || !algorithm->finalize)
 	{
 		return 0;
 	}
@@ -319,6 +321,7 @@ char IFF_DataTap_EndSpan
 		// Finalize the calculation
 		if (!VPS_Data_Allocate(&calculated_data, 0, 0) || !calc->algorithm->finalize(calc->context, calculated_data))
 		{
+			VPS_Data_Release(calculated_data);
 			all_match = 0;
 			break;
 		}

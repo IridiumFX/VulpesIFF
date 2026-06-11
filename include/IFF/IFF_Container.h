@@ -1,3 +1,5 @@
+#pragma once
+
 enum IFF_Container_Type
 {
 	IFF_Container_Type_CAT,

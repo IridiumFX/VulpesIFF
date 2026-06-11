@@ -2229,7 +2229,8 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 		frame,
 		parser->reader,
 		parser->file_handle,
-		session->iff85_locked
+		session->iff85_locked,
+		session->current_scope->flags
 	);
 
 	if (!VPS_List_Node_Allocate(&node))
@@ -2293,6 +2294,11 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 	parser->file_handle = new_file_handle;
 	session->iff85_locked = 0;
 
+	// Segments are self-contained streams: the included one bootstraps
+	// from the IFF-85 defaults, exactly like a standalone file. Its own
+	// global handshake then configures it (spec Section 6.2).
+	session->current_scope->flags = IFF_HEADER_FLAGS_1985;
+
 	IFF_Parser_Session_SetState(session, IFF_Parser_SessionState_SegmentSwitch);
 
 	return 1;
@@ -2344,10 +2350,12 @@ static char PRIVATE_IFF_Parser_PopReaderAndRestore
 	IFF_Reader_Release(parser->reader);
 	close(parser->file_handle);
 
-	// Restore parent state from the frame.
+	// Restore parent state from the frame. The caller's global-scope
+	// configuration survives the included segment (spec Section 6.2).
 	parser->reader = frame->reader;
 	parser->file_handle = frame->file_handle;
 	session->iff85_locked = frame->iff85_locked;
+	session->current_scope->flags = frame->flags;
 
 	// Prevent double-free: frame no longer owns these.
 	frame->reader = 0;

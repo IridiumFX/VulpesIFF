@@ -32,6 +32,7 @@ char IFF_ReaderFrame_Construct
 	, struct IFF_Reader *reader
 	, int file_handle
 	, char iff85_locked
+	, union IFF_Header_Flags flags
 )
 {
 	if (!item)
@@ -42,6 +43,7 @@ char IFF_ReaderFrame_Construct
 	item->reader = reader;
 	item->file_handle = file_handle;
 	item->iff85_locked = iff85_locked;
+	item->flags = flags;
 
 	return 1;
 }

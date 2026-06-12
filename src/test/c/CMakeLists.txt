@@ -58,3 +58,9 @@ target_include_directories(VulpesIFF_Tests PRIVATE
 )
 
 target_link_libraries(VulpesIFF_Tests PRIVATE VulpesIFF)
+
+# CI invokes the test binary at build/Tests/<config>/VulpesIFF_Tests; keep the
+# output location stable across single- and multi-config generators.
+set_target_properties(VulpesIFF_Tests PROPERTIES
+	RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Tests
+)

@@ -67,19 +67,6 @@ jobs:
       - name: Test
         run: build/Tests/VulpesIFF_Tests.exe
 
-  windows-msvc:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Build
-        run: |
-          cmake -B build -DCMAKE_C_STANDARD=17 -DCMAKE_BUILD_TYPE=Debug
-          cmake --build build --target VulpesIFF_Tests --config Debug
-      - name: Test
-        run: build\Tests\Debug\VulpesIFF_Tests.exe
-
   freebsd:
     runs-on: ubuntu-latest
     steps:

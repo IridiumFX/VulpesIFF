@@ -138,7 +138,7 @@ char IFF_Parser_Session_EnterScope
 	struct IFF_Scope* new_scope
 )
 {
-	struct VPS_List_Node *node;
+	struct VPS_List_Node *node = 0;
 
 	if (!item || !new_scope) return 0;
 
@@ -160,19 +160,31 @@ char IFF_Parser_Session_EnterScope
 		}
 	}
 
-	// 2. If there is a current scope, push it onto the parent stack.
-	if (item->current_scope)
+	// 2. Enter the mirrored properties scope first: it is the only step
+	//    that can fail after the stack push, and it is cheap to undo.
+	if (!VPS_ScopedDictionary_EnterScope(item->props))
 	{
-		VPS_List_Node_Allocate(&node);
-		VPS_List_Node_Construct(node, item->current_scope);
-		VPS_List_AddHead(item->scope_stack, node);
+		return 0;
 	}
 
-	// 3. The new scope becomes the current active scope.
-	item->current_scope = new_scope;
+	// 3. If there is a current scope, push it onto the parent stack.
+	if (item->current_scope)
+	{
+		if
+		(
+			!VPS_List_Node_Allocate(&node)
+			|| !VPS_List_Node_Construct(node, item->current_scope)
+			|| !VPS_List_AddHead(item->scope_stack, node)
+		)
+		{
+			VPS_List_Node_Release(node);
+			VPS_ScopedDictionary_LeaveScope(item->props);
+			return 0;
+		}
+	}
 
-	// 4. Mirror the scope change in the properties dictionary.
-	VPS_ScopedDictionary_EnterScope(item->props);
+	// 4. The new scope becomes the current active scope.
+	item->current_scope = new_scope;
 
 	return 1;
 }
@@ -212,8 +224,12 @@ char IFF_Parser_Session_FindProp
 )
 {
     struct IFF_Chunk_Key key;
+    struct IFF_Scope *current_scope;
+
+    if (!item || !prop_tag || !out_prop_data) return 0;
+
     // The current_scope is always the correct one to search from.
-    struct IFF_Scope *current_scope = item->current_scope;
+    current_scope = item->current_scope;
     if (!current_scope) return 0;
 
     key.prop = *prop_tag;
@@ -241,6 +257,7 @@ char IFF_Parser_Session_AddProp
 )
 {
 	struct IFF_Chunk_Key* key = 0;
+	char existed;
 
 	if (!item || !form_type || !prop_tag || !prop_data) return 0;
 
@@ -250,8 +267,24 @@ char IFF_Parser_Session_AddProp
 	key->form = *form_type;
 	key->prop = *prop_tag;
 
-	// The dictionary takes ownership of both the key and the data.
-	return VPS_ScopedDictionary_Add(item->props, key, prop_data);
+	// The dictionary consumes the key only when it creates a new entry.
+	// When the key already exists (a same-scope duplicate or a cross-scope
+	// shadow), Add pushes a value version and merely borrows the key, so
+	// this fresh copy stays ours to release.
+	existed = VPS_ScopedDictionary_Find(item->props, key, 0);
+
+	if (!VPS_ScopedDictionary_Add(item->props, key, prop_data))
+	{
+		IFF_Chunk_Key_Release(key);
+		return 0;
+	}
+
+	if (existed)
+	{
+		IFF_Chunk_Key_Release(key);
+	}
+
+	return 1;
 }
 
 char IFF_Parser_Session_IsActive

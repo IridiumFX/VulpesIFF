@@ -52,6 +52,41 @@ char IFF_Directive_IFF_Process
 		return 1;
 	}
 
+	// --- Flag Field Validation ---
+	// Every flag group is an enumeration (or bit set) the specification
+	// defines exhaustively. A value outside those definitions cannot be
+	// honored — the widths and semantics it implies are unknown, so
+	// applying it would misparse the stream instead of rejecting it.
+	if
+	(
+		(
+			header.flags.as_fields.sizing != IFF_Header_Sizing_32
+			&& header.flags.as_fields.sizing != IFF_Header_Sizing_64
+			&& header.flags.as_fields.sizing != IFF_Header_Sizing_16
+		)
+		|| header.flags.as_fields.tag_sizing > IFF_Header_TagSizing_16
+		|| header.flags.as_fields.operating > IFF_Header_Operating_PROGRESSIVE
+		|| header.flags.as_fields.encoding != IFF_Header_Encoding_BASE_256
+		|| (
+			header.flags.as_fields.typing
+			& (VPS_TYPE_8U)~(IFF_Header_Flag_Typing_UNSIGNED_SIZES | IFF_Header_Flag_Typing_LITTLE_ENDIAN)
+		)
+		|| (
+			header.flags.as_fields.structuring
+			& (VPS_TYPE_8U)~(
+				IFF_Header_Flag_Structuring_NO_PADDING
+				| IFF_Header_Flag_Structuring_SHARDING
+				| IFF_Header_Flag_Structuring_STRICT_CONTAINERS
+			)
+		)
+		|| header.flags.as_fields.reserved != 0
+	)
+	{
+		result->action = IFF_ACTION_HALT;
+		result->payload.error_code = IFF_ERROR_UNSUPPORTED_FEATURE;
+		return 1;
+	}
+
 	// --- Host Capability Check ---
 	// Before applying the flags, check if the host can support the request.
 	if (header.flags.as_fields.sizing == IFF_Header_Sizing_64 && sizeof(VPS_TYPE_SIZE) < 8)

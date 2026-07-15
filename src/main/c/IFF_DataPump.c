@@ -155,7 +155,7 @@ char IFF_DataPump_ConstructFromData
 	, const struct VPS_Data *source
 )
 {
-	if (!item || !source)
+	if (!item || !source || (!source->bytes && source->limit > 0))
 	{
 		return 0;
 	}
@@ -176,12 +176,15 @@ char IFF_DataPump_ConstructFromData
 	}
 
 	// Copy source bytes into the data buffer.
-	memcpy
-	(
-		item->data_buffer->bytes
-		, source->bytes
-		, source->limit
-	);
+	if (source->limit > 0)
+	{
+		memcpy
+		(
+			item->data_buffer->bytes
+			, source->bytes
+			, source->limit
+		);
+	}
 	item->data_buffer->limit = source->limit;
 
 	// Construct the data reader over the filled buffer.

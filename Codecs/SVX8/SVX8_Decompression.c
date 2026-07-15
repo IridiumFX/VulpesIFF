@@ -21,9 +21,9 @@ char SVX8_DecompressFibonacciDelta
 {
 	if (!dest || !src || src_size < 2) return 0;
 
-	/* First two bytes are the initial value (big-endian signed 16-bit),
-	   but in practice only the high byte is used as the initial sample. */
-	signed char accumulator = (signed char)src[0];
+	/* Canonical 8SVX layout (spec appendix, DUnpack): src[0] is a pad
+	   byte and src[1] is the initial sample value the deltas build on. */
+	signed char accumulator = (signed char)src[1];
 	VPS_TYPE_SIZE si = 2; /* Skip the 2-byte header. */
 	VPS_TYPE_SIZE di = 0;
 
@@ -42,5 +42,7 @@ char SVX8_DecompressFibonacciDelta
 		if (di < num_samples) dest[di++] = (VPS_TYPE_8U)accumulator;
 	}
 
-	return 1;
+	/* A source too short to produce every requested sample would leave
+	   the tail of dest uninitialized; report it as a failure. */
+	return di == num_samples;
 }

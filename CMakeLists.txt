@@ -27,7 +27,6 @@ target_sources(VulpesIFF PRIVATE
 		src/main/c/IFF_Chunk_Key.c
 		src/main/c/IFF_ChunkDecoder.c
 		src/main/c/IFF_ChunkEncoder.c
-		src/main/c/IFF_Container.c
 		src/main/c/IFF_ContextualData.c
 		src/main/c/IFF_Directive_IFF_Processor.c
 		src/main/c/IFF_DataPump.c

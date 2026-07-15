@@ -46,7 +46,10 @@ static char passthrough_shard(struct IFF_Parser_State* state, void* custom_state
 
 	if (!ps->accumulated)
 	{
-		VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)chunk_data, 0, chunk_data->size);
+		if (!VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)chunk_data, 0, chunk_data->size))
+		{
+			return 0;
+		}
 	}
 	else
 	{

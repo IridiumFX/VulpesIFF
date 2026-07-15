@@ -39,7 +39,10 @@ static char pt8_shard(struct IFF_Parser_State* state, void* cs, const struct VPS
 
 	if (!ps->accumulated)
 	{
-		VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)data, 0, data->size);
+		if (!VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)data, 0, data->size))
+		{
+			return 0;
+		}
 	}
 	else
 	{
@@ -177,7 +180,12 @@ static char svx8_end(struct IFF_Parser_State* state, void* cs, void** out)
 		/* Fibonacci delta decompression. Widen before adding: the two 32-bit
 		 * sample counts can sum past 32 bits. */
 		VPS_TYPE_SIZE num_samples = (VPS_TYPE_SIZE)s->vhdr.oneShotHiSamples + s->vhdr.repeatHiSamples;
-		if (num_samples == 0) num_samples = s->body_data->size * 2; /* Estimate if header is zero. */
+		if (num_samples == 0 && s->body_data->size >= 2)
+		{
+			/* Estimate if the header is zero: n compressed bytes hold a
+			 * 2-byte header plus two samples per remaining byte. */
+			num_samples = (s->body_data->size - 2) * 2;
+		}
 
 		VPS_Data_Allocate(&result->samples, num_samples, num_samples);
 		if (!result->samples || !SVX8_DecompressFibonacciDelta(

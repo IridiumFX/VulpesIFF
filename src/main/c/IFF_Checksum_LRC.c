@@ -69,8 +69,7 @@ static char LRC_Finalize
 		return 0;
 	}
 
-	// VPS_Data_Allocate(, 0, 0) leaves own_bytes=0, so Resize rejects it.
-	// Manually allocate the buffer.
+	// Populate the caller's empty container directly.
 	out_checksum->bytes = calloc(1, 1);
 	if (!out_checksum->bytes) return 0;
 	out_checksum->bytes[0] = *state;

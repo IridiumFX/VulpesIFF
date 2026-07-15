@@ -366,6 +366,12 @@ char IFF_DataTap_Skip
 		return 0;
 	}
 
+	// Nothing to consume; the pump (and ReadRaw) reject zero-byte reads.
+	if (bytes_to_skip == 0)
+	{
+		return 1;
+	}
+
 	if (tap->active_spans->count > 0)
 	{
 		if (!IFF_DataTap_ReadRaw(tap, bytes_to_skip, &skipped_data))

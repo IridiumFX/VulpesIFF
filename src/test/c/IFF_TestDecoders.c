@@ -76,7 +76,7 @@ static char TestChunk_EndDecode
 
 	flags.as_int = 0;
 
-	if (!IFF_ContextualData_Allocate(&cd))
+	if (IFF_ContextualData_Allocate(&cd))
 	{
 		free(cs);
 		return 0;

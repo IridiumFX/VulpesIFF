@@ -4,46 +4,51 @@
 
 #include <IFF/IFF_Boundary.h>
 
-char IFF_Boundary_Allocate
+IFF_TYPE_RESULT IFF_Boundary_Allocate
 (
 	struct IFF_Boundary **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*item = calloc(1, sizeof(struct IFF_Boundary));
 
-	return *item != 0;
+	if (!*item)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Boundary_Construct
+IFF_TYPE_RESULT IFF_Boundary_Construct
 (
 	struct IFF_Boundary *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->limit = 0;
 	item->level = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Boundary_Deconstruct
+IFF_TYPE_RESULT IFF_Boundary_Deconstruct
 (
 	struct IFF_Boundary *item
 )
 {
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Boundary_Release
+IFF_TYPE_RESULT IFF_Boundary_Release
 (
 	struct IFF_Boundary *item
 )
@@ -54,5 +59,5 @@ char IFF_Boundary_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
 }

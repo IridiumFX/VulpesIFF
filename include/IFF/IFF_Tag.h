@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 /*
  * NOTE:
  * All tags are normalized to a 16-byte canonical representation before being used for processor lookups.
@@ -42,12 +44,12 @@ extern const struct IFF_Tag IFF_TAG_SYSTEM_FORM;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_PROP;
 extern const struct IFF_Tag IFF_TAG_SYSTEM_WILDCARD;
 
-char IFF_Tag_Allocate
+IFF_TYPE_RESULT IFF_Tag_Allocate
 (
 	struct IFF_Tag **tag
 );
 
-char IFF_Tag_Construct
+IFF_TYPE_RESULT IFF_Tag_Construct
 (
 	struct IFF_Tag *tag
 	, const unsigned char *raw_data
@@ -55,31 +57,58 @@ char IFF_Tag_Construct
 	, enum IFF_Tag_Type type
 );
 
-char IFF_Tag_Deconstruct
+IFF_TYPE_RESULT IFF_Tag_Deconstruct
 (
 	struct IFF_Tag *tag
 );
 
-char IFF_Tag_Release
+IFF_TYPE_RESULT IFF_Tag_Release
 (
 	struct IFF_Tag *tag
 );
 
-char IFF_Tag_Clone
+IFF_TYPE_RESULT IFF_Tag_Clone
 (
 	const struct IFF_Tag *source
 	, struct IFF_Tag **clone
 );
 
-char IFF_Tag_Compare
+IFF_TYPE_RESULT IFF_Tag_Compare
 (
 	const struct IFF_Tag *tag1
 	, const struct IFF_Tag *tag2
 	, VPS_TYPE_16S *ordering
 );
 
-char IFF_Tag_Hash
+IFF_TYPE_RESULT IFF_Tag_Hash
 (
 	const struct IFF_Tag *tag
 	, VPS_TYPE_SIZE *hash
+);
+
+/*
+ * --- VulpesCore boundary adapters ---
+ *
+ * VulpesCore containers expect the boolean convention (1 = success) and do
+ * check the result of hash and compare, so these shims translate polarity.
+ * Register these with VPS_Dictionary_Construct rather than casting the
+ * functions above, which would invert every lookup.
+ */
+
+char IFF_Tag_VPS_Hash
+(
+	void *key
+	, VPS_TYPE_SIZE *key_hash
+);
+
+char IFF_Tag_VPS_Compare
+(
+	void *key_1
+	, void *key_2
+	, VPS_TYPE_16S *ordering
+);
+
+char IFF_Tag_VPS_Release
+(
+	void *key
 );

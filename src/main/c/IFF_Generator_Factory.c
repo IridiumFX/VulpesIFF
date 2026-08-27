@@ -62,9 +62,9 @@ char IFF_Generator_Factory_Construct
 	VPS_Dictionary_Construct
 	(
 		item->form_encoders
-		, (char (*)(void *, VPS_TYPE_SIZE *)) IFF_Tag_Hash
-		, (char (*)(void *, void *, VPS_TYPE_16S *)) IFF_Tag_Compare
-		, (char (*)(void *)) IFF_Tag_Release
+		, IFF_Tag_VPS_Hash
+		, IFF_Tag_VPS_Compare
+		, IFF_Tag_VPS_Release
 		, (char (*)(void *)) IFF_FormEncoder_Release // Registered encoders are owned by the factory
 		, 2
 		, 7500
@@ -74,9 +74,9 @@ char IFF_Generator_Factory_Construct
 	VPS_Dictionary_Construct
 	(
 		item->chunk_encoders
-		, (char (*)(void *, VPS_TYPE_SIZE *)) IFF_Tag_Hash
-		, (char (*)(void *, void *, VPS_TYPE_16S *)) IFF_Tag_Compare
-		, (char (*)(void *)) IFF_Tag_Release
+		, IFF_Tag_VPS_Hash
+		, IFF_Tag_VPS_Compare
+		, IFF_Tag_VPS_Release
 		, (char (*)(void *)) IFF_ChunkEncoder_Release // Registered encoders are owned by the factory
 		, 2
 		, 7500
@@ -134,7 +134,7 @@ char IFF_Generator_Factory_RegisterFormEncoder
 		return 0;
 	}
 
-	if (!IFF_Tag_Clone(form_tag, &key_clone))
+	if (IFF_Tag_Clone(form_tag, &key_clone))
 	{
 		return 0;
 	}
@@ -169,7 +169,7 @@ char IFF_Generator_Factory_RegisterChunkEncoder
 		return 0;
 	}
 
-	if (!IFF_Tag_Clone(chunk_tag, &key_clone))
+	if (IFF_Tag_Clone(chunk_tag, &key_clone))
 	{
 		return 0;
 	}

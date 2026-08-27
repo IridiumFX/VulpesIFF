@@ -5,17 +5,22 @@
 #include <IFF/IFF_Tag.h>
 #include <IFF/IFF_Chunk.h>
 
-char IFF_Chunk_Allocate
+IFF_TYPE_RESULT IFF_Chunk_Allocate
 (
 	struct IFF_Chunk** item
 )
 {
-	if (!item) return 0;
+	if (!item) return IFF_FAIL;
 	*item = calloc(1, sizeof(struct IFF_Chunk));
-	return *item != 0;
+	if (!*item)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Chunk_Construct
+IFF_TYPE_RESULT IFF_Chunk_Construct
 (
 	struct IFF_Chunk* item,
 	const struct IFF_Tag* tag,
@@ -23,30 +28,30 @@ char IFF_Chunk_Construct
 	struct VPS_Data* data
 )
 {
-	if (!item || !tag) return 0;
+	if (!item || !tag) return IFF_FAIL;
 
 	item->tag = *tag;
 	item->size = size;
 	item->data = data; // The chunk takes ownership of the data.
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Chunk_Deconstruct
+IFF_TYPE_RESULT IFF_Chunk_Deconstruct
 (
 	struct IFF_Chunk* item
 )
 {
-	if (!item) return 0;
+	if (!item) return IFF_FAIL;
 
 	// Release the data payload that this chunk owns.
 	VPS_Data_Release(item->data);
 	item->data = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Chunk_Release
+IFF_TYPE_RESULT IFF_Chunk_Release
 (
 	struct IFF_Chunk* item
 )
@@ -56,5 +61,5 @@ char IFF_Chunk_Release
 		IFF_Chunk_Deconstruct(item);
 		free(item);
 	}
-	return 1;
+	return IFF_OK;
 }

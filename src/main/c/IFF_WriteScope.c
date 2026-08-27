@@ -10,22 +10,27 @@
 #include <IFF/IFF_FormEncoder.h>
 #include <IFF/IFF_WriteScope.h>
 
-char IFF_WriteScope_Allocate
+IFF_TYPE_RESULT IFF_WriteScope_Allocate
 (
 	struct IFF_WriteScope **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*item = calloc(1, sizeof(struct IFF_WriteScope));
 
-	return (*item != 0);
+	if (!*item)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_WriteScope_Construct
+IFF_TYPE_RESULT IFF_WriteScope_Construct
 (
 	struct IFF_WriteScope *item
 	, union IFF_Header_Flags flags
@@ -35,7 +40,7 @@ char IFF_WriteScope_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->flags = flags;
@@ -52,21 +57,21 @@ char IFF_WriteScope_Construct
 	{
 		if (!VPS_Data_Allocate(&item->accumulator, 256, 0))
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		if (!VPS_Data_Construct(item->accumulator))
 		{
 			VPS_Data_Release(item->accumulator);
 			item->accumulator = 0;
-			return 0;
+			return IFF_FAIL;
 		}
 
 		if (!VPS_DataWriter_Allocate(&item->accumulator_writer))
 		{
 			VPS_Data_Release(item->accumulator);
 			item->accumulator = 0;
-			return 0;
+			return IFF_FAIL;
 		}
 
 		if (!VPS_DataWriter_Construct(item->accumulator_writer, item->accumulator))
@@ -75,30 +80,30 @@ char IFF_WriteScope_Construct
 			item->accumulator_writer = 0;
 			VPS_Data_Release(item->accumulator);
 			item->accumulator = 0;
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WriteScope_Deconstruct
+IFF_TYPE_RESULT IFF_WriteScope_Deconstruct
 (
 	struct IFF_WriteScope *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->form_encoder = 0;
 	item->form_state = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WriteScope_Release
+IFF_TYPE_RESULT IFF_WriteScope_Release
 (
 	struct IFF_WriteScope *item
 )
@@ -111,5 +116,16 @@ char IFF_WriteScope_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
+}
+
+
+// --- VulpesCore boundary adapter ---
+
+char IFF_WriteScope_VPS_Release
+(
+	void *item
+)
+{
+	return IFF_WriteScope_Release(item) == IFF_OK;
 }

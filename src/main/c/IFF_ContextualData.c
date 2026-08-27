@@ -6,22 +6,27 @@
 #include <IFF/IFF_Header.h>
 #include <IFF/IFF_ContextualData.h>
 
-char IFF_ContextualData_Allocate
+IFF_TYPE_RESULT IFF_ContextualData_Allocate
 (
 	struct IFF_ContextualData **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*item = calloc(1, sizeof(struct IFF_ContextualData));
 
-	return *item != 0;
+	if (!*item)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_ContextualData_Construct
+IFF_TYPE_RESULT IFF_ContextualData_Construct
 (
 	struct IFF_ContextualData *item
 	, union IFF_Header_Flags flags
@@ -30,23 +35,23 @@ char IFF_ContextualData_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->flags = flags;
 	item->data = data;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ContextualData_Deconstruct
+IFF_TYPE_RESULT IFF_ContextualData_Deconstruct
 (
 	struct IFF_ContextualData *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// The owned payload is released here (not in Release) so that a
@@ -54,10 +59,10 @@ char IFF_ContextualData_Deconstruct
 	VPS_Data_Release(item->data);
 	item->data = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ContextualData_Release
+IFF_TYPE_RESULT IFF_ContextualData_Release
 (
 	struct IFF_ContextualData *item
 )
@@ -68,6 +73,17 @@ char IFF_ContextualData_Release
 
 		free(item);
 	}
-	return 1;
+	return IFF_OK;
 }
 
+
+
+// --- VulpesCore boundary adapter ---
+
+char IFF_ContextualData_VPS_Release
+(
+	void *item
+)
+{
+	return IFF_ContextualData_Release(item) == IFF_OK;
+}

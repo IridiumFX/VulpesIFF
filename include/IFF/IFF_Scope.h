@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_Scope
 {
 	union IFF_Header_Flags flags;
@@ -25,12 +27,12 @@ struct IFF_Scope
 	struct IFF_Tag last_chunk_tag;
 };
 
-char IFF_Scope_Allocate
+IFF_TYPE_RESULT IFF_Scope_Allocate
 (
 	struct IFF_Scope **item
 );
 
-char IFF_Scope_Construct
+IFF_TYPE_RESULT IFF_Scope_Construct
 (
 	struct IFF_Scope *item
 	, union IFF_Header_Flags flags
@@ -39,12 +41,25 @@ char IFF_Scope_Construct
 	, struct IFF_Tag type
 );
 
-char IFF_Scope_Deconstruct
+IFF_TYPE_RESULT IFF_Scope_Deconstruct
 (
 	struct IFF_Scope *item
 );
 
-char IFF_Scope_Release
+IFF_TYPE_RESULT IFF_Scope_Release
 (
 	struct IFF_Scope *item
+);
+
+/*
+ * --- VulpesCore boundary adapter ---
+ *
+ * VulpesCore containers expect the boolean convention (1 = success).
+ * Register this shim as the release hook rather than casting the function
+ * above, whose polarity is inverted.
+ */
+
+char IFF_Scope_VPS_Release
+(
+	void *item
 );

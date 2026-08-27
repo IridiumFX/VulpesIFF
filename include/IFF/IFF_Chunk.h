@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 /**
  * @brief Represents a single, complete IFF chunk read from the stream.
  * @details This is a simple data container that holds the tag, the interpreted
@@ -13,12 +15,12 @@ struct IFF_Chunk
 	struct VPS_Data* data;
 };
 
-char IFF_Chunk_Allocate
+IFF_TYPE_RESULT IFF_Chunk_Allocate
 (
 	struct IFF_Chunk** item
 );
 
-char IFF_Chunk_Construct
+IFF_TYPE_RESULT IFF_Chunk_Construct
 (
 	struct IFF_Chunk* item,
 	const struct IFF_Tag* tag,
@@ -26,12 +28,12 @@ char IFF_Chunk_Construct
 	struct VPS_Data* data
 );
 
-char IFF_Chunk_Deconstruct
+IFF_TYPE_RESULT IFF_Chunk_Deconstruct
 (
 	struct IFF_Chunk* item
 );
 
-char IFF_Chunk_Release
+IFF_TYPE_RESULT IFF_Chunk_Release
 (
 	struct IFF_Chunk* item
 );

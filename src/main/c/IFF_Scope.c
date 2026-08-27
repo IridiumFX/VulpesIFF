@@ -8,17 +8,22 @@
 #include <IFF/IFF_Boundary.h>
 #include <IFF/IFF_Scope.h>
 
-char IFF_Scope_Allocate
+IFF_TYPE_RESULT IFF_Scope_Allocate
 (
 	struct IFF_Scope **item
 )
 {
-	if (!item) return 0;
+	if (!item) return IFF_FAIL;
 	*item = calloc(1, sizeof(struct IFF_Scope));
-	return *item != 0;
+	if (!*item)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Scope_Construct
+IFF_TYPE_RESULT IFF_Scope_Construct
 (
 	struct IFF_Scope *item
 	, union IFF_Header_Flags flags
@@ -27,7 +32,7 @@ char IFF_Scope_Construct
 	, struct IFF_Tag type
 )
 {
-	if (!item) return 0;
+	if (!item) return IFF_FAIL;
 
 	item->flags = flags;
 	item->boundary = boundary;
@@ -40,18 +45,18 @@ char IFF_Scope_Construct
 	item->last_chunk_state = 0;
 	memset(&item->last_chunk_tag, 0, sizeof(struct IFF_Tag));
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Scope_Deconstruct
+IFF_TYPE_RESULT IFF_Scope_Deconstruct
 (
 	struct IFF_Scope *item
 )
 {
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Scope_Release
+IFF_TYPE_RESULT IFF_Scope_Release
 (
 	struct IFF_Scope *item
 )
@@ -62,5 +67,15 @@ char IFF_Scope_Release
 		IFF_Scope_Deconstruct(item);
 		free(item);
 	}
-	return 1;
+	return IFF_OK;
+}
+
+// --- VulpesCore boundary adapter ---
+
+char IFF_Scope_VPS_Release
+(
+	void *item
+)
+{
+	return IFF_Scope_Release(item) == IFF_OK;
 }

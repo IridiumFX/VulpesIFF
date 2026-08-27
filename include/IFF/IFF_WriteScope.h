@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 /**
  * @brief Per-container write state, inverse of IFF_Scope.
  * @details Tracks the configuration flags, container variant/type,
@@ -24,12 +26,12 @@ struct IFF_WriteScope
 	void *form_state;
 };
 
-char IFF_WriteScope_Allocate
+IFF_TYPE_RESULT IFF_WriteScope_Allocate
 (
 	struct IFF_WriteScope **item
 );
 
-char IFF_WriteScope_Construct
+IFF_TYPE_RESULT IFF_WriteScope_Construct
 (
 	struct IFF_WriteScope *item
 	, union IFF_Header_Flags flags
@@ -37,12 +39,25 @@ char IFF_WriteScope_Construct
 	, struct IFF_Tag type
 );
 
-char IFF_WriteScope_Deconstruct
+IFF_TYPE_RESULT IFF_WriteScope_Deconstruct
 (
 	struct IFF_WriteScope *item
 );
 
-char IFF_WriteScope_Release
+IFF_TYPE_RESULT IFF_WriteScope_Release
 (
 	struct IFF_WriteScope *item
+);
+
+/*
+ * --- VulpesCore boundary adapter ---
+ *
+ * VulpesCore containers expect the boolean convention (1 = success).
+ * Register this shim as the release hook rather than casting the function
+ * above, whose polarity is inverted.
+ */
+
+char IFF_WriteScope_VPS_Release
+(
+	void *item
 );

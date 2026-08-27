@@ -88,17 +88,20 @@ const struct IFF_Tag IFF_TAG_SYSTEM_WILDCARD =
     , {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 };
 
-char IFF_Tag_Allocate
+IFF_TYPE_RESULT IFF_Tag_Allocate
 (
     struct IFF_Tag **tag
 )
 {
-    if (!tag) return 0;
+    if (!tag) return IFF_FAIL;
+
     *tag = calloc(1, sizeof(struct IFF_Tag));
-    return *tag != 0;
+    if (!*tag) return IFF_FAIL;
+
+    return IFF_OK;
 }
 
-char IFF_Tag_Construct
+IFF_TYPE_RESULT IFF_Tag_Construct
 (
     struct IFF_Tag *tag
     , const unsigned char *raw_data
@@ -108,7 +111,7 @@ char IFF_Tag_Construct
 {
     if (!tag || !raw_data || (raw_size != 4 && raw_size != 8 && raw_size != 16))
     {
-        return 0;
+        return IFF_FAIL;
     }
 
     tag->type = type;
@@ -123,20 +126,20 @@ char IFF_Tag_Construct
         memcpy(tag->data, raw_data, raw_size);
     }
 
-    return 1;
+    return IFF_OK;
 }
 
-char IFF_Tag_Deconstruct
+IFF_TYPE_RESULT IFF_Tag_Deconstruct
 (
     struct IFF_Tag *tag
 )
 {
     (void)tag;
 
-    return 1;
+    return IFF_OK;
 }
 
-char IFF_Tag_Release
+IFF_TYPE_RESULT IFF_Tag_Release
 (
     struct IFF_Tag *tag
 )
@@ -146,33 +149,36 @@ char IFF_Tag_Release
         free(tag);
     }
 
-    return 1;
+    return IFF_OK;
 }
 
-char IFF_Tag_Clone
+IFF_TYPE_RESULT IFF_Tag_Clone
 (
 	const struct IFF_Tag *source
 	, struct IFF_Tag **clone
 )
 {
+	IFF_TYPE_RESULT result;
+
 	if (!source || !clone)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_Tag_Allocate(clone))
+	result = IFF_Tag_Allocate(clone);
+	if (result)
 	{
-		return 0;
+		return result;
 	}
 
 	// Since IFF_Tag is a simple struct with no internal pointers,
 	// a direct value copy is safe and efficient.
 	**clone = *source;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Tag_Compare
+IFF_TYPE_RESULT IFF_Tag_Compare
 (
     const struct IFF_Tag *tag1
     , const struct IFF_Tag *tag2
@@ -181,20 +187,20 @@ char IFF_Tag_Compare
 {
     if (!tag1 || !tag2 || !ordering)
     {
-        return 0;
+        return IFF_FAIL;
     }
 
     if (tag1->type < tag2->type)
     {
         *ordering = -1;
 
-        return 1;
+        return IFF_OK;
     }
     if (tag1->type > tag2->type)
     {
         *ordering = 1;
 
-        return 1;
+        return IFF_OK;
     }
 
     int result = memcmp(tag1->data, tag2->data, IFF_TAG_CANONICAL_SIZE);
@@ -212,10 +218,10 @@ char IFF_Tag_Compare
         *ordering = 0;
     }
 
-    return 1;
+    return IFF_OK;
 }
 
-char IFF_Tag_Hash
+IFF_TYPE_RESULT IFF_Tag_Hash
 (
     const struct IFF_Tag *tag
     , VPS_TYPE_SIZE *hash
@@ -223,7 +229,7 @@ char IFF_Tag_Hash
 {
     if (!tag || !hash)
     {
-        return 0;
+        return IFF_FAIL;
     }
 
     VPS_TYPE_64U h = 0xcbf29ce484222325ULL;
@@ -239,5 +245,35 @@ char IFF_Tag_Hash
 
     *hash = (VPS_TYPE_SIZE)h;
 
-    return 1;
+    return IFF_OK;
+}
+
+
+// --- VulpesCore boundary adapters ---
+
+char IFF_Tag_VPS_Hash
+(
+	void *key
+	, VPS_TYPE_SIZE *key_hash
+)
+{
+	return IFF_Tag_Hash(key, key_hash) == IFF_OK;
+}
+
+char IFF_Tag_VPS_Compare
+(
+	void *key_1
+	, void *key_2
+	, VPS_TYPE_16S *ordering
+)
+{
+	return IFF_Tag_Compare(key_1, key_2, ordering) == IFF_OK;
+}
+
+char IFF_Tag_VPS_Release
+(
+	void *key
+)
+{
+	return IFF_Tag_Release(key) == IFF_OK;
 }

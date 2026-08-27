@@ -6,6 +6,24 @@ printf("    [FAIL] Assertion failed at %s:%d: %s\n", __FILE__, __LINE__, #condit
 return 0; \
 }
 
+// Asserts that an IFF call succeeded (returned IFF_OK). On failure the
+// non-zero result is the source line inside VulpesIFF that raised it.
+#define TEST_ASSERT_OK(expr) \
+{ \
+IFF_TYPE_RESULT _iff_result = (expr); \
+if (_iff_result) { \
+printf("    [FAIL] %s:%d: %s returned %lu\n", __FILE__, __LINE__, #expr, (unsigned long)_iff_result); \
+return 0; \
+} \
+}
+
+// Asserts that an IFF call failed (returned a non-zero result).
+#define TEST_ASSERT_FAIL(expr) \
+if (!(expr)) { \
+printf("    [FAIL] %s:%d: expected failure from %s\n", __FILE__, __LINE__, #expr); \
+return 0; \
+}
+
 #define RUN_TEST(test_func) \
 printf("  Running test: %s\n", #test_func); \
 if (test_func()) { \

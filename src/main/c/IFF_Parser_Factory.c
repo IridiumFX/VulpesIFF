@@ -73,9 +73,9 @@ char IFF_Parser_Factory_Construct
 	VPS_Dictionary_Construct
 	(
 		item->form_decoders
-		, (char (*)(void *, VPS_TYPE_SIZE *)) IFF_Tag_Hash
-		, (char (*)(void *, void *, VPS_TYPE_16S *)) IFF_Tag_Compare
-		, (char (*)(void *)) IFF_Tag_Release
+		, IFF_Tag_VPS_Hash
+		, IFF_Tag_VPS_Compare
+		, IFF_Tag_VPS_Release
 		, (char (*)(void *)) IFF_FormDecoder_Release // Registered decoders are owned by the factory
 		, 2
 		, 7500
@@ -84,9 +84,9 @@ char IFF_Parser_Factory_Construct
 	VPS_Dictionary_Construct
 	(
 		item->chunk_decoders
-		, (char (*)(void *, VPS_TYPE_SIZE *)) IFF_Chunk_Key_Hash
-		, (char (*)(void *, void *, VPS_TYPE_16S *)) IFF_Chunk_Key_Compare
-		, (char (*)(void *)) IFF_Chunk_Key_Release
+		, IFF_Chunk_Key_VPS_Hash
+		, IFF_Chunk_Key_VPS_Compare
+		, IFF_Chunk_Key_VPS_Release
 		, (char (*)(void *)) IFF_ChunkDecoder_Release // Registered decoders are owned by the factory
 		, 2
 		, 7500
@@ -95,9 +95,9 @@ char IFF_Parser_Factory_Construct
 	VPS_Dictionary_Construct
 	(
 		item->directive_processors,
-		(char(*)(void*, VPS_TYPE_SIZE*)) IFF_Tag_Hash,
-		(char(*)(void*, void*, VPS_TYPE_16S*)) IFF_Tag_Compare,
-		(char(*)(void*)) IFF_Tag_Release,
+		IFF_Tag_VPS_Hash,
+		IFF_Tag_VPS_Compare,
+		IFF_Tag_VPS_Release,
 		0, // Processors are function pointers, not owned.
 		2,
 		7500,
@@ -177,7 +177,7 @@ char IFF_Parser_Factory_RegisterFormDecoder
 	}
 
 	// Clone the provided key so the dictionary can own it.
-	if (!IFF_Tag_Clone(form_tag, &key_clone))
+	if (IFF_Tag_Clone(form_tag, &key_clone))
 	{
 		return 0;
 	}
@@ -213,7 +213,7 @@ char IFF_Parser_Factory_RegisterChunkDecoder
 	}
 
 	// Clone the provided key so the dictionary can own it.
-	if (!IFF_Chunk_Key_Allocate(&key_clone)) return 0;
+	if (IFF_Chunk_Key_Allocate(&key_clone)) return 0;
 	*key_clone = *chunk_key; // Safe by-value copy
 
 	// Add consumes the clone only when it creates a new entry (see
@@ -250,7 +250,7 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 	}
 
 	// Clone the provided key so the dictionary can own it.
-	if (!IFF_Tag_Clone(directive_tag, &key_clone))
+	if (IFF_Tag_Clone(directive_tag, &key_clone))
 	{
 		return 0;
 	}

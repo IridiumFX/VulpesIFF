@@ -219,7 +219,7 @@ char IFF_Reader_ReadTag
 
 	// 2. Classify the tag type and construct the canonical form.
 	enum IFF_Tag_Type type = (raw_data->bytes[0] == ' ') ? IFF_TAG_TYPE_DIRECTIVE : IFF_TAG_TYPE_TAG;
-	char result = IFF_Tag_Construct(tag, raw_data->bytes, tag_size_in_bytes, type);
+	char result = (IFF_Tag_Construct(tag, raw_data->bytes, tag_size_in_bytes, type) == IFF_OK);
 
 	VPS_Data_Release(raw_data);
 
@@ -366,14 +366,14 @@ char IFF_Reader_ReadChunk
 	}
 
 	// 3. Assemble the final chunk object
-	if (!IFF_Chunk_Allocate(&chunk))
+	if (IFF_Chunk_Allocate(&chunk))
 	{
 		VPS_Data_Release(data); // Must release the data if chunk allocation fails
 		return 0;
 	}
 
 	// The IFF_Chunk takes ownership of the data pointer.
-	if (!IFF_Chunk_Construct(chunk, tag, size, data))
+	if (IFF_Chunk_Construct(chunk, tag, size, data))
 	{
 		// Construction failed. The chunk does not own the data yet,
 		// so we must release both resources manually.

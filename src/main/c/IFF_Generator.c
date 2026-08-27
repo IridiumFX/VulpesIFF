@@ -524,7 +524,7 @@ static char PRIVATE_IFF_Generator_IsVariant
 {
 	VPS_TYPE_16S ordering;
 
-	if (!IFF_Tag_Compare(a, b, &ordering))
+	if (IFF_Tag_Compare(a, b, &ordering))
 	{
 		return 0;
 	}
@@ -824,12 +824,12 @@ static char PRIVATE_IFF_Generator_BeginContainer
 	}
 
 	/* Allocate and construct the new scope */
-	if (!IFF_WriteScope_Allocate(&new_scope))
+	if (IFF_WriteScope_Allocate(&new_scope))
 	{
 		return 0;
 	}
 
-	if (!IFF_WriteScope_Construct(new_scope, gen->flags, *variant, *type))
+	if (IFF_WriteScope_Construct(new_scope, gen->flags, *variant, *type))
 	{
 		IFF_WriteScope_Release(new_scope);
 		return 0;
@@ -1176,7 +1176,7 @@ char IFF_Generator_Construct
 	(
 		item->scope_stack
 		, 0, 0
-		, (char(*)(void*))IFF_WriteScope_Release
+		, IFF_WriteScope_VPS_Release
 	);
 
 	VPS_List_Construct
@@ -1213,7 +1213,7 @@ char IFF_Generator_ConstructToData
 	(
 		item->scope_stack
 		, 0, 0
-		, (char(*)(void*))IFF_WriteScope_Release
+		, IFF_WriteScope_VPS_Release
 	);
 
 	VPS_List_Construct

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 /**
  * @brief Encapsulates a block of data along with the parsing context (flags)
  *        that was active at the time of its creation.
@@ -14,24 +16,37 @@ struct IFF_ContextualData
 	struct VPS_Data *data;
 };
 
-char IFF_ContextualData_Allocate
+IFF_TYPE_RESULT IFF_ContextualData_Allocate
 (
 	struct IFF_ContextualData **item
 );
 
-char IFF_ContextualData_Construct
+IFF_TYPE_RESULT IFF_ContextualData_Construct
 (
 	struct IFF_ContextualData *item
 	, union IFF_Header_Flags flags
 	, struct VPS_Data *data
 );
 
-char IFF_ContextualData_Deconstruct
+IFF_TYPE_RESULT IFF_ContextualData_Deconstruct
 (
 	struct IFF_ContextualData *item
 );
 
-char IFF_ContextualData_Release
+IFF_TYPE_RESULT IFF_ContextualData_Release
 (
 	struct IFF_ContextualData *item
+);
+
+/*
+ * --- VulpesCore boundary adapter ---
+ *
+ * VulpesCore containers expect the boolean convention (1 = success).
+ * Register this shim as the release hook rather than casting the function
+ * above, whose polarity is inverted.
+ */
+
+char IFF_ContextualData_VPS_Release
+(
+	void *item
 );

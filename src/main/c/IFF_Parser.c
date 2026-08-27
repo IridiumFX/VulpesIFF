@@ -207,7 +207,7 @@ char IFF_Parser_Construct
 		item->reader_stack,
 		0,
 		0,
-		(char(*)(void*))IFF_ReaderFrame_Release
+		IFF_ReaderFrame_VPS_Release
 	);
 
 	item->segment_resolver = 0;
@@ -265,7 +265,7 @@ char IFF_Parser_ConstructFromData
 		item->reader_stack,
 		0,
 		0,
-		(char(*)(void*))IFF_ReaderFrame_Release
+		IFF_ReaderFrame_VPS_Release
 	);
 
 	item->segment_resolver = 0;
@@ -1128,7 +1128,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 	child_boundary.limit = container_size;
 	child_boundary.level = tag_size; // Type tag already consumed.
 
-	if (!IFF_Scope_Allocate(&child_scope))
+	if (IFF_Scope_Allocate(&child_scope))
 	{
 		return 0;
 	}
@@ -1420,7 +1420,7 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 	child_boundary.limit = container_size;
 	child_boundary.level = tag_size;
 
-	if (!IFF_Scope_Allocate(&child_scope))
+	if (IFF_Scope_Allocate(&child_scope))
 	{
 		return 0;
 	}
@@ -1605,7 +1605,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 	child_boundary.limit = container_size;
 	child_boundary.level = tag_size;
 
-	if (!IFF_Scope_Allocate(&child_scope))
+	if (IFF_Scope_Allocate(&child_scope))
 	{
 		return 0;
 	}
@@ -1824,7 +1824,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 	child_boundary.limit = container_size;
 	child_boundary.level = tag_size;
 
-	if (!IFF_Scope_Allocate(&child_scope))
+	if (IFF_Scope_Allocate(&child_scope))
 	{
 		return 0;
 	}
@@ -2117,7 +2117,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		}
 
 		// Wrap raw data as contextual data.
-		if (!IFF_ContextualData_Allocate(&contextual_data))
+		if (IFF_ContextualData_Allocate(&contextual_data))
 		{
 			IFF_Chunk_Release(chunk);
 			return 0;
@@ -2218,7 +2218,7 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 	}
 
 	// Save current state into a frame.
-	if (!IFF_ReaderFrame_Allocate(&frame))
+	if (IFF_ReaderFrame_Allocate(&frame))
 	{
 		close(new_file_handle);
 		return 0;

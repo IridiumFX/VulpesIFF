@@ -66,18 +66,18 @@ char IFF_Parser_Session_Construct
 		return 0;
 	}
 
-	VPS_List_Construct(item->scope_stack, 0, 0, (char (*)(void *))IFF_Scope_Release);
+	VPS_List_Construct(item->scope_stack, 0, 0, IFF_Scope_VPS_Release);
 
 	// The props dictionary uses a composite IFF_Chunk_Key.
 	// It takes ownership of the keys and the IFF_ContextualData values.
 	VPS_ScopedDictionary_Construct
 	(
 		item->props,
-		(char(*)(void*, VPS_TYPE_SIZE*))IFF_Chunk_Key_Hash,
-		(char(*)(void*, void*, VPS_TYPE_16S*))IFF_Chunk_Key_Compare,
+		IFF_Chunk_Key_VPS_Hash,
+		IFF_Chunk_Key_VPS_Compare,
 		0, // data_compare is not needed for this implementation.
-		(char(*)(void*))IFF_Chunk_Key_Release,
-		(char(*)(void*))IFF_ContextualData_Release,
+		IFF_Chunk_Key_VPS_Release,
+		IFF_ContextualData_VPS_Release,
 		2,    // growth_multiplier
 		75,   // load_percent_threshold
 		8     // single_bucket_threshold
@@ -261,7 +261,7 @@ char IFF_Parser_Session_AddProp
 
 	if (!item || !form_type || !prop_tag || !prop_data) return 0;
 
-	if (!IFF_Chunk_Key_Allocate(&key)) return 0;
+	if (IFF_Chunk_Key_Allocate(&key)) return 0;
 
 	// The key is a composite of the PROP's type and the property's own tag.
 	key->form = *form_type;

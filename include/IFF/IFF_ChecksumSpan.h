@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 /**
  * @brief Represents a single, active checksum span initiated by a 'CHK' directive.
  * @details This struct acts as a container for all the concurrent checksum
@@ -15,22 +17,35 @@ struct IFF_ChecksumSpan
 	struct VPS_List* calculators;
 };
 
-char IFF_ChecksumSpan_Allocate
+IFF_TYPE_RESULT IFF_ChecksumSpan_Allocate
 (
 	struct IFF_ChecksumSpan** item
 );
 
-char IFF_ChecksumSpan_Construct
+IFF_TYPE_RESULT IFF_ChecksumSpan_Construct
 (
 	struct IFF_ChecksumSpan* item
 );
 
-char IFF_ChecksumSpan_Deconstruct
+IFF_TYPE_RESULT IFF_ChecksumSpan_Deconstruct
 (
 	struct IFF_ChecksumSpan* item
 );
 
-char IFF_ChecksumSpan_Release
+IFF_TYPE_RESULT IFF_ChecksumSpan_Release
 (
 	struct IFF_ChecksumSpan* item
+);
+
+/*
+ * --- VulpesCore boundary adapter ---
+ *
+ * VulpesCore lists expect the boolean convention (1 = success). Register
+ * this shim as the release hook rather than casting the function above,
+ * whose polarity is inverted.
+ */
+
+char IFF_ChecksumSpan_VPS_Release
+(
+	void *item
 );

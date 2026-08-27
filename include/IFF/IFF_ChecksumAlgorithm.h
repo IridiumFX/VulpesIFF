@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct VPS_Data;
 
 /**
@@ -20,9 +22,9 @@ struct IFF_ChecksumAlgorithm
 	/**
 	 * @brief Creates and initializes the algorithm's state context.
 	 * @param[out] context A pointer to receive the allocated context.
-	 * @return 1 on success, 0 on failure.
+	 * @return IFF_OK on success, non-zero on failure.
 	 */
-	char (*create_context)
+	IFF_TYPE_RESULT (*create_context)
 	(
 		void** context
 	);
@@ -43,9 +45,9 @@ struct IFF_ChecksumAlgorithm
 	 * @param context The algorithm's state context.
 	 * @param[out] out_checksum A VPS_Data buffer to receive the final checksum.
 	 *                         The buffer will be resized to `output_size`.
-	 * @return 1 on success, 0 on failure.
+	 * @return IFF_OK on success, non-zero on failure.
 	 */
-	char (*finalize)
+	IFF_TYPE_RESULT (*finalize)
 	(
 		void* context
 		, struct VPS_Data* out_checksum
@@ -61,15 +63,15 @@ struct IFF_ChecksumAlgorithm
 	);
 };
 
-char IFF_ChecksumAlgorithm_Allocate
+IFF_TYPE_RESULT IFF_ChecksumAlgorithm_Allocate
 (
 	struct IFF_ChecksumAlgorithm **item
 );
 
-char IFF_ChecksumAlgorithm_Construct
+IFF_TYPE_RESULT IFF_ChecksumAlgorithm_Construct
 (
 	struct IFF_ChecksumAlgorithm *item
-	, char (*create_context)
+	, IFF_TYPE_RESULT (*create_context)
 	(
 		void** context
 	)
@@ -78,7 +80,7 @@ char IFF_ChecksumAlgorithm_Construct
 		void* context
 		, const struct VPS_Data* raw_data
 	)
-	, char (*finalize)
+	, IFF_TYPE_RESULT (*finalize)
 	(
 		void* context
 		, struct VPS_Data* out_checksum
@@ -89,12 +91,12 @@ char IFF_ChecksumAlgorithm_Construct
 	)
 );
 
-char IFF_ChecksumAlgorithm_Deconstruct
+IFF_TYPE_RESULT IFF_ChecksumAlgorithm_Deconstruct
 (
 	struct IFF_ChecksumAlgorithm *item
 );
 
-char IFF_ChecksumAlgorithm_Release
+IFF_TYPE_RESULT IFF_ChecksumAlgorithm_Release
 (
 	struct IFF_ChecksumAlgorithm *item
 );

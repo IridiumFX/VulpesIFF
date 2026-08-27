@@ -54,7 +54,7 @@ struct CRC32C_State
 	VPS_TYPE_32U crc;
 };
 
-static char CRC32C_CreateContext
+static IFF_TYPE_RESULT CRC32C_CreateContext
 (
 	void** context
 )
@@ -63,7 +63,7 @@ static char CRC32C_CreateContext
 
 	if (!context)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	CRC32C_InitTable();
@@ -71,13 +71,13 @@ static char CRC32C_CreateContext
 	state = calloc(1, sizeof(struct CRC32C_State));
 	if (!state)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	state->crc = 0xFFFFFFFFu;
 	*context = state;
 
-	return 1;
+	return IFF_OK;
 }
 
 static void CRC32C_Update
@@ -101,7 +101,7 @@ static void CRC32C_Update
 	}
 }
 
-static char CRC32C_Finalize
+static IFF_TYPE_RESULT CRC32C_Finalize
 (
 	void* context
 	, struct VPS_Data* out_checksum
@@ -112,13 +112,13 @@ static char CRC32C_Finalize
 
 	if (!state || !out_checksum)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	final_crc = state->crc ^ 0xFFFFFFFFu;
 
 	out_checksum->bytes = calloc(1, 4);
-	if (!out_checksum->bytes) return 0;
+	if (!out_checksum->bytes) return IFF_FAIL;
 	out_checksum->size = 4;
 	out_checksum->limit = 4;
 	out_checksum->own_bytes = 1;
@@ -129,7 +129,7 @@ static char CRC32C_Finalize
 	out_checksum->bytes[2] = (unsigned char)((final_crc >> 8) & 0xFF);
 	out_checksum->bytes[3] = (unsigned char)(final_crc & 0xFF);
 
-	return 1;
+	return IFF_OK;
 }
 
 static void CRC32C_ReleaseContext

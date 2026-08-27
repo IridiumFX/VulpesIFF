@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 /**
  * @brief A concrete instance of a checksum calculator for a single span.
  * @details This struct pairs a specific algorithm's function table with its
@@ -19,23 +21,36 @@ struct IFF_ChecksumCalculator
 	void* context;
 };
 
-char IFF_ChecksumCalculator_Allocate
+IFF_TYPE_RESULT IFF_ChecksumCalculator_Allocate
 (
 	struct IFF_ChecksumCalculator **item
 );
 
-char IFF_ChecksumCalculator_Construct
+IFF_TYPE_RESULT IFF_ChecksumCalculator_Construct
 (
 	struct IFF_ChecksumCalculator *item,
 	const struct IFF_ChecksumAlgorithm* algorithm
 );
 
-char IFF_ChecksumCalculator_Deconstruct
+IFF_TYPE_RESULT IFF_ChecksumCalculator_Deconstruct
 (
 	struct IFF_ChecksumCalculator *item
 );
 
-char IFF_ChecksumCalculator_Release
+IFF_TYPE_RESULT IFF_ChecksumCalculator_Release
 (
 	struct IFF_ChecksumCalculator *item
+);
+
+/*
+ * --- VulpesCore boundary adapter ---
+ *
+ * VulpesCore lists expect the boolean convention (1 = success). Register
+ * this shim as the release hook rather than casting the function above,
+ * whose polarity is inverted.
+ */
+
+char IFF_ChecksumCalculator_VPS_Release
+(
+	void *item
 );

@@ -12,7 +12,7 @@
  * The context is a single heap-allocated byte holding the running XOR.
  */
 
-static char LRC_CreateContext
+static IFF_TYPE_RESULT LRC_CreateContext
 (
 	void** context
 )
@@ -21,19 +21,19 @@ static char LRC_CreateContext
 
 	if (!context)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	state = calloc(1, sizeof(VPS_TYPE_8U));
 	if (!state)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*state = 0;
 	*context = state;
 
-	return 1;
+	return IFF_OK;
 }
 
 static void LRC_Update
@@ -56,7 +56,7 @@ static void LRC_Update
 	}
 }
 
-static char LRC_Finalize
+static IFF_TYPE_RESULT LRC_Finalize
 (
 	void* context
 	, struct VPS_Data* out_checksum
@@ -66,18 +66,18 @@ static char LRC_Finalize
 
 	if (!state || !out_checksum)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Populate the caller's empty container directly.
 	out_checksum->bytes = calloc(1, 1);
-	if (!out_checksum->bytes) return 0;
+	if (!out_checksum->bytes) return IFF_FAIL;
 	out_checksum->bytes[0] = *state;
 	out_checksum->size = 1;
 	out_checksum->limit = 1;
 	out_checksum->own_bytes = 1;
 
-	return 1;
+	return IFF_OK;
 }
 
 static void LRC_ReleaseContext

@@ -5,7 +5,7 @@
 #include <IFF/IFF_ChecksumCalculator.h>
 #include <IFF/IFF_ChecksumSpan.h>
 
-char IFF_ChecksumSpan_Allocate
+IFF_TYPE_RESULT IFF_ChecksumSpan_Allocate
 (
 	struct IFF_ChecksumSpan** item
 )
@@ -14,7 +14,7 @@ char IFF_ChecksumSpan_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	span = calloc
@@ -25,7 +25,7 @@ char IFF_ChecksumSpan_Allocate
 
 	if (!span)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_List_Allocate(&span->calculators);
@@ -37,52 +37,60 @@ char IFF_ChecksumSpan_Allocate
 
 	*item = span;
 
-	return 1;
+	return IFF_OK;
 
 cleanup:
 
 	IFF_ChecksumSpan_Release(span);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_ChecksumSpan_Construct
+IFF_TYPE_RESULT IFF_ChecksumSpan_Construct
 (
 	struct IFF_ChecksumSpan* item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return VPS_List_Construct
+	if
 	(
-		item->calculators
-		, 0
-		, 0
-		, (char(*)(void*))IFF_ChecksumCalculator_Release
-	);
+		!VPS_List_Construct
+		(
+			item->calculators
+			, 0
+			, 0
+			, IFF_ChecksumCalculator_VPS_Release
+		)
+	)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_ChecksumSpan_Deconstruct
+IFF_TYPE_RESULT IFF_ChecksumSpan_Deconstruct
 (
 	struct IFF_ChecksumSpan* item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Deconstructing the list will clear it, which in turn calls the
 	// `node_data_release` callback (IFF_ChecksumCalculator_Release) for each item.
 	VPS_List_Deconstruct(item->calculators);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ChecksumSpan_Release
+IFF_TYPE_RESULT IFF_ChecksumSpan_Release
 (
 	struct IFF_ChecksumSpan* item
 )
@@ -95,5 +103,16 @@ char IFF_ChecksumSpan_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
+}
+
+
+// --- VulpesCore boundary adapter ---
+
+char IFF_ChecksumSpan_VPS_Release
+(
+	void *item
+)
+{
+	return IFF_ChecksumSpan_Release(item) == IFF_OK;
 }

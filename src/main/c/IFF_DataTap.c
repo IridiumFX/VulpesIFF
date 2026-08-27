@@ -117,7 +117,7 @@ char IFF_DataTap_Construct
 	VPS_List_Construct(
 		item->active_spans,
 		0, 0,
-		(char(*)(void*))IFF_ChecksumSpan_Release
+		IFF_ChecksumSpan_VPS_Release
 	);
 
 	return 1;
@@ -147,7 +147,7 @@ char IFF_DataTap_ConstructFromData
 	VPS_List_Construct(
 		item->active_spans,
 		0, 0,
-		(char(*)(void*))IFF_ChecksumSpan_Release
+		IFF_ChecksumSpan_VPS_Release
 	);
 
 	return 1;
@@ -243,7 +243,7 @@ char IFF_DataTap_StartSpan
 
 	if (!tap || !algorithm_identifiers) return 0;
 
-	if (!IFF_ChecksumSpan_Allocate(&new_span) || !IFF_ChecksumSpan_Construct(new_span))
+	if (IFF_ChecksumSpan_Allocate(&new_span) || IFF_ChecksumSpan_Construct(new_span))
 	{
 		IFF_ChecksumSpan_Release(new_span);
 		return 0;
@@ -266,7 +266,7 @@ char IFF_DataTap_StartSpan
 			{
 				struct IFF_ChecksumCalculator* calc = 0;
 				struct VPS_List_Node* calc_node = 0;
-				if (IFF_ChecksumCalculator_Allocate(&calc) && IFF_ChecksumCalculator_Construct(calc, algo) && VPS_List_Node_Allocate(&calc_node))
+				if (!IFF_ChecksumCalculator_Allocate(&calc) && !IFF_ChecksumCalculator_Construct(calc, algo) && VPS_List_Node_Allocate(&calc_node))
 				{
 					VPS_List_Node_Construct(calc_node, calc);
 					VPS_List_AddTail(new_span->calculators, calc_node);
@@ -319,7 +319,7 @@ char IFF_DataTap_EndSpan
 		struct VPS_Data* calculated_data = 0;
 
 		// Finalize the calculation
-		if (!VPS_Data_Allocate(&calculated_data, 0, 0) || !calc->algorithm->finalize(calc->context, calculated_data))
+		if (!VPS_Data_Allocate(&calculated_data, 0, 0) || calc->algorithm->finalize(calc->context, calculated_data))
 		{
 			VPS_Data_Release(calculated_data);
 			all_match = 0;

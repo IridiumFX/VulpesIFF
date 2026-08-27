@@ -26,7 +26,7 @@ struct RFC1071_State
 	char odd_offset;
 };
 
-static char RFC1071_CreateContext
+static IFF_TYPE_RESULT RFC1071_CreateContext
 (
 	void** context
 )
@@ -35,19 +35,19 @@ static char RFC1071_CreateContext
 
 	if (!context)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	state = calloc(1, sizeof(struct RFC1071_State));
 	if (!state)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	state->sum = 0;
 	*context = state;
 
-	return 1;
+	return IFF_OK;
 }
 
 static void RFC1071_Update
@@ -81,7 +81,7 @@ static void RFC1071_Update
 	}
 }
 
-static char RFC1071_Finalize
+static IFF_TYPE_RESULT RFC1071_Finalize
 (
 	void* context
 	, struct VPS_Data* out_checksum
@@ -93,7 +93,7 @@ static char RFC1071_Finalize
 
 	if (!state || !out_checksum)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Fold 32-bit sum to 16 bits.
@@ -106,7 +106,7 @@ static char RFC1071_Finalize
 	result = (VPS_TYPE_16U)~sum;
 
 	out_checksum->bytes = calloc(1, 2);
-	if (!out_checksum->bytes) return 0;
+	if (!out_checksum->bytes) return IFF_FAIL;
 	out_checksum->size = 2;
 	out_checksum->limit = 2;
 	out_checksum->own_bytes = 1;
@@ -115,7 +115,7 @@ static char RFC1071_Finalize
 	out_checksum->bytes[0] = (unsigned char)(result >> 8);
 	out_checksum->bytes[1] = (unsigned char)(result & 0xFF);
 
-	return 1;
+	return IFF_OK;
 }
 
 static void RFC1071_ReleaseContext

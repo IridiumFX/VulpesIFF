@@ -54,7 +54,7 @@ struct CRC64_State
 	VPS_TYPE_64U crc;
 };
 
-static char CRC64_CreateContext
+static IFF_TYPE_RESULT CRC64_CreateContext
 (
 	void** context
 )
@@ -63,7 +63,7 @@ static char CRC64_CreateContext
 
 	if (!context)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	CRC64_InitTable();
@@ -71,13 +71,13 @@ static char CRC64_CreateContext
 	state = calloc(1, sizeof(struct CRC64_State));
 	if (!state)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	state->crc = 0;
 	*context = state;
 
-	return 1;
+	return IFF_OK;
 }
 
 static void CRC64_Update
@@ -101,7 +101,7 @@ static void CRC64_Update
 	}
 }
 
-static char CRC64_Finalize
+static IFF_TYPE_RESULT CRC64_Finalize
 (
 	void* context
 	, struct VPS_Data* out_checksum
@@ -112,13 +112,13 @@ static char CRC64_Finalize
 
 	if (!state || !out_checksum)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	final_crc = state->crc;
 
 	out_checksum->bytes = calloc(1, 8);
-	if (!out_checksum->bytes) return 0;
+	if (!out_checksum->bytes) return IFF_FAIL;
 	out_checksum->size = 8;
 	out_checksum->limit = 8;
 	out_checksum->own_bytes = 1;
@@ -133,7 +133,7 @@ static char CRC64_Finalize
 	out_checksum->bytes[6] = (unsigned char)((final_crc >> 8) & 0xFF);
 	out_checksum->bytes[7] = (unsigned char)(final_crc & 0xFF);
 
-	return 1;
+	return IFF_OK;
 }
 
 static void CRC64_ReleaseContext

@@ -126,7 +126,7 @@ char IFF_WriteTap_Construct
 	(
 		item->active_spans
 		, 0, 0
-		, (char(*)(void*))IFF_ChecksumSpan_Release
+		, IFF_ChecksumSpan_VPS_Release
 	);
 
 	return 1;
@@ -161,7 +161,7 @@ char IFF_WriteTap_ConstructToData
 	(
 		item->active_spans
 		, 0, 0
-		, (char(*)(void*))IFF_ChecksumSpan_Release
+		, IFF_ChecksumSpan_VPS_Release
 	);
 
 	return 1;
@@ -280,7 +280,7 @@ char IFF_WriteTap_StartSpan
 		return 0;
 	}
 
-	if (!IFF_ChecksumSpan_Allocate(&new_span) || !IFF_ChecksumSpan_Construct(new_span))
+	if (IFF_ChecksumSpan_Allocate(&new_span) || IFF_ChecksumSpan_Construct(new_span))
 	{
 		IFF_ChecksumSpan_Release(new_span);
 		return 0;
@@ -305,8 +305,8 @@ char IFF_WriteTap_StartSpan
 
 				if
 				(
-					IFF_ChecksumCalculator_Allocate(&calc)
-					&& IFF_ChecksumCalculator_Construct(calc, algo)
+					!IFF_ChecksumCalculator_Allocate(&calc)
+					&& !IFF_ChecksumCalculator_Construct(calc, algo)
 					&& VPS_List_Node_Allocate(&calc_node)
 				)
 				{
@@ -386,7 +386,7 @@ char IFF_WriteTap_EndSpan
 			if
 			(
 				!VPS_Data_Allocate(&calculated_data, 0, 0)
-				|| !calc->algorithm->finalize(calc->context, calculated_data)
+				|| calc->algorithm->finalize(calc->context, calculated_data)
 			)
 			{
 				VPS_Data_Release(calculated_data);

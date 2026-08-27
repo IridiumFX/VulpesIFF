@@ -5,29 +5,29 @@
 
 #include <IFF/IFF_ChecksumAlgorithm.h>
 
-char IFF_ChecksumAlgorithm_Allocate
+IFF_TYPE_RESULT IFF_ChecksumAlgorithm_Allocate
 (
 	struct IFF_ChecksumAlgorithm **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*item = calloc(1, sizeof(struct IFF_ChecksumAlgorithm));
 	if (!*item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ChecksumAlgorithm_Construct
+IFF_TYPE_RESULT IFF_ChecksumAlgorithm_Construct
 (
 	struct IFF_ChecksumAlgorithm *item
-	, char (*create_context)
+	, IFF_TYPE_RESULT (*create_context)
 	(
 		void** context
 	)
@@ -36,7 +36,7 @@ char IFF_ChecksumAlgorithm_Construct
 		void* context
 		, const struct VPS_Data* raw_data
 	)
-	, char (*finalize)
+	, IFF_TYPE_RESULT (*finalize)
 	(
 		void* context
 		, struct VPS_Data* out_checksum
@@ -49,7 +49,7 @@ char IFF_ChecksumAlgorithm_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->create_context = create_context;
@@ -57,17 +57,17 @@ char IFF_ChecksumAlgorithm_Construct
 	item->finalize = finalize;
 	item->release_context = release_context;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ChecksumAlgorithm_Deconstruct
+IFF_TYPE_RESULT IFF_ChecksumAlgorithm_Deconstruct
 (
 	struct IFF_ChecksumAlgorithm *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->create_context = 0;
@@ -75,10 +75,10 @@ char IFF_ChecksumAlgorithm_Deconstruct
 	item->finalize = 0;
 	item->release_context = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ChecksumAlgorithm_Release
+IFF_TYPE_RESULT IFF_ChecksumAlgorithm_Release
 (
 	struct IFF_ChecksumAlgorithm *item
 )
@@ -89,5 +89,5 @@ char IFF_ChecksumAlgorithm_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
 }

@@ -5,14 +5,14 @@
 
 #include <IFF/IFF_ChecksumAlgorithm.h>
 
-static char TestXOR_CreateContext(void **context)
+static IFF_TYPE_RESULT TestXOR_CreateContext(void **context)
 {
 	unsigned char *ctx = calloc(1, sizeof(unsigned char));
-	if (!ctx) return 0;
+	if (!ctx) return IFF_FAIL;
 
 	*ctx = 0;
 	*context = ctx;
-	return 1;
+	return IFF_OK;
 }
 
 static void TestXOR_Update(void *context, const struct VPS_Data *raw_data)
@@ -28,22 +28,22 @@ static void TestXOR_Update(void *context, const struct VPS_Data *raw_data)
 	}
 }
 
-static char TestXOR_Finalize(void *context, struct VPS_Data *out_checksum)
+static IFF_TYPE_RESULT TestXOR_Finalize(void *context, struct VPS_Data *out_checksum)
 {
 	unsigned char *ctx = context;
 
-	if (!ctx || !out_checksum) return 0;
+	if (!ctx || !out_checksum) return IFF_FAIL;
 
 	// VPS_Data_Allocate(, 0, 0) leaves own_bytes=0, so Resize rejects it.
 	// Manually allocate the buffer.
 	out_checksum->bytes = calloc(1, 1);
-	if (!out_checksum->bytes) return 0;
+	if (!out_checksum->bytes) return IFF_FAIL;
 	out_checksum->bytes[0] = *ctx;
 	out_checksum->size = 1;
 	out_checksum->limit = 1;
 	out_checksum->own_bytes = 1;
 
-	return 1;
+	return IFF_OK;
 }
 
 static void TestXOR_ReleaseContext(void *context)

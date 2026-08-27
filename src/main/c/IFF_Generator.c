@@ -106,7 +106,7 @@ static char PRIVATE_IFF_Generator_BeginBlobbedSpan
 	}
 
 	/* Create a ChecksumSpan with calculators from registered algorithms */
-	if (!IFF_ChecksumSpan_Allocate(&new_span) || !IFF_ChecksumSpan_Construct(new_span))
+	if (IFF_ChecksumSpan_Allocate(&new_span) || IFF_ChecksumSpan_Construct(new_span))
 	{
 		IFF_ChecksumSpan_Release(new_span);
 		return 0;
@@ -131,8 +131,8 @@ static char PRIVATE_IFF_Generator_BeginBlobbedSpan
 
 				if
 				(
-					IFF_ChecksumCalculator_Allocate(&calc)
-					&& IFF_ChecksumCalculator_Construct(calc, algo)
+					!IFF_ChecksumCalculator_Allocate(&calc)
+					&& !IFF_ChecksumCalculator_Construct(calc, algo)
 					&& VPS_List_Node_Allocate(&calc_node)
 				)
 				{
@@ -296,7 +296,7 @@ static char PRIVATE_IFF_Generator_EndBlobbedSpan
 			if
 			(
 				!VPS_Data_Allocate(&calculated_data, 0, 0)
-				|| !calc->algorithm->finalize(calc->context, calculated_data)
+				|| calc->algorithm->finalize(calc->context, calculated_data)
 			)
 			{
 				VPS_Data_Release(calculated_data);

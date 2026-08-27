@@ -130,7 +130,7 @@ static char test_gen_checksum_nested(void)
 	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
@@ -201,8 +201,8 @@ static char test_gen_checksum_multiple_algorithms(void)
 	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, lrc_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, lrc_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
@@ -381,7 +381,7 @@ static char test_gen_checksum_binary_layout_sum(void)
 	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
@@ -459,7 +459,7 @@ static char test_gen_checksum_nested_progressive(void)
 	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, rfc_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, rfc_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);

@@ -192,11 +192,11 @@ char IFF_Parser_Construct
 		return 0;
 	}
 
-	result = IFF_Reader_Construct
+	result = (IFF_Reader_Construct
 	(
 		item->reader,
 		file_handle
-	);
+	) == IFF_OK);
 	if (!result)
 	{
 		return 0;
@@ -250,7 +250,7 @@ char IFF_Parser_ConstructFromData
 
 	if
 	(
-		!IFF_Reader_ConstructFromData
+		IFF_Reader_ConstructFromData
 		(
 			item->reader,
 			source
@@ -637,13 +637,13 @@ static char PRIVATE_IFF_Parser_ReadAndExecuteDirective
 	struct IFF_Chunk* chunk = 0;
 	char result;
 
-	result = IFF_Reader_ReadChunk
+	result = (IFF_Reader_ReadChunk
 	(
 		parser->reader,
 		&flags.as_fields,
 		&tag,
 		&chunk
-	);
+	) == IFF_OK);
 	if (!result)
 	{
 		return 0;
@@ -725,13 +725,13 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 	if (ordering == 0)
 	{
 		// Read the size field (must be 0).
-		result = IFF_Reader_ReadSize
-		(
+		result = (IFF_Reader_ReadSize
+	(
 			parser->reader,
 			flags.as_fields.sizing,
 			flags.as_fields.typing,
 			&end_size
-		);
+		) == IFF_OK);
 		if (!result || end_size != 0)
 		{
 			return 0;
@@ -753,13 +753,13 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 	{
 		struct IFF_Chunk* chunk = 0;
 
-		result = IFF_Reader_ReadChunk
-		(
+		result = (IFF_Reader_ReadChunk
+	(
 			parser->reader,
 			&flags.as_fields,
 			&tag,
 			&chunk
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			return 0;
@@ -788,12 +788,12 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			scope->boundary.level += 1;
 		}
 
-		result = IFF_Reader_StartChecksumSpan
-		(
+		result = (IFF_Reader_StartChecksumSpan
+	(
 			parser->reader,
 			&flags.as_fields,
 			chunk->data
-		);
+		) == IFF_OK);
 
 		IFF_Chunk_Release(chunk);
 
@@ -817,13 +817,13 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			VPS_List_RemoveHead(parser->reader->tap->active_spans, &paused_span_node);
 		}
 
-		result = IFF_Reader_ReadChunk
-		(
+		result = (IFF_Reader_ReadChunk
+	(
 			parser->reader,
 			&flags.as_fields,
 			&tag,
 			&chunk
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			// Restore span before returning so cleanup can release it.
@@ -868,12 +868,12 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			VPS_List_AddHead(parser->reader->tap->active_spans, paused_span_node);
 		}
 
-		result = IFF_Reader_EndChecksumSpan
-		(
+		result = (IFF_Reader_EndChecksumSpan
+	(
 			parser->reader,
 			&flags.as_fields,
 			chunk->data
-		);
+		) == IFF_OK);
 
 		IFF_Chunk_Release(chunk);
 
@@ -889,13 +889,13 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			// Shard mode: read the chunk and pass data to the pending decoder.
 			struct IFF_Chunk* chunk = 0;
 
-			result = IFF_Reader_ReadChunk
-			(
+			result = (IFF_Reader_ReadChunk
+	(
 				parser->reader,
 				&flags.as_fields,
 				&tag,
 				&chunk
-			);
+			) == IFF_OK);
 			if (!result)
 			{
 				return 0;
@@ -1029,13 +1029,13 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 	// 1. If blobbed mode, read container size and update parent boundary.
 	if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		result = IFF_Reader_ReadSize
-		(
+		result = (IFF_Reader_ReadSize
+	(
 			parser->reader,
 			parent_flags.as_fields.sizing,
 			parent_flags.as_fields.typing,
 			&container_size
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			return 0;
@@ -1060,12 +1060,12 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 	}
 
 	// 2. Read the FORM's type tag.
-	result = IFF_Reader_ReadTag
+	result = (IFF_Reader_ReadTag
 	(
 		parser->reader,
 		parent_flags.as_fields.tag_sizing,
 		&form_type
-	);
+	) == IFF_OK);
 	if (!result)
 	{
 		return 0;
@@ -1165,12 +1165,12 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
 	{
-		result = IFF_Reader_ReadTag
-		(
+		result = (IFF_Reader_ReadTag
+	(
 			parser->reader,
 			parser->session->current_scope->flags.as_fields.tag_sizing,
 			&tag
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			break;
@@ -1373,13 +1373,13 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 	// 1. If blobbed mode, read container size and update parent boundary.
 	if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		result = IFF_Reader_ReadSize
-		(
+		result = (IFF_Reader_ReadSize
+	(
 			parser->reader,
 			parent_flags.as_fields.sizing,
 			parent_flags.as_fields.typing,
 			&container_size
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			return 0;
@@ -1401,12 +1401,12 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 	}
 
 	// 2. Read PROP type tag.
-	result = IFF_Reader_ReadTag
+	result = (IFF_Reader_ReadTag
 	(
 		parser->reader,
 		parent_flags.as_fields.tag_sizing,
 		&prop_type
-	);
+	) == IFF_OK);
 	if (!result)
 	{
 		return 0;
@@ -1445,12 +1445,12 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
 	{
-		result = IFF_Reader_ReadTag
-		(
+		result = (IFF_Reader_ReadTag
+	(
 			parser->reader,
 			parser->session->current_scope->flags.as_fields.tag_sizing,
 			&tag
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			break;
@@ -1558,13 +1558,13 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 	// 1. If blobbed mode, read container size and update parent boundary.
 	if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		result = IFF_Reader_ReadSize
-		(
+		result = (IFF_Reader_ReadSize
+	(
 			parser->reader,
 			parent_flags.as_fields.sizing,
 			parent_flags.as_fields.typing,
 			&container_size
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			return 0;
@@ -1586,12 +1586,12 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 	}
 
 	// 2. Read LIST type tag.
-	result = IFF_Reader_ReadTag
+	result = (IFF_Reader_ReadTag
 	(
 		parser->reader,
 		parent_flags.as_fields.tag_sizing,
 		&list_type
-	);
+	) == IFF_OK);
 	if (!result)
 	{
 		return 0;
@@ -1646,12 +1646,12 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
 	{
-		result = IFF_Reader_ReadTag
-		(
+		result = (IFF_Reader_ReadTag
+	(
 			parser->reader,
 			parser->session->current_scope->flags.as_fields.tag_sizing,
 			&tag
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			break;
@@ -1777,13 +1777,13 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 	// 1. If blobbed mode, read container size and update parent boundary.
 	if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		result = IFF_Reader_ReadSize
-		(
+		result = (IFF_Reader_ReadSize
+	(
 			parser->reader,
 			parent_flags.as_fields.sizing,
 			parent_flags.as_fields.typing,
 			&container_size
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			return 0;
@@ -1805,12 +1805,12 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 	}
 
 	// 2. Read CAT type tag.
-	result = IFF_Reader_ReadTag
+	result = (IFF_Reader_ReadTag
 	(
 		parser->reader,
 		parent_flags.as_fields.tag_sizing,
 		&cat_type
-	);
+	) == IFF_OK);
 	if (!result)
 	{
 		return 0;
@@ -1865,12 +1865,12 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
 	{
-		result = IFF_Reader_ReadTag
-		(
+		result = (IFF_Reader_ReadTag
+	(
 			parser->reader,
 			parser->session->current_scope->flags.as_fields.tag_sizing,
 			&tag
-		);
+		) == IFF_OK);
 		if (!result)
 		{
 			break;
@@ -1981,13 +1981,13 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 	char result;
 
 	// 1. Read the chunk (size + data).
-	result = IFF_Reader_ReadChunk
+	result = (IFF_Reader_ReadChunk
 	(
 		parser->reader,
 		&flags.as_fields,
 		&tag,
 		&chunk
-	);
+	) == IFF_OK);
 	if (!result)
 	{
 		return 0;
@@ -2244,12 +2244,12 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 	VPS_List_AddHead(parser->reader_stack, node);
 
 	// Create a new reader for the included segment.
-	if (!IFF_Reader_Allocate(&new_reader))
+	if (IFF_Reader_Allocate(&new_reader))
 	{
 		goto rollback;
 	}
 
-	if (!IFF_Reader_Construct(new_reader, new_file_handle))
+	if (IFF_Reader_Construct(new_reader, new_file_handle))
 	{
 		IFF_Reader_Release(new_reader);
 		goto rollback;
@@ -2274,7 +2274,7 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 
 				if
 				(
-					!IFF_DataTap_RegisterAlgorithm
+					IFF_DataTap_RegisterAlgorithm
 					(
 						new_reader->tap
 						, (const struct IFF_ChecksumAlgorithm *)entry->data
@@ -2385,13 +2385,13 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 	char result;
 
 	// Read the directive chunk.
-	result = IFF_Reader_ReadChunk
+	result = (IFF_Reader_ReadChunk
 	(
 		parser->reader,
 		&flags.as_fields,
 		&tag,
 		&chunk
-	);
+	) == IFF_OK);
 	if (!result)
 	{
 		return 0;
@@ -2424,12 +2424,12 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 
 			if (VPS_DataReader_Allocate(&sr) && VPS_DataReader_Construct(sr, chunk->data))
 			{
-				if (IFF_Reader_ReadPayloadSize(sr, &flags.as_fields, &sr_num))
+				if (!IFF_Reader_ReadPayloadSize(sr, &flags.as_fields, &sr_num))
 				{
 					for (sr_i = 0; sr_i < sr_num; ++sr_i)
 					{
 						VPS_TYPE_SIZE sr_id_size = 0;
-						if (!IFF_Reader_ReadPayloadSize(sr, &flags.as_fields, &sr_id_size))
+						if (IFF_Reader_ReadPayloadSize(sr, &flags.as_fields, &sr_id_size))
 						{
 							break;
 						}
@@ -2470,7 +2470,7 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 	}
 
 	// Read num_options.
-	if (!IFF_Reader_ReadPayloadSize(dr, &flags.as_fields, &num_options))
+	if (IFF_Reader_ReadPayloadSize(dr, &flags.as_fields, &num_options))
 	{
 		VPS_DataReader_Release(dr);
 		IFF_Chunk_Release(chunk);
@@ -2484,7 +2484,7 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 		struct VPS_Data *id_data = 0;
 		int fh = -1;
 
-		if (!IFF_Reader_ReadPayloadSize(dr, &flags.as_fields, &id_size))
+		if (IFF_Reader_ReadPayloadSize(dr, &flags.as_fields, &id_size))
 		{
 			VPS_DataReader_Release(dr);
 			IFF_Chunk_Release(chunk);
@@ -2570,12 +2570,12 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 
 		current_flags = &session->current_scope->flags;
 
-		result = IFF_Reader_ReadTag
-		(
+		result = (IFF_Reader_ReadTag
+	(
 			parser->reader,
 			current_flags->as_fields.tag_sizing,
 			&tag
-		);
+		) == IFF_OK);
 
 		if (!result)
 		{

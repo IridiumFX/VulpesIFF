@@ -170,7 +170,7 @@ static char test_checksum_mismatch_fails(void)
 	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
 	// Parse should fail due to checksum mismatch.
 	TEST_ASSERT(!IFF_Parser_Scan(parser));
@@ -240,7 +240,7 @@ static char test_checksum_empty_span(void)
 	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
@@ -320,7 +320,7 @@ static char test_checksum_nested_spans(void)
 	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
@@ -393,8 +393,8 @@ static char test_checksum_multiple_algorithms(void)
 	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, lrc_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, lrc_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
@@ -469,7 +469,7 @@ static char test_checksum_partial_algorithm_support(void)
 	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 	// Intentionally NOT registering LRC on parser.
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));

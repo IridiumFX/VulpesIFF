@@ -229,7 +229,7 @@ static char test_roundtrip_checksum(void)
 	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
@@ -666,7 +666,7 @@ static char test_roundtrip_encoder_progressive_checksum(void)
 	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
 	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
-	if (!IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
+	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
 	TEST_ASSERT(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);

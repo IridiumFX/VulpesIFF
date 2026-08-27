@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_ChecksumAlgorithm;
 struct VPS_Set;
 struct VPS_Dictionary;
@@ -30,34 +32,34 @@ struct IFF_DataTap
 	struct VPS_List *active_spans;
 };
 
-char IFF_DataTap_Allocate
+IFF_TYPE_RESULT IFF_DataTap_Allocate
 (
 	struct IFF_DataTap **item
 );
 
-char IFF_DataTap_Construct
+IFF_TYPE_RESULT IFF_DataTap_Construct
 (
 	struct IFF_DataTap *item
 	, int fh
 );
 
-char IFF_DataTap_ConstructFromData
+IFF_TYPE_RESULT IFF_DataTap_ConstructFromData
 (
 	struct IFF_DataTap *item
 	, const struct VPS_Data *source
 );
 
-char IFF_DataTap_Deconstruct
+IFF_TYPE_RESULT IFF_DataTap_Deconstruct
 (
 	struct IFF_DataTap *item
 );
 
-char IFF_DataTap_Release
+IFF_TYPE_RESULT IFF_DataTap_Release
 (
 	struct IFF_DataTap *tap
 );
 
-char IFF_DataTap_RegisterAlgorithm
+IFF_TYPE_RESULT IFF_DataTap_RegisterAlgorithm
 (
 	struct IFF_DataTap* tap,
 	const struct IFF_ChecksumAlgorithm* algorithm
@@ -69,26 +71,26 @@ char IFF_DataTap_RegisterAlgorithm
  *          to get the bytes, then passes those bytes to all active calculators
  *          before returning the bytes to the caller.
  */
-char IFF_DataTap_ReadRaw
+IFF_TYPE_RESULT IFF_DataTap_ReadRaw
 (
 	struct IFF_DataTap *tap
 	, VPS_TYPE_SIZE bytes_to_read
 	, struct VPS_Data **out_data
 );
 
-char IFF_DataTap_StartSpan
+IFF_TYPE_RESULT IFF_DataTap_StartSpan
 (
 	struct IFF_DataTap *tap
 	, const struct VPS_Set *algorithm_identifiers
 );
 
-char IFF_DataTap_EndSpan
+IFF_TYPE_RESULT IFF_DataTap_EndSpan
 (
 	struct IFF_DataTap *tap
 	, struct VPS_Dictionary *expected_checksums
 );
 
-char IFF_DataTap_Skip
+IFF_TYPE_RESULT IFF_DataTap_Skip
 (
 	struct IFF_DataTap *tap
 	, VPS_TYPE_SIZE bytes_to_skip

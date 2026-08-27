@@ -21,7 +21,7 @@
 /**
  * @brief Interprets a raw byte buffer as an integer based on current config.
  */
-static char IFF_Reader_PRIVATE_InterpretSize
+static IFF_TYPE_RESULT IFF_Reader_PRIVATE_InterpretSize
 (
 	enum IFF_Header_Sizing sizing,
 	enum IFF_Header_Flag_Typing typing,
@@ -74,10 +74,10 @@ static char IFF_Reader_PRIVATE_InterpretSize
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Reader_Allocate
+IFF_TYPE_RESULT IFF_Reader_Allocate
 (
 	struct IFF_Reader** item
 )
@@ -85,7 +85,7 @@ char IFF_Reader_Allocate
 	struct IFF_Reader* reader;
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	reader = calloc
@@ -96,17 +96,17 @@ char IFF_Reader_Allocate
 	if (!reader)
 	{
 		*item = 0;
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Allocate the entire decorator stack that this reader owns.
-	if (!IFF_DataTap_Allocate(&reader->tap))
+	if (IFF_DataTap_Allocate(&reader->tap))
 	{
 		goto cleanup;
 	}
 
 	*item = reader;
-	return 1;
+	return IFF_OK;
 
 cleanup:
 
@@ -116,7 +116,7 @@ cleanup:
 	return  0;
 }
 
-char IFF_Reader_Construct
+IFF_TYPE_RESULT IFF_Reader_Construct
 (
 	struct IFF_Reader* item
 	, int fh
@@ -124,23 +124,23 @@ char IFF_Reader_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Construct the underlying stack, passing the file handle down.
-	if (!IFF_DataTap_Construct(item->tap, fh))
+	if (IFF_DataTap_Construct(item->tap, fh))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// TODO: Allocate and construct the content_decoders dictionary when needed.
 	//		 The Spec hints to different encodings but only Base256 is currenty defined
 	item->content_decoders = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Reader_ConstructFromData
+IFF_TYPE_RESULT IFF_Reader_ConstructFromData
 (
 	struct IFF_Reader* item
 	, const struct VPS_Data *source
@@ -148,35 +148,35 @@ char IFF_Reader_ConstructFromData
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_DataTap_ConstructFromData(item->tap, source))
+	if (IFF_DataTap_ConstructFromData(item->tap, source))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->content_decoders = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Reader_Deconstruct
+IFF_TYPE_RESULT IFF_Reader_Deconstruct
 (
 	struct IFF_Reader* item
 )
 {
-	if (!item) return 0;
+	if (!item) return IFF_FAIL;
 
 	// Deconstruct the owned reader stack.
 	IFF_DataTap_Deconstruct(item->tap);
 	VPS_Dictionary_Release(item->content_decoders);
 	item->content_decoders = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Reader_Release
+IFF_TYPE_RESULT IFF_Reader_Release
 (
 	struct IFF_Reader* item
 )
@@ -187,10 +187,10 @@ char IFF_Reader_Release
 		IFF_DataTap_Release(item->tap);
 		free(item);
 	}
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Reader_ReadTag
+IFF_TYPE_RESULT IFF_Reader_ReadTag
 (
 	struct IFF_Reader* reader
 	, enum IFF_Header_TagSizing tag_sizing
@@ -202,30 +202,30 @@ char IFF_Reader_ReadTag
 
 	if (!reader || !tag)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	tag_size_in_bytes = IFF_Header_Flags_GetTagLength(tag_sizing);
 	if (tag_size_in_bytes == 0)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 1. Read raw bytes from the next layer down.
-	if (!IFF_DataTap_ReadRaw(reader->tap, tag_size_in_bytes, &raw_data))
+	if (IFF_DataTap_ReadRaw(reader->tap, tag_size_in_bytes, &raw_data))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 2. Classify the tag type and construct the canonical form.
 	enum IFF_Tag_Type type = (raw_data->bytes[0] == ' ') ? IFF_TAG_TYPE_DIRECTIVE : IFF_TAG_TYPE_TAG;
-	char result = (IFF_Tag_Construct(tag, raw_data->bytes, tag_size_in_bytes, type) == IFF_OK);
+	IFF_TYPE_RESULT result = IFF_Tag_Construct(tag, raw_data->bytes, tag_size_in_bytes, type);
 
 	VPS_Data_Release(raw_data);
 
-	if (!result)
+	if (result)
 	{
-		return 0;
+		return result;
 	}
 
 	// 3. Post-classify: reclassify known container and subcontainer tags.
@@ -246,10 +246,10 @@ char IFF_Reader_ReadTag
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Reader_ReadSize
+IFF_TYPE_RESULT IFF_Reader_ReadSize
 (
 	struct IFF_Reader* reader
 	, enum IFF_Header_Sizing sizing
@@ -260,26 +260,26 @@ char IFF_Reader_ReadSize
 	struct VPS_Data* raw_data = 0;
 	VPS_TYPE_8U size_in_bytes;
 
-	if (!reader || !size) return 0;
+	if (!reader || !size) return IFF_FAIL;
 	*size = 0;
 
 	size_in_bytes = IFF_Header_Flags_GetSizeLength(sizing);
-	if (size_in_bytes == 0) return 0;
+	if (size_in_bytes == 0) return IFF_FAIL;
 
 	// 1. Read raw bytes from the next layer down.
-	if (!IFF_DataTap_ReadRaw(reader->tap, size_in_bytes, &raw_data))
+	if (IFF_DataTap_ReadRaw(reader->tap, size_in_bytes, &raw_data))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 2. Interpret the raw bytes based on the current configuration.
-	char result = IFF_Reader_PRIVATE_InterpretSize(sizing, typing, raw_data->bytes, size);
+	IFF_TYPE_RESULT result = IFF_Reader_PRIVATE_InterpretSize(sizing, typing, raw_data->bytes, size);
 
 	VPS_Data_Release(raw_data);
 	return result;
 }
 
-char IFF_Reader_ReadData
+IFF_TYPE_RESULT IFF_Reader_ReadData
 (
 	struct IFF_Reader* reader
 	, enum IFF_Header_Encoding encoding
@@ -287,7 +287,7 @@ char IFF_Reader_ReadData
 	, struct VPS_Data** out_data
 )
 {
-	if (!reader || !out_data) return 0;
+	if (!reader || !out_data) return IFF_FAIL;
 
 	// If content decoding were implemented, the logic would go here.
 	// We would read the raw data, then pass it through the appropriate
@@ -297,7 +297,7 @@ char IFF_Reader_ReadData
 	return IFF_DataTap_ReadRaw(reader->tap, size, out_data);
 }
 
-char IFF_Reader_Skip
+IFF_TYPE_RESULT IFF_Reader_Skip
 (
 	struct IFF_Reader* reader
 	, VPS_TYPE_SIZE bytes_to_skip
@@ -305,7 +305,7 @@ char IFF_Reader_Skip
 {
 	if (!reader)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	return IFF_DataTap_Skip
@@ -332,7 +332,7 @@ char IFF_Reader_IsActive
 	return remaining > 0;
 }
 
-char IFF_Reader_ReadChunk
+IFF_TYPE_RESULT IFF_Reader_ReadChunk
 (
 	struct IFF_Reader* reader,
 	const struct IFF_Header_Flags_Fields* config,
@@ -340,7 +340,7 @@ char IFF_Reader_ReadChunk
 	struct IFF_Chunk** out_chunk
 )
 {
-	if (!reader || !config || !tag || !out_chunk) return 0;
+	if (!reader || !config || !tag || !out_chunk) return IFF_FAIL;
 
 	*out_chunk = 0;
 	VPS_TYPE_SIZE size = 0;
@@ -348,20 +348,20 @@ char IFF_Reader_ReadChunk
 	struct IFF_Chunk* chunk = 0;
 
 	// 1. Read Size using the granular primitive
-	if (!IFF_Reader_ReadSize(reader, config->sizing, config->typing, &size))
+	if (IFF_Reader_ReadSize(reader, config->sizing, config->typing, &size))
 	{
 		// Failed to read size after reading a tag, this is a file corruption error.
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 2. Read Data payload using the granular primitive
 	if (size > 0)
 	{
-		if (!IFF_Reader_ReadData(reader, config->encoding, size, &data))
+		if (IFF_Reader_ReadData(reader, config->encoding, size, &data))
 		{
 			// Failed to read the data payload after getting tag and size.
 			// This is a file corruption error.
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
@@ -369,7 +369,7 @@ char IFF_Reader_ReadChunk
 	if (IFF_Chunk_Allocate(&chunk))
 	{
 		VPS_Data_Release(data); // Must release the data if chunk allocation fails
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// The IFF_Chunk takes ownership of the data pointer.
@@ -380,18 +380,18 @@ char IFF_Reader_ReadChunk
 		VPS_Data_Release(data);
 		IFF_Chunk_Release(chunk);
 
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_chunk = chunk;
 
-	return 1;
+	return IFF_OK;
 }
 
 /**
  * @brief Reads a size field from a VPS_DataReader using the current scope's config.
  */
-char IFF_Reader_ReadPayloadSize
+IFF_TYPE_RESULT IFF_Reader_ReadPayloadSize
 (
 	struct VPS_DataReader* dr,
 	const struct IFF_Header_Flags_Fields* config,
@@ -405,18 +405,18 @@ char IFF_Reader_ReadPayloadSize
 	VPS_DataReader_Remaining(dr, &remaining);
 	if (remaining < size_len)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_DataReader_ReadBytes(dr, buf, size_len))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	return IFF_Reader_PRIVATE_InterpretSize(config->sizing, config->typing, buf, out_size);
 }
 
-char IFF_Reader_StartChecksumSpan
+IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
 (
 	struct IFF_Reader* reader
 	, const struct IFF_Header_Flags_Fields* config
@@ -428,27 +428,27 @@ char IFF_Reader_StartChecksumSpan
 	VPS_TYPE_SIZE version = 0;
 	VPS_TYPE_SIZE num_ids = 0;
 	VPS_TYPE_SIZE i;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	if (!reader || !config || !chk_payload)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Wrap the payload in a DataReader for sequential access.
 	if (!VPS_DataReader_Allocate(&dr))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_DataReader_Construct(dr, (struct VPS_Data*)chk_payload))
 	{
 		VPS_DataReader_Release(dr);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Read version (currently expect 1).
-	if (!IFF_Reader_ReadPayloadSize(dr, config, &version))
+	if (IFF_Reader_ReadPayloadSize(dr, config, &version))
 	{
 		goto cleanup;
 	}
@@ -459,7 +459,7 @@ char IFF_Reader_StartChecksumSpan
 	}
 
 	// Read number of algorithm identifiers.
-	if (!IFF_Reader_ReadPayloadSize(dr, config, &num_ids))
+	if (IFF_Reader_ReadPayloadSize(dr, config, &num_ids))
 	{
 		goto cleanup;
 	}
@@ -484,7 +484,7 @@ char IFF_Reader_StartChecksumSpan
 		VPS_TYPE_SIZE id_len = 0;
 		struct VPS_Data* id_data = 0;
 
-		if (!IFF_Reader_ReadPayloadSize(dr, config, &id_len))
+		if (IFF_Reader_ReadPayloadSize(dr, config, &id_len))
 		{
 			goto cleanup;
 		}
@@ -522,7 +522,7 @@ cleanup:
 	VPS_Set_Release(algorithm_ids);
 	VPS_DataReader_Release(dr);
 
-	return 0;
+	return IFF_FAIL;
 }
 
 /**
@@ -561,7 +561,7 @@ static char PRIVATE_IFF_Reader_FreeChecksumKeys
 	return 1;
 }
 
-char IFF_Reader_EndChecksumSpan
+IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 (
 	struct IFF_Reader* reader
 	, const struct IFF_Header_Flags_Fields* config
@@ -573,27 +573,27 @@ char IFF_Reader_EndChecksumSpan
 	VPS_TYPE_SIZE version = 0;
 	VPS_TYPE_SIZE num_ids = 0;
 	VPS_TYPE_SIZE i;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	if (!reader || !config || !sum_payload)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Wrap the payload in a DataReader for sequential access.
 	if (!VPS_DataReader_Allocate(&dr))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_DataReader_Construct(dr, (struct VPS_Data*)sum_payload))
 	{
 		VPS_DataReader_Release(dr);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Read version.
-	if (!IFF_Reader_ReadPayloadSize(dr, config, &version))
+	if (IFF_Reader_ReadPayloadSize(dr, config, &version))
 	{
 		goto cleanup;
 	}
@@ -604,7 +604,7 @@ char IFF_Reader_EndChecksumSpan
 	}
 
 	// Read number of entries.
-	if (!IFF_Reader_ReadPayloadSize(dr, config, &num_ids))
+	if (IFF_Reader_ReadPayloadSize(dr, config, &num_ids))
 	{
 		goto cleanup;
 	}
@@ -633,7 +633,7 @@ char IFF_Reader_EndChecksumSpan
 		struct VPS_Data* sum_data = 0;
 
 		// Read algorithm identifier.
-		if (!IFF_Reader_ReadPayloadSize(dr, config, &id_len))
+		if (IFF_Reader_ReadPayloadSize(dr, config, &id_len))
 		{
 			goto cleanup;
 		}
@@ -652,7 +652,7 @@ char IFF_Reader_EndChecksumSpan
 		id_data->bytes[id_len] = '\0';
 
 		// Read expected checksum.
-		if (!IFF_Reader_ReadPayloadSize(dr, config, &sum_len))
+		if (IFF_Reader_ReadPayloadSize(dr, config, &sum_len))
 		{
 			VPS_Data_Release(id_data);
 			goto cleanup;
@@ -721,5 +721,5 @@ cleanup:
 	VPS_Dictionary_Release(expected_checksums);
 	VPS_DataReader_Release(dr);
 
-	return 0;
+	return IFF_FAIL;
 }

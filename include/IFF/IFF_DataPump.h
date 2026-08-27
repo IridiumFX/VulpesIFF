@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_DataPump
 {
 	struct VPS_Decoder *base256_decoder;
@@ -8,41 +10,41 @@ struct IFF_DataPump
 	struct VPS_DataReader *data_reader;
 };
 
-char IFF_DataPump_Allocate
+IFF_TYPE_RESULT IFF_DataPump_Allocate
 (
 	struct IFF_DataPump **item
 );
 
-char IFF_DataPump_Construct
+IFF_TYPE_RESULT IFF_DataPump_Construct
 (
 	struct IFF_DataPump *item
 	, int fh
 );
 
-char IFF_DataPump_ConstructFromData
+IFF_TYPE_RESULT IFF_DataPump_ConstructFromData
 (
 	struct IFF_DataPump *item
 	, const struct VPS_Data *source
 );
 
-char IFF_DataPump_Deconstruct
+IFF_TYPE_RESULT IFF_DataPump_Deconstruct
 (
 	struct IFF_DataPump *item
 );
 
-char IFF_DataPump_Release
+IFF_TYPE_RESULT IFF_DataPump_Release
 (
 	struct IFF_DataPump *item
 );
 
-char IFF_DataPump_ReadRaw
+IFF_TYPE_RESULT IFF_DataPump_ReadRaw
 (
 	struct IFF_DataPump *pump
 	, VPS_TYPE_SIZE bytes_to_read
 	, struct VPS_Data **out_data
 );
 
-char IFF_DataPump_Skip
+IFF_TYPE_RESULT IFF_DataPump_Skip
 (
 	struct IFF_DataPump *pump
 	, VPS_TYPE_SIZE bytes_to_read

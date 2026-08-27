@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_Chunk;
 struct VPS_DataReader;
 
@@ -20,29 +22,29 @@ struct IFF_Reader
 	struct VPS_Dictionary* content_decoders;
 };
 
-char IFF_Reader_Allocate
+IFF_TYPE_RESULT IFF_Reader_Allocate
 (
 	struct IFF_Reader** item
 );
 
-char IFF_Reader_Construct
+IFF_TYPE_RESULT IFF_Reader_Construct
 (
 	struct IFF_Reader* item
 	, int fh
 );
 
-char IFF_Reader_ConstructFromData
+IFF_TYPE_RESULT IFF_Reader_ConstructFromData
 (
 	struct IFF_Reader* item
 	, const struct VPS_Data *source
 );
 
-char IFF_Reader_Deconstruct
+IFF_TYPE_RESULT IFF_Reader_Deconstruct
 (
 	struct IFF_Reader* item
 );
 
-char IFF_Reader_Release
+IFF_TYPE_RESULT IFF_Reader_Release
 (
 	struct IFF_Reader* item
 );
@@ -50,7 +52,7 @@ char IFF_Reader_Release
 /**
  * @brief Reads and canonicalizes a tag based on the current configuration.
  */
-char IFF_Reader_ReadTag
+IFF_TYPE_RESULT IFF_Reader_ReadTag
 (
 	struct IFF_Reader* reader
 	, enum IFF_Header_TagSizing tag_sizing
@@ -60,7 +62,7 @@ char IFF_Reader_ReadTag
 /**
  * @brief Reads and interprets a size field based on the current configuration.
  */
-char IFF_Reader_ReadSize
+IFF_TYPE_RESULT IFF_Reader_ReadSize
 (
 	struct IFF_Reader* reader
 	, enum IFF_Header_Sizing sizing
@@ -71,7 +73,7 @@ char IFF_Reader_ReadSize
 /**
  * @brief Reads a block of data, applying content decoding if necessary.
  */
-char IFF_Reader_ReadData
+IFF_TYPE_RESULT IFF_Reader_ReadData
 (
 	struct IFF_Reader* reader
 	, enum IFF_Header_Encoding encoding
@@ -82,7 +84,7 @@ char IFF_Reader_ReadData
 /**
  * @brief Skips a block of data, applying content decoding if necessary.
  */
-char IFF_Reader_Skip
+IFF_TYPE_RESULT IFF_Reader_Skip
 (
 	struct IFF_Reader* reader
 	, VPS_TYPE_SIZE bytes_to_skip
@@ -94,7 +96,7 @@ char IFF_Reader_Skip
  *          calls the granular ReadSize, and ReadData functions, ensuring
  *          the entire decorator stack (e.g., checksumming) is processed correctly.
  */
-char IFF_Reader_ReadChunk
+IFF_TYPE_RESULT IFF_Reader_ReadChunk
 (
 	struct IFF_Reader* reader,
 	const struct IFF_Header_Flags_Fields* config,
@@ -102,6 +104,11 @@ char IFF_Reader_ReadChunk
 	struct IFF_Chunk** out_chunk
 );
 
+/**
+ * @brief Predicate: does the reader still have bytes to hand out?
+ * @details Answers a question rather than reporting a status, so this keeps
+ *          the plain boolean form: 1 when bytes remain, 0 when exhausted.
+ */
 char IFF_Reader_IsActive
 (
 	struct IFF_Reader* reader
@@ -119,14 +126,14 @@ char IFF_Reader_IsActive
 /**
  * @brief Reads a size field from a VPS_DataReader using the provided config.
  */
-char IFF_Reader_ReadPayloadSize
+IFF_TYPE_RESULT IFF_Reader_ReadPayloadSize
 (
 	struct VPS_DataReader* dr,
 	const struct IFF_Header_Flags_Fields* config,
 	VPS_TYPE_SIZE* out_size
 );
 
-char IFF_Reader_StartChecksumSpan
+IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
 (
 	struct IFF_Reader* reader
 	, const struct IFF_Header_Flags_Fields* config
@@ -143,7 +150,7 @@ char IFF_Reader_StartChecksumSpan
  * @param sum_payload The raw data from the ' SUM' directive chunk.
  * @return 1 if all checksums match, 0 on mismatch or failure.
  */
-char IFF_Reader_EndChecksumSpan
+IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 (
 	struct IFF_Reader* reader
 	, const struct IFF_Header_Flags_Fields* config

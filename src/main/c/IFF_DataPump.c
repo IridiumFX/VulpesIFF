@@ -11,7 +11,7 @@
 
 #include <IFF/IFF_DataPump.h>
 
-char IFF_DataPump_Allocate
+IFF_TYPE_RESULT IFF_DataPump_Allocate
 (
 	struct IFF_DataPump **item
 )
@@ -20,7 +20,7 @@ char IFF_DataPump_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	pump = calloc
@@ -30,7 +30,7 @@ char IFF_DataPump_Allocate
 	);
 	if (!pump)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Decoder_Allocate
@@ -73,7 +73,7 @@ char IFF_DataPump_Allocate
 
 	*item = pump;
 
-	return 1;
+	return IFF_OK;
 
 cleanup:
 
@@ -82,10 +82,10 @@ cleanup:
 		pump
 	);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_DataPump_Construct
+IFF_TYPE_RESULT IFF_DataPump_Construct
 (
 	struct IFF_DataPump *item
 	, int fh
@@ -93,7 +93,7 @@ char IFF_DataPump_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Construct the I/O pipeline that this reader will manage.
@@ -105,7 +105,7 @@ char IFF_DataPump_Construct
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if
@@ -116,7 +116,7 @@ char IFF_DataPump_Construct
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if
@@ -128,7 +128,7 @@ char IFF_DataPump_Construct
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if
@@ -143,13 +143,13 @@ char IFF_DataPump_Construct
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataPump_ConstructFromData
+IFF_TYPE_RESULT IFF_DataPump_ConstructFromData
 (
 	struct IFF_DataPump *item
 	, const struct VPS_Data *source
@@ -157,7 +157,7 @@ char IFF_DataPump_ConstructFromData
 {
 	if (!item || !source || (!source->bytes && source->limit > 0))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Release the stream reader — not needed for memory mode.
@@ -167,12 +167,12 @@ char IFF_DataPump_ConstructFromData
 	// Resize the data buffer to fit the source data.
 	if (!VPS_Data_Resize(item->data_buffer, source->limit))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_Data_Construct(item->data_buffer))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Copy source bytes into the data buffer.
@@ -197,7 +197,7 @@ char IFF_DataPump_ConstructFromData
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Construct the base256 decoder for API consistency.
@@ -209,20 +209,20 @@ char IFF_DataPump_ConstructFromData
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataPump_Deconstruct
+IFF_TYPE_RESULT IFF_DataPump_Deconstruct
 (
 	struct IFF_DataPump *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_StreamReader_Deconstruct
@@ -245,10 +245,10 @@ char IFF_DataPump_Deconstruct
 		item->base256_decoder
 	);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataPump_Release
+IFF_TYPE_RESULT IFF_DataPump_Release
 (
 	struct IFF_DataPump *item
 )
@@ -285,9 +285,14 @@ char IFF_DataPump_Release
 			item
 		);
 	}
-	return 1;
+	return IFF_OK;
 }
 
+/**
+ * @brief Predicate: can the buffer supply this many bytes?
+ * @details Not a status function. A short stream is a legitimate answer
+ *          here, not a fault, so this keeps the plain boolean form.
+ */
 static char IFF_DataPump_PRIVATE_EnsureDataAvailable
 (
 	struct IFF_DataPump *pump,
@@ -329,7 +334,7 @@ static char IFF_DataPump_PRIVATE_EnsureDataAvailable
 	return (char)(bytes_available >= bytes_needed);
 }
 
-char IFF_DataPump_ReadRaw
+IFF_TYPE_RESULT IFF_DataPump_ReadRaw
 (
 	struct IFF_DataPump *pump
 	, VPS_TYPE_SIZE bytes_to_read
@@ -338,12 +343,12 @@ char IFF_DataPump_ReadRaw
 {
 	if (!pump || !out_data || bytes_to_read == 0)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!IFF_DataPump_PRIVATE_EnsureDataAvailable(pump, bytes_to_read))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if
@@ -357,7 +362,7 @@ char IFF_DataPump_ReadRaw
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if
@@ -373,13 +378,13 @@ char IFF_DataPump_ReadRaw
 		VPS_Data_Release(*out_data);
 		*out_data = 0;
 
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataPump_Skip
+IFF_TYPE_RESULT IFF_DataPump_Skip
 (
 	struct IFF_DataPump *pump
 	, VPS_TYPE_SIZE bytes_to_skip
@@ -387,23 +392,31 @@ char IFF_DataPump_Skip
 {
 	if (!pump)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (bytes_to_skip == 0)
 	{
-		return 1;
+		return IFF_OK;
 	}
 
 	if (!IFF_DataPump_PRIVATE_EnsureDataAvailable(pump, bytes_to_skip))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return VPS_Data_Seek
+	if
 	(
-		pump->data_buffer
-		, bytes_to_skip
-		, SEEK_CUR
-	);
+		!VPS_Data_Seek
+		(
+			pump->data_buffer
+			, bytes_to_skip
+			, SEEK_CUR
+		)
+	)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }

@@ -44,7 +44,7 @@ static void IFF_DataTap_PRIVATE_UpdateAllSpans
 	}
 }
 
-char IFF_DataTap_Allocate
+IFF_TYPE_RESULT IFF_DataTap_Allocate
 (
 	struct IFF_DataTap **item
 )
@@ -53,16 +53,16 @@ char IFF_DataTap_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	tap = calloc(1, sizeof(struct IFF_DataTap));
 	if (!tap)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_DataPump_Allocate(&tap->pump))
+	if (IFF_DataPump_Allocate(&tap->pump))
 	{
 		goto cleanup;
 	}
@@ -79,16 +79,16 @@ char IFF_DataTap_Allocate
 
 	*item = tap;
 
-	return 1;
+	return IFF_OK;
 
 cleanup:
 
 	IFF_DataTap_Release(tap);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_DataTap_Construct
+IFF_TYPE_RESULT IFF_DataTap_Construct
 (
 	struct IFF_DataTap *item
 	, int fh
@@ -96,10 +96,10 @@ char IFF_DataTap_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_DataPump_Construct(item->pump, fh)) return 0;
+	if (IFF_DataPump_Construct(item->pump, fh)) return IFF_FAIL;
 
 	// The dictionary keys are const char* identifiers, which we don't own.
 	// The data are const IFF_ChecksumAlgorithm* pointers, which we also don't own.
@@ -120,10 +120,10 @@ char IFF_DataTap_Construct
 		IFF_ChecksumSpan_VPS_Release
 	);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataTap_ConstructFromData
+IFF_TYPE_RESULT IFF_DataTap_ConstructFromData
 (
 	struct IFF_DataTap *item
 	, const struct VPS_Data *source
@@ -131,10 +131,10 @@ char IFF_DataTap_ConstructFromData
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_DataPump_ConstructFromData(item->pump, source)) return 0;
+	if (IFF_DataPump_ConstructFromData(item->pump, source)) return IFF_FAIL;
 
 	VPS_Dictionary_Construct(
 		item->registered_algorithms,
@@ -150,17 +150,17 @@ char IFF_DataTap_ConstructFromData
 		IFF_ChecksumSpan_VPS_Release
 	);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataTap_Deconstruct
+IFF_TYPE_RESULT IFF_DataTap_Deconstruct
 (
 	struct IFF_DataTap *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Deconstruct(item->registered_algorithms);
@@ -169,10 +169,10 @@ char IFF_DataTap_Deconstruct
 
 	IFF_DataPump_Deconstruct(item->pump);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataTap_Release
+IFF_TYPE_RESULT IFF_DataTap_Release
 (
 	struct IFF_DataTap *item
 )
@@ -185,10 +185,10 @@ char IFF_DataTap_Release
 		VPS_List_Release(item->active_spans);
 		free(item);
 	}
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataTap_RegisterAlgorithm
+IFF_TYPE_RESULT IFF_DataTap_RegisterAlgorithm
 (
 	struct IFF_DataTap* tap,
 	const struct IFF_ChecksumAlgorithm* algorithm
@@ -198,14 +198,19 @@ char IFF_DataTap_RegisterAlgorithm
 	if (!tap || !algorithm || !algorithm->identifier
 		|| !algorithm->create_context || !algorithm->update || !algorithm->finalize)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// The dictionary does not take ownership of the key or data pointers.
-	return VPS_Dictionary_Add(tap->registered_algorithms, (void*)algorithm->identifier, (void*)algorithm);
+	if (!VPS_Dictionary_Add(tap->registered_algorithms, (void*)algorithm->identifier, (void*)algorithm))
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_DataTap_ReadRaw
+IFF_TYPE_RESULT IFF_DataTap_ReadRaw
 (
 	struct IFF_DataTap *tap
 	, VPS_TYPE_SIZE bytes_to_read
@@ -214,13 +219,13 @@ char IFF_DataTap_ReadRaw
 {
 	if (!tap || !tap->pump)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 1. Call the underlying pump to get the raw bytes.
-	if (!IFF_DataPump_ReadRaw(tap->pump, bytes_to_read, out_data))
+	if (IFF_DataPump_ReadRaw(tap->pump, bytes_to_read, out_data))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 2. If the read was successful and there are active spans, update them.
@@ -229,10 +234,10 @@ char IFF_DataTap_ReadRaw
 		IFF_DataTap_PRIVATE_UpdateAllSpans(tap, *out_data);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataTap_StartSpan
+IFF_TYPE_RESULT IFF_DataTap_StartSpan
 (
 	struct IFF_DataTap *tap
 	, const struct VPS_Set *algorithm_identifiers
@@ -241,12 +246,12 @@ char IFF_DataTap_StartSpan
 	struct IFF_ChecksumSpan* new_span = 0;
 	struct VPS_List_Node* new_span_node = 0;
 
-	if (!tap || !algorithm_identifiers) return 0;
+	if (!tap || !algorithm_identifiers) return IFF_FAIL;
 
 	if (IFF_ChecksumSpan_Allocate(&new_span) || IFF_ChecksumSpan_Construct(new_span))
 	{
 		IFF_ChecksumSpan_Release(new_span);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Iterate through all buckets of the set
@@ -277,7 +282,7 @@ char IFF_DataTap_StartSpan
 					IFF_ChecksumCalculator_Release(calc);
 					VPS_List_Node_Release(calc_node);
 					IFF_ChecksumSpan_Release(new_span);
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 			set_entry_node = set_entry_node->next;
@@ -285,14 +290,14 @@ char IFF_DataTap_StartSpan
 	}
 
 	// Add the fully populated span to the LIFO stack (head of the list)
-	if (!VPS_List_Node_Allocate(&new_span_node)) { IFF_ChecksumSpan_Release(new_span); return 0; }
+	if (!VPS_List_Node_Allocate(&new_span_node)) { IFF_ChecksumSpan_Release(new_span); return IFF_FAIL; }
 	VPS_List_Node_Construct(new_span_node, new_span);
 	VPS_List_AddHead(tap->active_spans, new_span_node);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_DataTap_EndSpan
+IFF_TYPE_RESULT IFF_DataTap_EndSpan
 (
 	struct IFF_DataTap *tap
 	, struct VPS_Dictionary *expected_checksums
@@ -302,12 +307,12 @@ char IFF_DataTap_EndSpan
 	struct IFF_ChecksumSpan* span = 0;
 	char all_match = 1;
 
-	if (!tap || !expected_checksums) return 0;
+	if (!tap || !expected_checksums) return IFF_FAIL;
 
 	// Pop the most recent span from the LIFO stack
 	if (!VPS_List_RemoveHead(tap->active_spans, &span_node))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 	span = span_node->data;
 
@@ -350,10 +355,10 @@ char IFF_DataTap_EndSpan
 	IFF_ChecksumSpan_Release(span); // This releases the span and its internal list of calculators.
 	VPS_List_Node_Release(span_node); // This just releases the list node container.
 
-	return all_match;
+	return all_match ? IFF_OK : IFF_FAIL;
 }
 
-char IFF_DataTap_Skip
+IFF_TYPE_RESULT IFF_DataTap_Skip
 (
 	struct IFF_DataTap *tap
 	, VPS_TYPE_SIZE bytes_to_skip
@@ -363,26 +368,26 @@ char IFF_DataTap_Skip
 
 	if (!tap)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Nothing to consume; the pump (and ReadRaw) reject zero-byte reads.
 	if (bytes_to_skip == 0)
 	{
-		return 1;
+		return IFF_OK;
 	}
 
 	if (tap->active_spans->count > 0)
 	{
-		if (!IFF_DataTap_ReadRaw(tap, bytes_to_skip, &skipped_data))
+		if (IFF_DataTap_ReadRaw(tap, bytes_to_skip, &skipped_data))
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// We read data just to checksum it. Release it again
 		VPS_Data_Release(skipped_data);
 
-		return 1;
+		return IFF_OK;
 	}
 
 	return IFF_DataPump_Skip

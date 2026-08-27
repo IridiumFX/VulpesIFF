@@ -130,7 +130,7 @@ static char test_checksum_mismatch_fails(void)
 	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
 	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
@@ -224,7 +224,7 @@ static char test_checksum_empty_span(void)
 	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
 	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
@@ -296,7 +296,7 @@ static char test_checksum_nested_spans(void)
 	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
 	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
@@ -377,8 +377,8 @@ static char test_checksum_multiple_algorithms(void)
 	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, lrc_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, lrc_algo)) goto cleanup;
 
 	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
@@ -452,8 +452,8 @@ static char test_checksum_partial_algorithm_support(void)
 	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, lrc_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, lrc_algo)) goto cleanup;
 
 	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;

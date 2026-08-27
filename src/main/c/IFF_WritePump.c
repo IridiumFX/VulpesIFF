@@ -7,7 +7,7 @@
 
 #include <IFF/IFF_WritePump.h>
 
-char IFF_WritePump_Allocate
+IFF_TYPE_RESULT IFF_WritePump_Allocate
 (
 	struct IFF_WritePump **item
 )
@@ -16,13 +16,13 @@ char IFF_WritePump_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	pump = calloc(1, sizeof(struct IFF_WritePump));
 	if (!pump)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_StreamWriter_Allocate(&pump->stream_writer))
@@ -42,16 +42,16 @@ char IFF_WritePump_Allocate
 
 	*item = pump;
 
-	return 1;
+	return IFF_OK;
 
 cleanup:
 
 	IFF_WritePump_Release(pump);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_WritePump_Construct
+IFF_TYPE_RESULT IFF_WritePump_Construct
 (
 	struct IFF_WritePump *item
 	, int file_handle
@@ -59,7 +59,7 @@ char IFF_WritePump_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Release the memory-mode members — a populated data_writer is the
@@ -71,20 +71,20 @@ char IFF_WritePump_Construct
 
 	if (!VPS_StreamWriter_Construct(item->stream_writer, file_handle))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WritePump_ConstructToData
+IFF_TYPE_RESULT IFF_WritePump_ConstructToData
 (
 	struct IFF_WritePump *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Release the stream writer — not needed for memory mode.
@@ -94,19 +94,19 @@ char IFF_WritePump_ConstructToData
 	// Construct the output buffer.
 	if (!VPS_Data_Construct(item->output_buffer))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Construct the data writer targeting the output buffer.
 	if (!VPS_DataWriter_Construct(item->data_writer, item->output_buffer))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WritePump_GetOutputData
+IFF_TYPE_RESULT IFF_WritePump_GetOutputData
 (
 	struct IFF_WritePump *pump
 	, struct VPS_Data **out_data
@@ -114,37 +114,37 @@ char IFF_WritePump_GetOutputData
 {
 	if (!pump || !out_data)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!pump->data_writer)
 	{
-		return 0; // Not in memory mode
+		return IFF_FAIL; // Not in memory mode
 	}
 
 	*out_data = pump->output_buffer;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WritePump_Deconstruct
+IFF_TYPE_RESULT IFF_WritePump_Deconstruct
 (
 	struct IFF_WritePump *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_DataWriter_Deconstruct(item->data_writer);
 	VPS_Data_Deconstruct(item->output_buffer);
 	VPS_StreamWriter_Deconstruct(item->stream_writer);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WritePump_Release
+IFF_TYPE_RESULT IFF_WritePump_Release
 (
 	struct IFF_WritePump *item
 )
@@ -158,10 +158,10 @@ char IFF_WritePump_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WritePump_WriteRaw
+IFF_TYPE_RESULT IFF_WritePump_WriteRaw
 (
 	struct IFF_WritePump *pump
 	, const unsigned char *data
@@ -170,18 +170,28 @@ char IFF_WritePump_WriteRaw
 {
 	if (!pump || (!data && size > 0))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (pump->data_writer)
 	{
-		return VPS_DataWriter_WriteBytes(pump->data_writer, data, size);
+		if (!VPS_DataWriter_WriteBytes(pump->data_writer, data, size))
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
-	return VPS_StreamWriter_Write(pump->stream_writer, data, size);
+	if (!VPS_StreamWriter_Write(pump->stream_writer, data, size))
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_WritePump_WriteData
+IFF_TYPE_RESULT IFF_WritePump_WriteData
 (
 	struct IFF_WritePump *pump
 	, const struct VPS_Data *data
@@ -189,41 +199,62 @@ char IFF_WritePump_WriteData
 {
 	if (!pump || !data)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (pump->data_writer)
 	{
-		return VPS_DataWriter_WriteBytes
+		if
 		(
-			pump->data_writer
-			, data->bytes
-			, data->limit
-		);
+			!VPS_DataWriter_WriteBytes
+			(
+				pump->data_writer
+				, data->bytes
+				, data->limit
+			)
+		)
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
-	return VPS_StreamWriter_Write
+	if
 	(
-		pump->stream_writer
-		, data->bytes
-		, data->limit
-	);
+		!VPS_StreamWriter_Write
+		(
+			pump->stream_writer
+			, data->bytes
+			, data->limit
+		)
+	)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_WritePump_Flush
+IFF_TYPE_RESULT IFF_WritePump_Flush
 (
 	struct IFF_WritePump *pump
 )
 {
 	if (!pump)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (pump->data_writer)
 	{
-		return 1; // No-op in memory mode
+		return IFF_OK; // No-op in memory mode
 	}
 
-	return VPS_StreamWriter_Flush(pump->stream_writer);
+	if (!VPS_StreamWriter_Flush(pump->stream_writer))
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }

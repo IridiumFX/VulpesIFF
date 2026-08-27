@@ -649,7 +649,7 @@ strict_check:
 /*  Unified write helpers that dispatch to stream or accumulator       */
 /* ------------------------------------------------------------------ */
 
-static char PRIVATE_IFF_Generator_EmitTag
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EmitTag
 (
 	struct IFF_Generator *gen
 	, enum IFF_Header_TagSizing tag_sizing
@@ -660,13 +660,18 @@ static char PRIVATE_IFF_Generator_EmitTag
 
 	if (scope && scope->accumulator_writer)
 	{
-		return PRIVATE_IFF_Generator_WriteTagTo(scope->accumulator_writer, tag_sizing, tag);
+		if (!PRIVATE_IFF_Generator_WriteTagTo(scope->accumulator_writer, tag_sizing, tag))
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
 	return IFF_Writer_WriteTag(gen->writer, tag_sizing, tag);
 }
 
-static char PRIVATE_IFF_Generator_EmitSize
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EmitSize
 (
 	struct IFF_Generator *gen
 	, enum IFF_Header_Sizing sizing
@@ -678,13 +683,18 @@ static char PRIVATE_IFF_Generator_EmitSize
 
 	if (scope && scope->accumulator_writer)
 	{
-		return PRIVATE_IFF_Generator_WriteSizeTo(scope->accumulator_writer, sizing, typing, size);
+		if (!PRIVATE_IFF_Generator_WriteSizeTo(scope->accumulator_writer, sizing, typing, size))
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
 	return IFF_Writer_WriteSize(gen->writer, sizing, typing, size);
 }
 
-static char PRIVATE_IFF_Generator_EmitData
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EmitData
 (
 	struct IFF_Generator *gen
 	, const struct VPS_Data *data
@@ -694,13 +704,18 @@ static char PRIVATE_IFF_Generator_EmitData
 
 	if (scope && scope->accumulator_writer)
 	{
-		return PRIVATE_IFF_Generator_WriteDataTo(scope->accumulator_writer, data);
+		if (!PRIVATE_IFF_Generator_WriteDataTo(scope->accumulator_writer, data))
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
 	return IFF_Writer_WriteData(gen->writer, IFF_Header_Encoding_BASE_256, data);
 }
 
-static char PRIVATE_IFF_Generator_EmitRaw
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EmitRaw
 (
 	struct IFF_Generator *gen
 	, const unsigned char *data
@@ -711,13 +726,18 @@ static char PRIVATE_IFF_Generator_EmitRaw
 
 	if (scope && scope->accumulator_writer)
 	{
-		return VPS_DataWriter_WriteBytes(scope->accumulator_writer, data, size);
+		if (!VPS_DataWriter_WriteBytes(scope->accumulator_writer, data, size))
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
 	return IFF_WriteTap_WriteRaw(gen->writer->tap, data, size);
 }
 
-static char PRIVATE_IFF_Generator_EmitPadding
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EmitPadding
 (
 	struct IFF_Generator *gen
 	, const struct IFF_Header_Flags_Fields *config
@@ -728,13 +748,18 @@ static char PRIVATE_IFF_Generator_EmitPadding
 
 	if (scope && scope->accumulator_writer)
 	{
-		return PRIVATE_IFF_Generator_WritePaddingTo(scope->accumulator_writer, config, data_size);
+		if (!PRIVATE_IFF_Generator_WritePaddingTo(scope->accumulator_writer, config, data_size))
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
 	return IFF_Writer_WritePadding(gen->writer, config, data_size);
 }
 
-static char PRIVATE_IFF_Generator_EmitChunk
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EmitChunk
 (
 	struct IFF_Generator *gen
 	, const struct IFF_Header_Flags_Fields *config
@@ -746,7 +771,12 @@ static char PRIVATE_IFF_Generator_EmitChunk
 
 	if (scope && scope->accumulator_writer)
 	{
-		return PRIVATE_IFF_Generator_WriteChunkTo(scope->accumulator_writer, config, tag, data);
+		if (!PRIVATE_IFF_Generator_WriteChunkTo(scope->accumulator_writer, config, tag, data))
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
 	return IFF_Writer_WriteChunk(gen->writer, config, tag, data);
@@ -772,12 +802,12 @@ static char PRIVATE_IFF_Generator_EmitTrackedChunk
 	const struct IFF_Header_Flags_Fields *config = &gen->flags.as_fields;
 	VPS_TYPE_SIZE data_size = data ? data->limit : 0;
 
-	if (!PRIVATE_IFF_Generator_EmitChunk(gen, config, tag, data))
+	if (PRIVATE_IFF_Generator_EmitChunk(gen, config, tag, data))
 	{
 		return 0;
 	}
 
-	if (!PRIVATE_IFF_Generator_EmitPadding(gen, config, data_size))
+	if (PRIVATE_IFF_Generator_EmitPadding(gen, config, data_size))
 	{
 		return 0;
 	}
@@ -857,12 +887,12 @@ static char PRIVATE_IFF_Generator_BeginContainer
 
 	if (config->operating == IFF_Header_Operating_PROGRESSIVE)
 	{
-		if (!IFF_Writer_WriteTag(gen->writer, config->tag_sizing, variant))
+		if (IFF_Writer_WriteTag(gen->writer, config->tag_sizing, variant))
 		{
 			goto begin_failure;
 		}
 
-		if (!IFF_Writer_WriteTag(gen->writer, config->tag_sizing, type))
+		if (IFF_Writer_WriteTag(gen->writer, config->tag_sizing, type))
 		{
 			goto begin_failure;
 		}
@@ -921,12 +951,12 @@ static char PRIVATE_IFF_Generator_EndContainer
 	if (config->operating == IFF_Header_Operating_PROGRESSIVE)
 	{
 		/* Write END directive: tag + size=0 */
-		if (!IFF_Writer_WriteTag(gen->writer, config->tag_sizing, &IFF_TAG_SYSTEM_END))
+		if (IFF_Writer_WriteTag(gen->writer, config->tag_sizing, &IFF_TAG_SYSTEM_END))
 		{
 			goto failure;
 		}
 
-		if (!IFF_Writer_WriteSize(gen->writer, config->sizing, config->typing, 0))
+		if (IFF_Writer_WriteSize(gen->writer, config->sizing, config->typing, 0))
 		{
 			goto failure;
 		}
@@ -985,12 +1015,12 @@ static char PRIVATE_IFF_Generator_EndContainer
 		else
 		{
 			/* Root-level blobbed container: write to the actual writer */
-			if (!IFF_Writer_WriteTag(gen->writer, config->tag_sizing, &scope->container_variant))
+			if (IFF_Writer_WriteTag(gen->writer, config->tag_sizing, &scope->container_variant))
 			{
 				goto failure;
 			}
 
-			if (!IFF_Writer_WriteSize(gen->writer, config->sizing, config->typing, body_size))
+			if (IFF_Writer_WriteSize(gen->writer, config->sizing, config->typing, body_size))
 			{
 				goto failure;
 			}
@@ -1004,13 +1034,13 @@ static char PRIVATE_IFF_Generator_EndContainer
 				body_data.limit = body_size;
 				body_data.own_bytes = 0;
 
-				if (!IFF_Writer_WriteData(gen->writer, IFF_Header_Encoding_BASE_256, &body_data))
+				if (IFF_Writer_WriteData(gen->writer, IFF_Header_Encoding_BASE_256, &body_data))
 				{
 					goto failure;
 				}
 			}
 
-			if (!IFF_Writer_WritePadding(gen->writer, config, body_size))
+			if (IFF_Writer_WritePadding(gen->writer, config, body_size))
 			{
 				goto failure;
 			}
@@ -1070,8 +1100,8 @@ static char PRIVATE_IFF_Generator_AbortContainer
 	{
 		if
 		(
-			!IFF_Writer_WriteTag(gen->writer, config->tag_sizing, &IFF_TAG_SYSTEM_END)
-			|| !IFF_Writer_WriteSize(gen->writer, config->sizing, config->typing, 0)
+			IFF_Writer_WriteTag(gen->writer, config->tag_sizing, &IFF_TAG_SYSTEM_END)
+			|| IFF_Writer_WriteSize(gen->writer, config->sizing, config->typing, 0)
 		)
 		{
 			result = 0;
@@ -1130,7 +1160,7 @@ char IFF_Generator_Allocate
 		return 0;
 	}
 
-	if (!IFF_Writer_Allocate(&gen->writer))
+	if (IFF_Writer_Allocate(&gen->writer))
 	{
 		goto cleanup;
 	}
@@ -1167,7 +1197,7 @@ char IFF_Generator_Construct
 		return 0;
 	}
 
-	if (!IFF_Writer_Construct(item->writer, file_handle))
+	if (IFF_Writer_Construct(item->writer, file_handle))
 	{
 		return 0;
 	}
@@ -1204,7 +1234,7 @@ char IFF_Generator_ConstructToData
 		return 0;
 	}
 
-	if (!IFF_Writer_ConstructToData(item->writer))
+	if (IFF_Writer_ConstructToData(item->writer))
 	{
 		return 0;
 	}
@@ -1242,7 +1272,12 @@ char IFF_Generator_GetOutputData
 		return 0;
 	}
 
-	return IFF_Writer_GetOutputData(gen->writer, out_data);
+	if (IFF_Writer_GetOutputData(gen->writer, out_data))
+	{
+		return 0;
+	}
+
+	return 1;
 }
 
 char IFF_Generator_Deconstruct
@@ -1330,11 +1365,11 @@ char IFF_Generator_WriteHeader
 	if (!VPS_DataWriter_Write64UBE(dw, header->flags.as_int)) goto cleanup;
 
 	/* Write as directive chunk: tag=' IFF', size, data */
-	result = IFF_Writer_WriteChunk(gen->writer, config, &IFF_TAG_SYSTEM_IFF, payload);
+	result = (IFF_Writer_WriteChunk(gen->writer, config, &IFF_TAG_SYSTEM_IFF, payload) == IFF_OK);
 
 	if (result)
 	{
-		result = IFF_Writer_WritePadding(gen->writer, config, payload->limit);
+		result = (IFF_Writer_WritePadding(gen->writer, config, payload->limit) == IFF_OK);
 	}
 
 	if (result)
@@ -1687,7 +1722,7 @@ char IFF_Generator_BeginChecksumSpan
 		}
 		else
 		{
-			result = IFF_WriteTap_StartSpan(gen->writer->tap, algorithm_ids);
+			result = (IFF_WriteTap_StartSpan(gen->writer->tap, algorithm_ids) == IFF_OK);
 		}
 	}
 
@@ -1774,7 +1809,7 @@ char IFF_Generator_EndChecksumSpan
 			}
 		}
 
-		if (!IFF_WriteTap_EndSpan(gen->writer->tap, &computed_checksums))
+		if (IFF_WriteTap_EndSpan(gen->writer->tap, &computed_checksums))
 		{
 			return 0;
 		}
@@ -2214,5 +2249,10 @@ char IFF_Generator_Flush
 		return 0;
 	}
 
-	return IFF_Writer_Flush(gen->writer);
+	if (IFF_Writer_Flush(gen->writer))
+	{
+		return 0;
+	}
+
+	return 1;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_ChecksumAlgorithm;
 struct VPS_Set;
 struct VPS_Dictionary;
@@ -29,39 +31,39 @@ struct IFF_WriteTap
 	struct VPS_List *active_spans;
 };
 
-char IFF_WriteTap_Allocate
+IFF_TYPE_RESULT IFF_WriteTap_Allocate
 (
 	struct IFF_WriteTap **item
 );
 
-char IFF_WriteTap_Construct
+IFF_TYPE_RESULT IFF_WriteTap_Construct
 (
 	struct IFF_WriteTap *item
 	, int file_handle
 );
 
-char IFF_WriteTap_ConstructToData
+IFF_TYPE_RESULT IFF_WriteTap_ConstructToData
 (
 	struct IFF_WriteTap *item
 );
 
-char IFF_WriteTap_GetOutputData
+IFF_TYPE_RESULT IFF_WriteTap_GetOutputData
 (
 	struct IFF_WriteTap *tap
 	, struct VPS_Data **out_data
 );
 
-char IFF_WriteTap_Deconstruct
+IFF_TYPE_RESULT IFF_WriteTap_Deconstruct
 (
 	struct IFF_WriteTap *item
 );
 
-char IFF_WriteTap_Release
+IFF_TYPE_RESULT IFF_WriteTap_Release
 (
 	struct IFF_WriteTap *item
 );
 
-char IFF_WriteTap_RegisterAlgorithm
+IFF_TYPE_RESULT IFF_WriteTap_RegisterAlgorithm
 (
 	struct IFF_WriteTap *tap
 	, const struct IFF_ChecksumAlgorithm *algorithm
@@ -70,7 +72,7 @@ char IFF_WriteTap_RegisterAlgorithm
 /**
  * @brief Writes raw bytes, transparently updating any active checksums.
  */
-char IFF_WriteTap_WriteRaw
+IFF_TYPE_RESULT IFF_WriteTap_WriteRaw
 (
 	struct IFF_WriteTap *tap
 	, const unsigned char *data
@@ -80,7 +82,7 @@ char IFF_WriteTap_WriteRaw
 /**
  * @brief Writes a VPS_Data buffer, transparently updating any active checksums.
  */
-char IFF_WriteTap_WriteData
+IFF_TYPE_RESULT IFF_WriteTap_WriteData
 (
 	struct IFF_WriteTap *tap
 	, const struct VPS_Data *data
@@ -89,7 +91,7 @@ char IFF_WriteTap_WriteData
 /**
  * @brief Starts a new checksum span for the given algorithm identifiers.
  */
-char IFF_WriteTap_StartSpan
+IFF_TYPE_RESULT IFF_WriteTap_StartSpan
 (
 	struct IFF_WriteTap *tap
 	, const struct VPS_Set *algorithm_identifiers
@@ -102,13 +104,13 @@ char IFF_WriteTap_StartSpan
  *                      The caller is responsible for releasing this dictionary.
  * @return 1 on success, 0 on failure.
  */
-char IFF_WriteTap_EndSpan
+IFF_TYPE_RESULT IFF_WriteTap_EndSpan
 (
 	struct IFF_WriteTap *tap
 	, struct VPS_Dictionary **out_checksums
 );
 
-char IFF_WriteTap_Flush
+IFF_TYPE_RESULT IFF_WriteTap_Flush
 (
 	struct IFF_WriteTap *tap
 );

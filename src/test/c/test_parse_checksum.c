@@ -111,7 +111,7 @@ static char test_checksum_roundtrip(void)
 	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	// Register the algorithm on the generator's write tap.
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
 	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;

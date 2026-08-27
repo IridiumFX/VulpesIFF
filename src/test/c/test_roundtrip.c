@@ -214,7 +214,7 @@ static char test_roundtrip_checksum(void)
 	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
 	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
 	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
 	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
 	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
@@ -650,7 +650,7 @@ static char test_roundtrip_encoder_progressive_checksum(void)
 	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
 	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
 	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
-	if (!IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
+	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
 	if (!IFF_Generator_Factory_RegisterFormEncoder(gf, &ilbm, form_enc)) goto cleanup;

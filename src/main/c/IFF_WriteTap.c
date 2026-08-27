@@ -52,7 +52,7 @@ static void IFF_WriteTap_PRIVATE_UpdateAllSpans
 	}
 }
 
-char IFF_WriteTap_Allocate
+IFF_TYPE_RESULT IFF_WriteTap_Allocate
 (
 	struct IFF_WriteTap **item
 )
@@ -61,16 +61,16 @@ char IFF_WriteTap_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	tap = calloc(1, sizeof(struct IFF_WriteTap));
 	if (!tap)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_WritePump_Allocate(&tap->pump))
+	if (IFF_WritePump_Allocate(&tap->pump))
 	{
 		goto cleanup;
 	}
@@ -87,16 +87,16 @@ char IFF_WriteTap_Allocate
 
 	*item = tap;
 
-	return 1;
+	return IFF_OK;
 
 cleanup:
 
 	IFF_WriteTap_Release(tap);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_WriteTap_Construct
+IFF_TYPE_RESULT IFF_WriteTap_Construct
 (
 	struct IFF_WriteTap *item
 	, int file_handle
@@ -104,12 +104,12 @@ char IFF_WriteTap_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_WritePump_Construct(item->pump, file_handle))
+	if (IFF_WritePump_Construct(item->pump, file_handle))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Construct
@@ -129,22 +129,22 @@ char IFF_WriteTap_Construct
 		, IFF_ChecksumSpan_VPS_Release
 	);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WriteTap_ConstructToData
+IFF_TYPE_RESULT IFF_WriteTap_ConstructToData
 (
 	struct IFF_WriteTap *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_WritePump_ConstructToData(item->pump))
+	if (IFF_WritePump_ConstructToData(item->pump))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Construct
@@ -164,10 +164,10 @@ char IFF_WriteTap_ConstructToData
 		, IFF_ChecksumSpan_VPS_Release
 	);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WriteTap_GetOutputData
+IFF_TYPE_RESULT IFF_WriteTap_GetOutputData
 (
 	struct IFF_WriteTap *tap
 	, struct VPS_Data **out_data
@@ -175,30 +175,30 @@ char IFF_WriteTap_GetOutputData
 {
 	if (!tap)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	return IFF_WritePump_GetOutputData(tap->pump, out_data);
 }
 
-char IFF_WriteTap_Deconstruct
+IFF_TYPE_RESULT IFF_WriteTap_Deconstruct
 (
 	struct IFF_WriteTap *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Deconstruct(item->registered_algorithms);
 	VPS_List_Deconstruct(item->active_spans);
 	IFF_WritePump_Deconstruct(item->pump);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WriteTap_Release
+IFF_TYPE_RESULT IFF_WriteTap_Release
 (
 	struct IFF_WriteTap *item
 )
@@ -212,10 +212,10 @@ char IFF_WriteTap_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WriteTap_RegisterAlgorithm
+IFF_TYPE_RESULT IFF_WriteTap_RegisterAlgorithm
 (
 	struct IFF_WriteTap *tap
 	, const struct IFF_ChecksumAlgorithm *algorithm
@@ -225,13 +225,18 @@ char IFF_WriteTap_RegisterAlgorithm
 	if (!tap || !algorithm || !algorithm->identifier
 		|| !algorithm->create_context || !algorithm->update || !algorithm->finalize)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return VPS_Dictionary_Add(tap->registered_algorithms, (void *)algorithm->identifier, (void *)algorithm);
+	if (!VPS_Dictionary_Add(tap->registered_algorithms, (void *)algorithm->identifier, (void *)algorithm))
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_WriteTap_WriteRaw
+IFF_TYPE_RESULT IFF_WriteTap_WriteRaw
 (
 	struct IFF_WriteTap *tap
 	, const unsigned char *data
@@ -240,7 +245,7 @@ char IFF_WriteTap_WriteRaw
 {
 	if (!tap || (!data && size > 0))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (tap->active_spans->count > 0)
@@ -251,7 +256,7 @@ char IFF_WriteTap_WriteRaw
 	return IFF_WritePump_WriteRaw(tap->pump, data, size);
 }
 
-char IFF_WriteTap_WriteData
+IFF_TYPE_RESULT IFF_WriteTap_WriteData
 (
 	struct IFF_WriteTap *tap
 	, const struct VPS_Data *data
@@ -259,13 +264,13 @@ char IFF_WriteTap_WriteData
 {
 	if (!tap || !data)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	return IFF_WriteTap_WriteRaw(tap, data->bytes, data->limit);
 }
 
-char IFF_WriteTap_StartSpan
+IFF_TYPE_RESULT IFF_WriteTap_StartSpan
 (
 	struct IFF_WriteTap *tap
 	, const struct VPS_Set *algorithm_identifiers
@@ -277,13 +282,13 @@ char IFF_WriteTap_StartSpan
 
 	if (!tap || !algorithm_identifiers)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (IFF_ChecksumSpan_Allocate(&new_span) || IFF_ChecksumSpan_Construct(new_span))
 	{
 		IFF_ChecksumSpan_Release(new_span);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	for (i = 0; i < algorithm_identifiers->buckets; ++i)
@@ -318,7 +323,7 @@ char IFF_WriteTap_StartSpan
 					IFF_ChecksumCalculator_Release(calc);
 					VPS_List_Node_Release(calc_node);
 					IFF_ChecksumSpan_Release(new_span);
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 			set_entry_node = set_entry_node->next;
@@ -328,16 +333,16 @@ char IFF_WriteTap_StartSpan
 	if (!VPS_List_Node_Allocate(&new_span_node))
 	{
 		IFF_ChecksumSpan_Release(new_span);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_List_Node_Construct(new_span_node, new_span);
 	VPS_List_AddHead(tap->active_spans, new_span_node);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WriteTap_EndSpan
+IFF_TYPE_RESULT IFF_WriteTap_EndSpan
 (
 	struct IFF_WriteTap *tap
 	, struct VPS_Dictionary **out_checksums
@@ -349,12 +354,12 @@ char IFF_WriteTap_EndSpan
 
 	if (!tap || !out_checksums)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_List_RemoveHead(tap->active_spans, &span_node))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	span = span_node->data;
@@ -363,7 +368,7 @@ char IFF_WriteTap_EndSpan
 	{
 		IFF_ChecksumSpan_Release(span);
 		VPS_List_Node_Release(span_node);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Construct
@@ -393,7 +398,7 @@ char IFF_WriteTap_EndSpan
 				VPS_Dictionary_Release(checksums);
 				IFF_ChecksumSpan_Release(span);
 				VPS_List_Node_Release(span_node);
-				return 0;
+				return IFF_FAIL;
 			}
 
 			if (!VPS_Dictionary_Add(checksums, (void *)calc->algorithm->identifier, calculated_data))
@@ -402,7 +407,7 @@ char IFF_WriteTap_EndSpan
 				VPS_Dictionary_Release(checksums);
 				IFF_ChecksumSpan_Release(span);
 				VPS_List_Node_Release(span_node);
-				return 0;
+				return IFF_FAIL;
 			}
 
 			calc_node = calc_node->next;
@@ -414,17 +419,17 @@ char IFF_WriteTap_EndSpan
 	IFF_ChecksumSpan_Release(span);
 	VPS_List_Node_Release(span_node);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_WriteTap_Flush
+IFF_TYPE_RESULT IFF_WriteTap_Flush
 (
 	struct IFF_WriteTap *tap
 )
 {
 	if (!tap)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	return IFF_WritePump_Flush(tap->pump);

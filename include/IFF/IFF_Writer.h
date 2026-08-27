@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 /**
  * @brief A stateful decorator that writes IFF primitives to a byte stream.
  * @details Inverse of IFF_Reader. Serializes tags, sizes, and data payloads
@@ -16,34 +18,34 @@ struct IFF_Writer
 	struct VPS_Dictionary *content_encoders;
 };
 
-char IFF_Writer_Allocate
+IFF_TYPE_RESULT IFF_Writer_Allocate
 (
 	struct IFF_Writer **item
 );
 
-char IFF_Writer_Construct
+IFF_TYPE_RESULT IFF_Writer_Construct
 (
 	struct IFF_Writer *item
 	, int file_handle
 );
 
-char IFF_Writer_ConstructToData
+IFF_TYPE_RESULT IFF_Writer_ConstructToData
 (
 	struct IFF_Writer *item
 );
 
-char IFF_Writer_GetOutputData
+IFF_TYPE_RESULT IFF_Writer_GetOutputData
 (
 	struct IFF_Writer *writer
 	, struct VPS_Data **out_data
 );
 
-char IFF_Writer_Deconstruct
+IFF_TYPE_RESULT IFF_Writer_Deconstruct
 (
 	struct IFF_Writer *item
 );
 
-char IFF_Writer_Release
+IFF_TYPE_RESULT IFF_Writer_Release
 (
 	struct IFF_Writer *item
 );
@@ -51,7 +53,7 @@ char IFF_Writer_Release
 /**
  * @brief Serializes and writes a tag to the output stream.
  */
-char IFF_Writer_WriteTag
+IFF_TYPE_RESULT IFF_Writer_WriteTag
 (
 	struct IFF_Writer *writer
 	, enum IFF_Header_TagSizing tag_sizing
@@ -61,7 +63,7 @@ char IFF_Writer_WriteTag
 /**
  * @brief Serializes and writes a size field to the output stream.
  */
-char IFF_Writer_WriteSize
+IFF_TYPE_RESULT IFF_Writer_WriteSize
 (
 	struct IFF_Writer *writer
 	, enum IFF_Header_Sizing sizing
@@ -72,7 +74,7 @@ char IFF_Writer_WriteSize
 /**
  * @brief Writes raw chunk payload data to the output stream.
  */
-char IFF_Writer_WriteData
+IFF_TYPE_RESULT IFF_Writer_WriteData
 (
 	struct IFF_Writer *writer
 	, enum IFF_Header_Encoding encoding
@@ -82,7 +84,7 @@ char IFF_Writer_WriteData
 /**
  * @brief Convenience: writes tag + size + data as a complete chunk.
  */
-char IFF_Writer_WriteChunk
+IFF_TYPE_RESULT IFF_Writer_WriteChunk
 (
 	struct IFF_Writer *writer
 	, const struct IFF_Header_Flags_Fields *config
@@ -93,14 +95,14 @@ char IFF_Writer_WriteChunk
 /**
  * @brief Emits 1 zero byte if data_size is odd and NO_PADDING is not set.
  */
-char IFF_Writer_WritePadding
+IFF_TYPE_RESULT IFF_Writer_WritePadding
 (
 	struct IFF_Writer *writer
 	, const struct IFF_Header_Flags_Fields *config
 	, VPS_TYPE_SIZE data_size
 );
 
-char IFF_Writer_Flush
+IFF_TYPE_RESULT IFF_Writer_Flush
 (
 	struct IFF_Writer *writer
 );

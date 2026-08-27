@@ -13,6 +13,19 @@ endif()
 # Define the 'VulpesIFF' library target.
 add_library(VulpesIFF STATIC)
 
+# --- Return-code refactor guard ---
+# VulpesIFF is migrating from the char/boolean return convention to
+# IFF_TYPE_RESULT, where 0 is success. During that migration a callback
+# registered with the wrong signature is the one class of mistake the tests
+# cannot catch, because an explicit cast silences the compiler and the
+# polarity only inverts at runtime. Promote those to hard errors.
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+	set(VULPESIFF_STRICT_FLAGS
+			-Werror=incompatible-pointer-types
+			-Werror=int-conversion
+	)
+endif()
+
 # Add the source files for this library.
 target_sources(VulpesIFF PRIVATE
 		src/main/c/IFF_Boundary.c
@@ -67,6 +80,8 @@ target_include_directories(VulpesIFF PUBLIC
 # Link this module to its dependencies.
 # Link this module to its dependencies.
 target_link_libraries(VulpesIFF PUBLIC VulpesCore)
+
+target_compile_options(VulpesIFF PRIVATE ${VULPESIFF_STRICT_FLAGS})
 
 # Add the test subdirectory to the build.
 add_subdirectory(src/test/c)

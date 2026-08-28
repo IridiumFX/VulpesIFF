@@ -74,18 +74,18 @@ static char test_decode_form_lifecycle(void)
 	if (!IFF_TestDecoders_CreateChunkDecoder(&chunk_dec)) goto cleanup;
 
 	// Create factory and register decoders.
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterChunkDecoder(factory, &chunk_key, chunk_dec)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterChunkDecoder(factory, &chunk_key, chunk_dec)) goto cleanup;
 
 	// Decoders are now owned by the factory dictionaries — don't double-release.
 	form_dec = 0;
 	chunk_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->final_entity != 0);
 
@@ -163,16 +163,16 @@ static char test_decode_chunk_decoder_lifecycle(void)
 	if (!IFF_TestDecoders_CreateFormDecoder(&form_dec)) goto cleanup;
 	if (!IFF_TestDecoders_CreateChunkDecoder(&chunk_dec)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterChunkDecoder(factory, &chunk_key, chunk_dec)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterChunkDecoder(factory, &chunk_key, chunk_dec)) goto cleanup;
 	form_dec = 0;
 	chunk_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->final_entity != 0);
 
@@ -252,14 +252,14 @@ static char test_decode_prop_pulling(void)
 
 	if (!IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
 	form_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->final_entity != 0);
 

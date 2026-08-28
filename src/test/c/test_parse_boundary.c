@@ -40,11 +40,11 @@ static char test_boundary_exact_match(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -96,11 +96,11 @@ static char test_boundary_overrun(void)
 	// but has consumed more bytes, misaligning the stream.
 	VPS_Endian_Write32UBE(image->bytes + 16, 4);
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(!IFF_Parser_Scan(parser));
+	TEST_ASSERT_FAIL(IFF_Parser_Scan(parser));
 
 	result = 1;
 
@@ -141,11 +141,11 @@ static char test_boundary_underrun(void)
 	TEST_ASSERT(image->limit == 30);
 	image->limit = 24;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(!IFF_Parser_Scan(parser));
+	TEST_ASSERT_FAIL(IFF_Parser_Scan(parser));
 
 	result = 1;
 
@@ -190,11 +190,11 @@ static char test_boundary_progressive_unbounded(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->iff85_locked == 0);
 
@@ -235,11 +235,11 @@ static char test_boundary_padding_counted(void)
 	// FORM(4) + size(4) + type(4) + TEST(4) + size(4) + data(5) + pad(1) = 26
 	TEST_ASSERT(image->limit == 26);
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -275,11 +275,11 @@ static char test_eof_after_single_form(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -319,11 +319,11 @@ static char test_eof_mid_chunk(void)
 	// Truncate to 26: cuts off 4 bytes of chunk data.
 	image->limit = 26;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(!IFF_Parser_Scan(parser));
+	TEST_ASSERT_FAIL(IFF_Parser_Scan(parser));
 
 	result = 1;
 
@@ -361,11 +361,11 @@ static char test_eof_mid_tag(void)
 	// Truncate to 2 bytes (partial FORM tag).
 	image->limit = 2;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(!IFF_Parser_Scan(parser));
+	TEST_ASSERT_FAIL(IFF_Parser_Scan(parser));
 
 	result = 1;
 

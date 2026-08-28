@@ -88,11 +88,11 @@ static char test_generate_progressive_roundtrip(void)
 	TEST_ASSERT(output->limit > 0);
 
 	// Feed to parser.
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->iff85_locked == 0);
 

@@ -13,7 +13,7 @@
 #include <IFF/IFF_Scope.h>
 #include <IFF/IFF_Chunk_Key.h>
 
-char IFF_Parser_Session_Allocate
+IFF_TYPE_RESULT IFF_Parser_Session_Allocate
 (
 	struct IFF_Parser_Session **item
 )
@@ -22,13 +22,13 @@ char IFF_Parser_Session_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	state = calloc(1, sizeof(struct IFF_Parser_Session));
 	if (!state)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_List_Allocate(&state->scope_stack))
@@ -43,16 +43,16 @@ char IFF_Parser_Session_Allocate
 
 	*item = state;
 
-	return 1;
+	return IFF_OK;
 
 failure:
 
 	IFF_Parser_Session_Release(state);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_Parser_Session_Construct
+IFF_TYPE_RESULT IFF_Parser_Session_Construct
 (
 	struct IFF_Parser_Session *item
 	, union IFF_Header_Flags flags
@@ -63,7 +63,7 @@ char IFF_Parser_Session_Construct
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_List_Construct(item->scope_stack, 0, 0, IFF_Scope_VPS_Release);
@@ -95,14 +95,14 @@ char IFF_Parser_Session_Construct
 	return IFF_Parser_Session_EnterScope(item, root_scope);
 }
 
-char IFF_Parser_Session_Deconstruct
+IFF_TYPE_RESULT IFF_Parser_Session_Deconstruct
 (
 	struct IFF_Parser_Session *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Deconstruct and release the final active scope.
@@ -113,10 +113,10 @@ char IFF_Parser_Session_Deconstruct
 	VPS_List_Deconstruct(item->scope_stack);
 	VPS_ScopedDictionary_Deconstruct(item->props);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Parser_Session_Release
+IFF_TYPE_RESULT IFF_Parser_Session_Release
 (
 	struct IFF_Parser_Session *item
 )
@@ -129,10 +129,10 @@ char IFF_Parser_Session_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Parser_Session_EnterScope
+IFF_TYPE_RESULT IFF_Parser_Session_EnterScope
 (
 	struct IFF_Parser_Session *item,
 	struct IFF_Scope* new_scope
@@ -140,7 +140,7 @@ char IFF_Parser_Session_EnterScope
 {
 	struct VPS_List_Node *node = 0;
 
-	if (!item || !new_scope) return 0;
+	if (!item || !new_scope) return IFF_FAIL;
 
 	// 1. Compute receiving_form_scope for the new scope.
 	//    If the current (parent) scope is a FORM, it becomes the receiver.
@@ -164,7 +164,7 @@ char IFF_Parser_Session_EnterScope
 	//    that can fail after the stack push, and it is cheap to undo.
 	if (!VPS_ScopedDictionary_EnterScope(item->props))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 3. If there is a current scope, push it onto the parent stack.
@@ -179,24 +179,24 @@ char IFF_Parser_Session_EnterScope
 		{
 			VPS_List_Node_Release(node);
 			VPS_ScopedDictionary_LeaveScope(item->props);
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
 	// 4. The new scope becomes the current active scope.
 	item->current_scope = new_scope;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Parser_Session_LeaveScope
+IFF_TYPE_RESULT IFF_Parser_Session_LeaveScope
 (
 	struct IFF_Parser_Session *item
 )
 {
 	struct VPS_List_Node *parent_node = 0;
 
-	if (!item) return 0;
+	if (!item) return IFF_FAIL;
 
 	// 1. The current scope is finished, release it.
 	IFF_Scope_Release(item->current_scope);
@@ -213,7 +213,7 @@ char IFF_Parser_Session_LeaveScope
 	// 3. Mirror the scope change in the properties dictionary.
 	VPS_ScopedDictionary_LeaveScope(item->props);
 
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_Parser_Session_FindProp
@@ -248,7 +248,7 @@ char IFF_Parser_Session_FindProp
     return VPS_ScopedDictionary_Find(item->props, &key, (void**)out_prop_data);
 }
 
-char IFF_Parser_Session_AddProp
+IFF_TYPE_RESULT IFF_Parser_Session_AddProp
 (
 	struct IFF_Parser_Session* item,
 	struct IFF_Tag* form_type,
@@ -259,9 +259,9 @@ char IFF_Parser_Session_AddProp
 	struct IFF_Chunk_Key* key = 0;
 	char existed;
 
-	if (!item || !form_type || !prop_tag || !prop_data) return 0;
+	if (!item || !form_type || !prop_tag || !prop_data) return IFF_FAIL;
 
-	if (IFF_Chunk_Key_Allocate(&key)) return 0;
+	if (IFF_Chunk_Key_Allocate(&key)) return IFF_FAIL;
 
 	// The key is a composite of the PROP's type and the property's own tag.
 	key->form = *form_type;
@@ -276,7 +276,7 @@ char IFF_Parser_Session_AddProp
 	if (!VPS_ScopedDictionary_Add(item->props, key, prop_data))
 	{
 		IFF_Chunk_Key_Release(key);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (existed)
@@ -284,7 +284,7 @@ char IFF_Parser_Session_AddProp
 		IFF_Chunk_Key_Release(key);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_Parser_Session_IsActive
@@ -330,7 +330,7 @@ char IFF_Parser_Session_IsBoundaryOpen
 	return boundary->level < boundary->limit;
 }
 
-char IFF_Parser_Session_SetState
+IFF_TYPE_RESULT IFF_Parser_Session_SetState
 (
 	struct IFF_Parser_Session *item
 	, enum IFF_Parser_SessionState new_state
@@ -338,10 +338,10 @@ char IFF_Parser_Session_SetState
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->session_state = new_state;
 
-	return 1;
+	return IFF_OK;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct VPS_Data;
 struct IFF_Tag;
 struct IFF_Chunk_Key;
@@ -16,41 +18,41 @@ struct IFF_Parser_Factory
 	struct VPS_Dictionary *directive_processors;
 };
 
-char IFF_Parser_Factory_Allocate
+IFF_TYPE_RESULT IFF_Parser_Factory_Allocate
 (
 	struct IFF_Parser_Factory **item
 );
 
-char IFF_Parser_Factory_Construct
+IFF_TYPE_RESULT IFF_Parser_Factory_Construct
 (
 	struct IFF_Parser_Factory *item
 );
 
-char IFF_Parser_Factory_Deconstruct
+IFF_TYPE_RESULT IFF_Parser_Factory_Deconstruct
 (
 	struct IFF_Parser_Factory *item
 );
 
-char IFF_Parser_Factory_Release
+IFF_TYPE_RESULT IFF_Parser_Factory_Release
 (
 	struct IFF_Parser_Factory *item
 );
 
-char IFF_Parser_Factory_RegisterFormDecoder
+IFF_TYPE_RESULT IFF_Parser_Factory_RegisterFormDecoder
 (
 	struct IFF_Parser_Factory *item,
 	const struct IFF_Tag* form_tag
 	, struct IFF_FormDecoder *decoder
 );
 
-char IFF_Parser_Factory_RegisterChunkDecoder
+IFF_TYPE_RESULT IFF_Parser_Factory_RegisterChunkDecoder
 (
 	struct IFF_Parser_Factory *item,
 	const struct IFF_Chunk_Key* chunk_key
 	, struct IFF_ChunkDecoder *decoder
 );
 
-char IFF_Parser_Factory_RegisterDirectiveProcessor
+IFF_TYPE_RESULT IFF_Parser_Factory_RegisterDirectiveProcessor
 (
 	struct IFF_Parser_Factory* item,
 	const struct IFF_Tag* directive_tag,
@@ -61,14 +63,14 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 	)
 );
 
-char IFF_Parser_Factory_Create
+IFF_TYPE_RESULT IFF_Parser_Factory_Create
 (
 	struct IFF_Parser_Factory *factory
 	, int file_handle
 	, struct IFF_Parser **out_parser
 );
 
-char IFF_Parser_Factory_CreateFromData
+IFF_TYPE_RESULT IFF_Parser_Factory_CreateFromData
 (
 	struct IFF_Parser_Factory *factory
 	, const struct VPS_Data *source

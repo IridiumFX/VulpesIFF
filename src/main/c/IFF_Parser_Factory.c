@@ -16,7 +16,7 @@
 #include <IFF/IFF_Parser.h>
 #include <IFF/IFF_Parser_Factory.h>
 
-char IFF_Parser_Factory_Allocate
+IFF_TYPE_RESULT IFF_Parser_Factory_Allocate
 (
 	struct IFF_Parser_Factory **item
 )
@@ -25,13 +25,13 @@ char IFF_Parser_Factory_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	subject = calloc(1, sizeof(struct IFF_Parser_Factory));
 	if (!subject)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_Dictionary_Allocate(&subject->form_decoders, 17))
@@ -51,23 +51,23 @@ char IFF_Parser_Factory_Allocate
 
 	*item = subject;
 
-	return 1;
+	return IFF_OK;
 
 failure:
 
 	IFF_Parser_Factory_Release(subject);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_Parser_Factory_Construct
+IFF_TYPE_RESULT IFF_Parser_Factory_Construct
 (
 	struct IFF_Parser_Factory *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Construct
@@ -109,14 +109,14 @@ char IFF_Parser_Factory_Construct
 	return IFF_Parser_Factory_RegisterDirectiveProcessor(item, &IFF_TAG_SYSTEM_IFF, IFF_Directive_IFF_Process);
 }
 
-char IFF_Parser_Factory_Deconstruct
+IFF_TYPE_RESULT IFF_Parser_Factory_Deconstruct
 (
 	struct IFF_Parser_Factory *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Deconstruct
@@ -132,10 +132,10 @@ char IFF_Parser_Factory_Deconstruct
 		item->directive_processors
 	);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Parser_Factory_Release
+IFF_TYPE_RESULT IFF_Parser_Factory_Release
 (
 	struct IFF_Parser_Factory *item
 )
@@ -157,10 +157,10 @@ char IFF_Parser_Factory_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Parser_Factory_RegisterFormDecoder
+IFF_TYPE_RESULT IFF_Parser_Factory_RegisterFormDecoder
 (
 	struct IFF_Parser_Factory *item,
 	const struct IFF_Tag* form_tag
@@ -173,13 +173,13 @@ char IFF_Parser_Factory_RegisterFormDecoder
 
 	if (!item || !item->form_decoders || !form_tag || !decoder)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Clone the provided key so the dictionary can own it.
 	if (IFF_Tag_Clone(form_tag, &key_clone))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Add consumes the clone only when it creates a new entry; on the
@@ -193,10 +193,15 @@ char IFF_Parser_Factory_RegisterFormDecoder
 		IFF_Tag_Release(key_clone);
 	}
 
-	return result;
+	if (!result)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Parser_Factory_RegisterChunkDecoder
+IFF_TYPE_RESULT IFF_Parser_Factory_RegisterChunkDecoder
 (
 	struct IFF_Parser_Factory *item,
 	const struct IFF_Chunk_Key* chunk_key
@@ -209,11 +214,11 @@ char IFF_Parser_Factory_RegisterChunkDecoder
 
 	if (!item || !item->chunk_decoders || !chunk_key || !decoder)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Clone the provided key so the dictionary can own it.
-	if (IFF_Chunk_Key_Allocate(&key_clone)) return 0;
+	if (IFF_Chunk_Key_Allocate(&key_clone)) return IFF_FAIL;
 	*key_clone = *chunk_key; // Safe by-value copy
 
 	// Add consumes the clone only when it creates a new entry (see
@@ -226,10 +231,15 @@ char IFF_Parser_Factory_RegisterChunkDecoder
 		IFF_Chunk_Key_Release(key_clone);
 	}
 
-	return result;
+	if (!result)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Parser_Factory_RegisterDirectiveProcessor
+IFF_TYPE_RESULT IFF_Parser_Factory_RegisterDirectiveProcessor
 (
 	struct IFF_Parser_Factory* item,
 	const struct IFF_Tag* directive_tag,
@@ -246,13 +256,13 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 
 	if (!item || !item->directive_processors || !directive_tag || !processor)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Clone the provided key so the dictionary can own it.
 	if (IFF_Tag_Clone(directive_tag, &key_clone))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Add consumes the clone only when it creates a new entry (see
@@ -265,10 +275,15 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 		IFF_Tag_Release(key_clone);
 	}
 
-	return result;
+	if (!result)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Parser_Factory_Create
+IFF_TYPE_RESULT IFF_Parser_Factory_Create
 (
 	struct IFF_Parser_Factory *factory,
 	int file_handle,
@@ -276,20 +291,20 @@ char IFF_Parser_Factory_Create
 )
 {
 	struct IFF_Parser *parser;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	if (!factory || !out_parser)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	result = IFF_Parser_Allocate
 	(
 		&parser
 	);
-	if (!result)
+	if (result)
 	{
-		return 0;
+		return result;
 	}
 
 	result = IFF_Parser_Construct
@@ -300,14 +315,14 @@ char IFF_Parser_Factory_Create
 		factory->directive_processors,
 		file_handle
 	);
-	if (!result)
+	if (result)
 	{
 		goto failure;
 	}
 
 	*out_parser = parser;
 
-	return 1;
+	return IFF_OK;
 
 failure:
 
@@ -315,10 +330,10 @@ failure:
 
 	*out_parser = 0;
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_Parser_Factory_CreateFromData
+IFF_TYPE_RESULT IFF_Parser_Factory_CreateFromData
 (
 	struct IFF_Parser_Factory *factory
 	, const struct VPS_Data *source
@@ -329,17 +344,17 @@ char IFF_Parser_Factory_CreateFromData
 
 	if (!factory || !source || !out_parser)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_Parser_Allocate(&parser))
+	if (IFF_Parser_Allocate(&parser))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if
 	(
-		!IFF_Parser_ConstructFromData
+		IFF_Parser_ConstructFromData
 		(
 			parser
 			, factory->form_decoders
@@ -351,10 +366,10 @@ char IFF_Parser_Factory_CreateFromData
 	{
 		IFF_Parser_Release(parser);
 		*out_parser = 0;
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_parser = parser;
 
-	return 1;
+	return IFF_OK;
 }

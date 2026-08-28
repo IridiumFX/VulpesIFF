@@ -35,12 +35,12 @@ struct IFF_Parser
 	char strict_references;
 };
 
-char IFF_Parser_Allocate
+IFF_TYPE_RESULT IFF_Parser_Allocate
 (
 	struct IFF_Parser **item
 );
 
-char IFF_Parser_Construct
+IFF_TYPE_RESULT IFF_Parser_Construct
 (
 	struct IFF_Parser *item
 	, struct VPS_Dictionary *form_decoders
@@ -49,7 +49,7 @@ char IFF_Parser_Construct
 	, int file_handle
 );
 
-char IFF_Parser_ConstructFromData
+IFF_TYPE_RESULT IFF_Parser_ConstructFromData
 (
 	struct IFF_Parser *item
 	, struct VPS_Dictionary *form_decoders
@@ -58,28 +58,28 @@ char IFF_Parser_ConstructFromData
 	, const struct VPS_Data *source
 );
 
-char IFF_Parser_Deconstruct
+IFF_TYPE_RESULT IFF_Parser_Deconstruct
 (
 	struct IFF_Parser *item
 );
 
-char IFF_Parser_Release
+IFF_TYPE_RESULT IFF_Parser_Release
 (
 	struct IFF_Parser *item
 );
 
-char IFF_Parser_ExecuteDirective
+IFF_TYPE_RESULT IFF_Parser_ExecuteDirective
 (
 	struct IFF_Parser *parser,
 	struct IFF_Chunk *directive_chunk
 );
 
-char IFF_Parser_Scan
+IFF_TYPE_RESULT IFF_Parser_Scan
 (
 	struct IFF_Parser *parser
 );
 
-char IFF_Parser_SetSegmentResolver
+IFF_TYPE_RESULT IFF_Parser_SetSegmentResolver
 (
 	struct IFF_Parser *parser,
 	IFF_SegmentResolverFn resolver,

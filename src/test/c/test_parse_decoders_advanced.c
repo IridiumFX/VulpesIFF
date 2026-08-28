@@ -59,14 +59,14 @@ static char test_chunk_decoder_no_registration(void)
 	// Only register FormDecoder, NO ChunkDecoder.
 	if (!IFF_TestDecoders_CreateFormDecoder(&form_dec)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
 	form_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->final_entity != 0);
 
@@ -138,16 +138,16 @@ static char test_chunk_decoder_in_prop(void)
 	if (!IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
 	if (!IFF_TestDecoders_CreateChunkDecoder(&chunk_dec)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterChunkDecoder(factory, &chunk_key, chunk_dec)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterChunkDecoder(factory, &chunk_key, chunk_dec)) goto cleanup;
 	form_dec = 0;
 	chunk_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->final_entity != 0);
 
@@ -230,14 +230,14 @@ static char test_form_decoder_nested(void)
 
 	if (!IFF_TestDecoders_CreateNestingAwareFormDecoder(&form_dec)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
 	form_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->final_entity != 0);
 
@@ -286,11 +286,11 @@ static char test_form_decoder_no_registration(void)
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	// No decoders registered at all.
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->final_entity == 0);
 
@@ -335,15 +335,15 @@ static char test_form_decoder_error_propagation(void)
 
 	if (!IFF_TestDecoders_CreateFailingFormDecoder(&form_dec)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec)) goto cleanup;
 	form_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
 	// begin_decode returns 0 → parse should fail.
-	TEST_ASSERT(!IFF_Parser_Scan(parser));
+	TEST_ASSERT_FAIL(IFF_Parser_Scan(parser));
 
 	result = 1;
 

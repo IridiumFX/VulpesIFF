@@ -50,14 +50,14 @@ struct SVX8_Result* VPS_SVX8_LoadFromFile(const char* filepath)
 	}
 
 	struct IFF_Parser* parser = NULL;
-	if (!IFF_Parser_Factory_CreateFromData(factory, data, &parser))
+	if (IFF_Parser_Factory_CreateFromData(factory, data, &parser))
 	{
 		IFF_Parser_Factory_Release(factory);
 		VPS_Data_Release(data);
 		return NULL;
 	}
 
-	if (!IFF_Parser_Scan(parser))
+	if (IFF_Parser_Scan(parser))
 	{
 		IFF_Parser_Release(parser);
 		IFF_Parser_Factory_Release(factory);

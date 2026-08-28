@@ -47,11 +47,11 @@ static char test_flags_64bit_8tag_progressive(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->iff85_locked == 0);
 
@@ -100,11 +100,11 @@ static char test_flags_16bit_le_no_padding(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -151,11 +151,11 @@ static char test_flags_64bit_16tag_le_unsigned_sharding(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -198,11 +198,11 @@ static char test_flags_all_defaults_explicit(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->iff85_locked == 0);
 

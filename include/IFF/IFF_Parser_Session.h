@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_Tag;
 struct IFF_ContextualData;
 union IFF_Header_Flags;
@@ -44,38 +46,43 @@ struct IFF_Parser_Session
 	void *user_data;
 };
 
-char IFF_Parser_Session_Allocate
+IFF_TYPE_RESULT IFF_Parser_Session_Allocate
 (
 	struct IFF_Parser_Session **item
 );
 
-char IFF_Parser_Session_Construct
+IFF_TYPE_RESULT IFF_Parser_Session_Construct
 (
 	struct IFF_Parser_Session *item
 	, union IFF_Header_Flags flags
 );
 
-char IFF_Parser_Session_Deconstruct
+IFF_TYPE_RESULT IFF_Parser_Session_Deconstruct
 (
 	struct IFF_Parser_Session *item
 );
 
-char IFF_Parser_Session_Release
+IFF_TYPE_RESULT IFF_Parser_Session_Release
 (
 	struct IFF_Parser_Session *item
 );
 
-char IFF_Parser_Session_EnterScope
+IFF_TYPE_RESULT IFF_Parser_Session_EnterScope
 (
 	struct IFF_Parser_Session *item,
 	struct IFF_Scope* new_scope
 );
 
-char IFF_Parser_Session_LeaveScope
+IFF_TYPE_RESULT IFF_Parser_Session_LeaveScope
 (
 	struct IFF_Parser_Session *item
 );
 
+/**
+ * @brief Predicate: is a property registered for this tag?
+ * @details A miss is a normal outcome, not a fault, so this reports found
+ *          (1) or not found (0) rather than a status.
+ */
 char IFF_Parser_Session_FindProp
 (
     struct IFF_Parser_Session *item
@@ -83,7 +90,7 @@ char IFF_Parser_Session_FindProp
     , struct IFF_ContextualData **out_prop_data
 );
 
-char IFF_Parser_Session_AddProp
+IFF_TYPE_RESULT IFF_Parser_Session_AddProp
 (
 	struct IFF_Parser_Session *item
 	, struct IFF_Tag* form_type
@@ -91,17 +98,26 @@ char IFF_Parser_Session_AddProp
 	, struct IFF_ContextualData *prop_data
 );
 
+/**
+ * @brief Predicate: is the session still consuming input?
+ * @details Answers a question rather than reporting a status, and is read
+ *          directly as a loop condition, so it keeps the boolean form.
+ */
 char IFF_Parser_Session_IsActive
 (
 	struct IFF_Parser_Session *item
 );
 
+/**
+ * @brief Predicate: does the current scope still have room?
+ * @details Loop condition, paired with IsActive. Boolean by design.
+ */
 char IFF_Parser_Session_IsBoundaryOpen
 (
 	struct IFF_Parser_Session *item
 );
 
-char IFF_Parser_Session_SetState
+IFF_TYPE_RESULT IFF_Parser_Session_SetState
 (
 	struct IFF_Parser_Session *item
 	, enum IFF_Parser_SessionState new_state

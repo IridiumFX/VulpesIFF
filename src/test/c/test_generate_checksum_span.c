@@ -181,13 +181,13 @@ static char test_gen_checksum_blobbed(void)
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 	TEST_ASSERT(output != 0);
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
 	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -256,13 +256,13 @@ static char test_gen_checksum_progressive(void)
 
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
 	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -332,13 +332,13 @@ static char test_gen_checksum_empty_span(void)
 
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
 	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;

@@ -97,11 +97,11 @@ static char test_file_blobbed_roundtrip(void)
 	read_handle = open(path, O_RDONLY | O_BINARY);
 	TEST_ASSERT(read_handle >= 0);
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Create(parse_factory, read_handle, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Create(parse_factory, read_handle, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -191,11 +191,11 @@ static char test_file_progressive_sharded_roundtrip(void)
 	read_handle = open(path, O_RDONLY | O_BINARY);
 	TEST_ASSERT(read_handle >= 0);
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Create(parse_factory, read_handle, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Create(parse_factory, read_handle, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;

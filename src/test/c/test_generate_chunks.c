@@ -71,11 +71,11 @@ static char test_gen_chunk_basic(void)
 
 	TEST_ASSERT(output->limit > 0);
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -127,11 +127,11 @@ static char test_gen_chunk_empty(void)
 
 	TEST_ASSERT(output->limit > 0);
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -182,11 +182,11 @@ static char test_gen_chunk_odd_padding(void)
 	// FORM(4) + size(4) + type(4) + chunk_tag(4) + chunk_size(4) + data(5) + pad(1) = 26
 	TEST_ASSERT(output->limit == 26);
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -241,11 +241,11 @@ static char test_gen_chunk_odd_no_padding(void)
 
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;

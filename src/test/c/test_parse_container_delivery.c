@@ -60,8 +60,8 @@ static char setup_factory
 		}
 	}
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) return 0;
-	if (!IFF_Parser_Factory_Construct(factory)) return 0;
+	if (IFF_Parser_Factory_Allocate(&factory)) return 0;
+	if (IFF_Parser_Factory_Construct(factory)) return 0;
 
 	IFF_Parser_Factory_RegisterFormDecoder(factory, &aaaa_tag, aaaa_dec);
 	IFF_Parser_Factory_RegisterFormDecoder(factory, &bbbb_tag, bbbb_dec);
@@ -108,9 +108,9 @@ static char test_cat_entity_delivery(void)
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->final_entity != 0);
 
 	fs = (struct ContainerAwareFormState *)parser->session->final_entity;
@@ -185,9 +185,9 @@ static char test_two_cats_group_boundaries(void)
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 1)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->final_entity != 0);
 
 	fs = (struct ContainerAwareFormState *)parser->session->final_entity;
@@ -264,9 +264,9 @@ static char test_consecutive_same_type_cats(void)
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->final_entity != 0);
 
 	fs = (struct ContainerAwareFormState *)parser->session->final_entity;
@@ -331,9 +331,9 @@ static char test_list_cat_nested_delivery(void)
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->final_entity != 0);
 
 	fs = (struct ContainerAwareFormState *)parser->session->final_entity;
@@ -404,14 +404,14 @@ static char test_root_cat_entity_delivery(void)
 
 	if (!IFF_TestDecoders_CreateFormDecoder(&bbbb_dec)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
 	IFF_Parser_Factory_RegisterFormDecoder(factory, &bbbb_tag, bbbb_dec);
 	bbbb_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	// Last entity wins at root level.
 	TEST_ASSERT(parser->session->final_entity != 0);
@@ -465,14 +465,14 @@ static char test_root_list_cat_entity_delivery(void)
 
 	if (!IFF_TestDecoders_CreateFormDecoder(&bbbb_dec)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
 	IFF_Parser_Factory_RegisterFormDecoder(factory, &bbbb_tag, bbbb_dec);
 	bbbb_dec = 0;
 
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->final_entity != 0);
 
@@ -520,9 +520,9 @@ static char test_direct_nested_form_regression(void)
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->final_entity != 0);
 
 	fs = (struct ContainerAwareFormState *)parser->session->final_entity;
@@ -579,9 +579,9 @@ static char test_list_entity_delivery(void)
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->final_entity != 0);
 
 	fs = (struct ContainerAwareFormState *)parser->session->final_entity;

@@ -28,13 +28,13 @@ struct ILBM_Result* VPS_ILBM_LoadFromData(const struct VPS_Data* data)
 	}
 
 	struct IFF_Parser* parser = NULL;
-	if (!IFF_Parser_Factory_CreateFromData(factory, data, &parser))
+	if (IFF_Parser_Factory_CreateFromData(factory, data, &parser))
 	{
 		IFF_Parser_Factory_Release(factory);
 		return NULL;
 	}
 
-	if (!IFF_Parser_Scan(parser))
+	if (IFF_Parser_Scan(parser))
 	{
 		fprintf(stderr, "ILBM: Parse failed\n");
 		IFF_Parser_Release(parser);

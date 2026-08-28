@@ -300,11 +300,11 @@ static char test_gen_prop_blobbed(void)
 	TEST_ASSERT(memcmp(actual->bytes, expected->bytes, actual->limit) == 0);
 
 	// Parse roundtrip.
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, actual, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, actual, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;

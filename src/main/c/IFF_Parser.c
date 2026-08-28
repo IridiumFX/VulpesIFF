@@ -35,57 +35,57 @@
 
 // Private protos
 // --------------
-static char PRIVATE_IFF_Parser_Parse_Container_CAT
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_CAT
 (
 	struct IFF_Parser *parser
 );
 
-static char PRIVATE_IFF_Parser_Parse_Container_LIST
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_LIST
 (
 	struct IFF_Parser *parser
 );
 
-static char PRIVATE_IFF_Parser_Parse_PROP
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_PROP
 (
 	struct IFF_Parser *parser
 );
 
-static char PRIVATE_IFF_Parser_Parse_Container_FORM
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_FORM
 (
 	struct IFF_Parser *parser
 );
 
-static char PRIVATE_IFF_Parser_Parse_Chunk
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Chunk
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
 );
 
-static char PRIVATE_IFF_Parser_Parse_Directive
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Directive
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
 	, char *out_scope_ended
 );
 
-static char PRIVATE_IFF_Parser_Parse_Container
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
 );
 
-static char PRIVATE_IFF_Parser_PushReaderAndSwitch
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_PushReaderAndSwitch
 (
 	struct IFF_Parser *parser
 	, int new_file_handle
 );
 
-static char PRIVATE_IFF_Parser_PopReaderAndRestore
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_PopReaderAndRestore
 (
 	struct IFF_Parser *parser
 );
 
-static char PRIVATE_IFF_Parser_HandleSegmentRef
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_HandleSegmentRef
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
@@ -94,7 +94,7 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 
 // --- Lifecycle ---
 
-char IFF_Parser_Allocate
+IFF_TYPE_RESULT IFF_Parser_Allocate
 (
 	struct IFF_Parser **item
 )
@@ -103,7 +103,7 @@ char IFF_Parser_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	parser = calloc
@@ -115,7 +115,7 @@ char IFF_Parser_Allocate
 	{
 		*item = 0;
 
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_Parser_Session_Allocate
@@ -147,7 +147,7 @@ char IFF_Parser_Allocate
 
 	*item = parser;
 
-	return 1;
+	return IFF_OK;
 
 cleanup:
 
@@ -158,10 +158,10 @@ cleanup:
 		parser
 	);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_Parser_Construct
+IFF_TYPE_RESULT IFF_Parser_Construct
 (
 	struct IFF_Parser *item
 	, struct VPS_Dictionary *form_decoders
@@ -170,11 +170,11 @@ char IFF_Parser_Construct
 	, int file_handle
 )
 {
-	char result;
+	IFF_TYPE_RESULT result;
 
 	if (!item || !form_decoders || !chunk_decoders || !directive_processors || !item->session)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->form_decoders = form_decoders;
@@ -187,19 +187,19 @@ char IFF_Parser_Construct
 		item->session,
 		IFF_HEADER_FLAGS_1985
 	);
-	if (!result)
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	result = (IFF_Reader_Construct
+	result = IFF_Reader_Construct
 	(
 		item->reader,
 		file_handle
-	) == IFF_OK);
-	if (!result)
+	);
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_List_Construct
@@ -214,10 +214,10 @@ char IFF_Parser_Construct
 	item->resolver_context = 0;
 	item->strict_references = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Parser_ConstructFromData
+IFF_TYPE_RESULT IFF_Parser_ConstructFromData
 (
 	struct IFF_Parser *item
 	, struct VPS_Dictionary *form_decoders
@@ -228,7 +228,7 @@ char IFF_Parser_ConstructFromData
 {
 	if (!item || !form_decoders || !chunk_decoders || !directive_processors || !item->session)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->form_decoders = form_decoders;
@@ -238,14 +238,14 @@ char IFF_Parser_ConstructFromData
 
 	if
 	(
-		!IFF_Parser_Session_Construct
+		IFF_Parser_Session_Construct
 		(
 			item->session,
 			IFF_HEADER_FLAGS_1985
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if
@@ -257,7 +257,7 @@ char IFF_Parser_ConstructFromData
 		)
 	)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_List_Construct
@@ -272,17 +272,17 @@ char IFF_Parser_ConstructFromData
 	item->resolver_context = 0;
 	item->strict_references = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Parser_Deconstruct
+IFF_TYPE_RESULT IFF_Parser_Deconstruct
 (
 	struct IFF_Parser *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Unwind the reader stack: pop all saved frames and restore the original
@@ -330,17 +330,17 @@ char IFF_Parser_Deconstruct
 	// NOTE: This is platform specific. Need a better abstraction
 	item->file_handle = -1;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Parser_Release
+IFF_TYPE_RESULT IFF_Parser_Release
 (
 	struct IFF_Parser *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_Parser_Deconstruct
@@ -368,7 +368,7 @@ char IFF_Parser_Release
 		item
 	);
 
-	return 1;
+	return IFF_OK;
 }
 
 
@@ -389,6 +389,11 @@ char IFF_Parser_Release
  *          root scope) always has room. Catching over-declared child sizes
  *          here keeps a malformed size from pulling sibling or parent bytes
  *          into the child's payload.
+ */
+/**
+ * @brief Predicate: does the boundary still have room for this chunk?
+ * @details Answers a question, not a status. Read as !HasRoom at every call
+ *          site; flipping it would silently disable boundary validation.
  */
 static char PRIVATE_IFF_Parser_BoundaryHasRoom
 (
@@ -419,7 +424,7 @@ static char PRIVATE_IFF_Parser_BoundaryHasRoom
 	return declared <= remaining - size_len;
 }
 
-static char PRIVATE_IFF_Parser_FlushLastDecoder
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_FlushLastDecoder
 (
 	struct IFF_Parser *parser
 )
@@ -432,7 +437,7 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 
 	if (!scope->last_chunk_decoder)
 	{
-		return 1;
+		return IFF_OK;
 	}
 
 	parser_state.session = session;
@@ -449,7 +454,7 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 		{
 			scope->last_chunk_decoder = 0;
 			scope->last_chunk_state = 0;
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
@@ -462,7 +467,7 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 		{
 			if
 			(
-				!IFF_Parser_Session_AddProp
+				IFF_Parser_Session_AddProp
 				(
 					session,
 					&scope->container_type,
@@ -474,7 +479,7 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 				IFF_ContextualData_Release(contextual_data);
 				scope->last_chunk_decoder = 0;
 				scope->last_chunk_state = 0;
-				return 0;
+				return IFF_FAIL;
 			}
 			contextual_data = 0;
 		}
@@ -494,7 +499,7 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 		{
 			scope->last_chunk_decoder = 0;
 			scope->last_chunk_state = 0;
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 	else if (contextual_data)
@@ -506,23 +511,24 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 	scope->last_chunk_decoder = 0;
 	scope->last_chunk_state = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
 
 // --- Directive Handling ---
 
-char IFF_Parser_ExecuteDirective
+IFF_TYPE_RESULT IFF_Parser_ExecuteDirective
 (
 	struct IFF_Parser *parser,
 	struct IFF_Chunk *directive_chunk
 )
 {
-	char result;
+	char found;
+	IFF_TYPE_RESULT result;
 
 	if (!parser || !directive_chunk)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Find the registered processor for this directive tag.
@@ -532,23 +538,23 @@ char IFF_Parser_ExecuteDirective
 		struct IFF_DirectiveResult *result
 	) = 0;
 
-	result = VPS_Dictionary_Find
+	found = VPS_Dictionary_Find
 	(
 		parser->directive_processors,
 		&directive_chunk->tag,
 		(void**)&processor
 	);
-	if (result)
+	if (found)
 	{
 		struct IFF_DirectiveResult directive_result;
 
 		// A registered processor that fails means the directive payload is
 		// malformed — fail the parse. (Unregistered directives are skipped
 		// below for forward compatibility.)
-		result = (processor(directive_chunk, &directive_result) == IFF_OK);
-		if (!result)
+		result = processor(directive_chunk, &directive_result);
+		if (result)
 		{
-			return 0;
+			return result;
 		}
 
 		{
@@ -573,7 +579,7 @@ char IFF_Parser_ExecuteDirective
 						if (IFF_Header_Flags_GetSizeLength(new_flags.as_fields.sizing)
 							> IFF_Header_Flags_GetSizeLength(parent_flags.as_fields.sizing))
 						{
-							return 0;
+							return IFF_FAIL;
 						}
 
 						// Guard 2: Blobbed-to-progressive — progressive mode
@@ -582,7 +588,7 @@ char IFF_Parser_ExecuteDirective
 						if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED
 							&& new_flags.as_fields.operating == IFF_Header_Operating_PROGRESSIVE)
 						{
-							return 0;
+							return IFF_FAIL;
 						}
 
 						// Guard 3: Tag widening — wider tags would misalign the
@@ -590,7 +596,7 @@ char IFF_Parser_ExecuteDirective
 						if (IFF_Header_Flags_GetTagLength(new_flags.as_fields.tag_sizing)
 							> IFF_Header_Flags_GetTagLength(parent_flags.as_fields.tag_sizing))
 						{
-							return 0;
+							return IFF_FAIL;
 						}
 					}
 
@@ -607,7 +613,7 @@ char IFF_Parser_ExecuteDirective
 
 				case IFF_ACTION_HALT:
 				{
-					return 0;
+					return IFF_FAIL;
 				}
 				break;
 
@@ -619,14 +625,14 @@ char IFF_Parser_ExecuteDirective
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
 /**
  * @brief Reads a directive chunk (size + data), updates the boundary, handles
  *        padding, and passes to ExecuteDirective for registered processors.
  */
-static char PRIVATE_IFF_Parser_ReadAndExecuteDirective
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_ReadAndExecuteDirective
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
@@ -635,18 +641,18 @@ static char PRIVATE_IFF_Parser_ReadAndExecuteDirective
 	struct IFF_Scope* scope = parser->session->current_scope;
 	union IFF_Header_Flags flags = scope->flags;
 	struct IFF_Chunk* chunk = 0;
-	char result;
+	IFF_TYPE_RESULT result;
 
-	result = (IFF_Reader_ReadChunk
+	result = IFF_Reader_ReadChunk
 	(
 		parser->reader,
 		&flags.as_fields,
 		&tag,
 		&chunk
-	) == IFF_OK);
-	if (!result)
+	);
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// The declared payload must fit the scope's remaining boundary.
@@ -658,7 +664,7 @@ static char PRIVATE_IFF_Parser_ReadAndExecuteDirective
 		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, size_len, chunk->size + padding))
 		{
 			IFF_Chunk_Release(chunk);
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
@@ -684,7 +690,7 @@ static char PRIVATE_IFF_Parser_ReadAndExecuteDirective
  * @brief Routes a directive tag to the appropriate handler.
  * @param out_scope_ended Set to 1 if ' END' was encountered. May be NULL.
  */
-static char PRIVATE_IFF_Parser_Parse_Directive
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Directive
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
@@ -695,7 +701,7 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 	union IFF_Header_Flags flags;
 	VPS_TYPE_16S ordering;
 	VPS_TYPE_SIZE end_size;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	scope = parser->session->current_scope;
 	flags = scope->flags;
@@ -717,7 +723,7 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 		}
 
 		// All other directives are invalid in IFF-85 mode.
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// --- ' END' ---
@@ -725,16 +731,16 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 	if (ordering == 0)
 	{
 		// Read the size field (must be 0).
-		result = (IFF_Reader_ReadSize
-	(
+		result = IFF_Reader_ReadSize
+		(
 			parser->reader,
 			flags.as_fields.sizing,
 			flags.as_fields.typing,
 			&end_size
-		) == IFF_OK);
-		if (!result || end_size != 0)
+		);
+		if (result || end_size != 0)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		scope->boundary.level += IFF_Header_Flags_GetSizeLength(flags.as_fields.sizing);
@@ -744,7 +750,7 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			*out_scope_ended = 1;
 		}
 
-		return 1;
+		return IFF_OK;
 	}
 
 	// --- ' CHK' (start checksum span) ---
@@ -753,16 +759,16 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 	{
 		struct IFF_Chunk* chunk = 0;
 
-		result = (IFF_Reader_ReadChunk
-	(
+		result = IFF_Reader_ReadChunk
+		(
 			parser->reader,
 			&flags.as_fields,
 			&tag,
 			&chunk
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// The declared payload must fit the scope's remaining boundary.
@@ -774,7 +780,7 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, chk_size_len, chunk->size + chk_padding))
 			{
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 
@@ -788,12 +794,12 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			scope->boundary.level += 1;
 		}
 
-		result = (IFF_Reader_StartChecksumSpan
-	(
+		result = IFF_Reader_StartChecksumSpan
+		(
 			parser->reader,
 			&flags.as_fields,
 			chunk->data
-		) == IFF_OK);
+		);
 
 		IFF_Chunk_Release(chunk);
 
@@ -817,21 +823,21 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			VPS_List_RemoveHead(parser->reader->tap->active_spans, &paused_span_node);
 		}
 
-		result = (IFF_Reader_ReadChunk
-	(
+		result = IFF_Reader_ReadChunk
+		(
 			parser->reader,
 			&flags.as_fields,
 			&tag,
 			&chunk
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
 			// Restore span before returning so cleanup can release it.
 			if (paused_span_node)
 			{
 				VPS_List_AddHead(parser->reader->tap->active_spans, paused_span_node);
 			}
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// The declared payload must fit the scope's remaining boundary.
@@ -847,7 +853,7 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 					VPS_List_AddHead(parser->reader->tap->active_spans, paused_span_node);
 				}
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 
@@ -868,12 +874,12 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			VPS_List_AddHead(parser->reader->tap->active_spans, paused_span_node);
 		}
 
-		result = (IFF_Reader_EndChecksumSpan
-	(
+		result = IFF_Reader_EndChecksumSpan
+		(
 			parser->reader,
 			&flags.as_fields,
 			chunk->data
-		) == IFF_OK);
+		);
 
 		IFF_Chunk_Release(chunk);
 
@@ -889,16 +895,16 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			// Shard mode: read the chunk and pass data to the pending decoder.
 			struct IFF_Chunk* chunk = 0;
 
-			result = (IFF_Reader_ReadChunk
-	(
+			result = IFF_Reader_ReadChunk
+			(
 				parser->reader,
 				&flags.as_fields,
 				&tag,
 				&chunk
-			) == IFF_OK);
-			if (!result)
+			);
+			if (result)
 			{
-				return 0;
+				return IFF_FAIL;
 			}
 
 			// The declared payload must fit the scope's remaining boundary.
@@ -910,7 +916,7 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 				if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, shard_size_len, chunk->size + shard_padding))
 				{
 					IFF_Chunk_Release(chunk);
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 
@@ -930,12 +936,12 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 				struct IFF_Parser_State parser_state;
 				parser_state.session = parser->session;
 
-				result = (scope->last_chunk_decoder->process_shard
+				result = scope->last_chunk_decoder->process_shard
 				(
 					&parser_state,
 					scope->last_chunk_state,
 					chunk->data
-				) == IFF_OK);
+				);
 
 				IFF_Chunk_Release(chunk);
 
@@ -945,7 +951,7 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 			// No active decoder — silently consume as filler.
 			IFF_Chunk_Release(chunk);
 
-			return 1;
+			return IFF_OK;
 		}
 
 		// Filler mode (SHARDING not set): read and skip.
@@ -975,7 +981,7 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 
 // --- Container Dispatcher ---
 
-static char PRIVATE_IFF_Parser_Parse_Container
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
@@ -1001,13 +1007,13 @@ static char PRIVATE_IFF_Parser_Parse_Container
 		return PRIVATE_IFF_Parser_Parse_Container_CAT(parser);
 	}
 
-	return 0;
+	return IFF_FAIL;
 }
 
 
 // --- FORM Container ---
 
-static char PRIVATE_IFF_Parser_Parse_Container_FORM
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_FORM
 (
 	struct IFF_Parser *parser
 )
@@ -1024,21 +1030,21 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 	struct IFF_FormDecoder* decoder = 0;
 	struct IFF_Parser_State parser_state;
 	void* final_entity = 0;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	// 1. If blobbed mode, read container size and update parent boundary.
 	if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		result = (IFF_Reader_ReadSize
-	(
+		result = IFF_Reader_ReadSize
+		(
 			parser->reader,
 			parent_flags.as_fields.sizing,
 			parent_flags.as_fields.typing,
 			&container_size
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// A blobbed container must at least hold its type tag; smaller
@@ -1047,28 +1053,28 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 		// stream).
 		if (container_size < tag_size)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// The declared container must fit the parent's remaining boundary.
 		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&parent_scope->boundary, size_len, container_size))
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		parent_scope->boundary.level += size_len + container_size;
 	}
 
 	// 2. Read the FORM's type tag.
-	result = (IFF_Reader_ReadTag
+	result = IFF_Reader_ReadTag
 	(
 		parser->reader,
 		parent_flags.as_fields.tag_sizing,
 		&form_type
-	) == IFF_OK);
-	if (!result)
+	);
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Type tags are content identifiers, not structural markers.
@@ -1081,7 +1087,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 		IFF_Tag_Compare(&form_type, &IFF_TAG_SYSTEM_WILDCARD, &type_ordering);
 		if (type_ordering == 0)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
@@ -1117,7 +1123,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 				IFF_Tag_Compare(&form_type, &parent_scope->container_type, &type_match);
 				if (type_match != 0)
 				{
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 		}
@@ -1130,7 +1136,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 
 	if (IFF_Scope_Allocate(&child_scope))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_Scope_Construct
@@ -1156,7 +1162,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 			if (decoder->begin_decode(&parser_state, &child_scope->form_state))
 			{
 				IFF_Parser_Session_LeaveScope(parser->session);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 	}
@@ -1165,13 +1171,13 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
 	{
-		result = (IFF_Reader_ReadTag
-	(
+		result = IFF_Reader_ReadTag
+		(
 			parser->reader,
 			parser->session->current_scope->flags.as_fields.tag_sizing,
 			&tag
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
 			break;
 		}
@@ -1191,7 +1197,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 					tag,
 					&scope_ended
 				);
-				if (!result)
+				if (result)
 				{
 					goto form_cleanup;
 				}
@@ -1205,7 +1211,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 			case IFF_TAG_TYPE_CONTAINER:
 			{
 				// Flush any pending shard decoder before nested container.
-				if (!PRIVATE_IFF_Parser_FlushLastDecoder(parser))
+				if (PRIVATE_IFF_Parser_FlushLastDecoder(parser))
 				{
 					goto form_cleanup;
 				}
@@ -1215,7 +1221,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 					parser,
 					tag
 				);
-				if (!result)
+				if (result)
 				{
 					goto form_cleanup;
 				}
@@ -1229,7 +1235,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 					parser,
 					tag
 				);
-				if (!result)
+				if (result)
 				{
 					goto form_cleanup;
 				}
@@ -1324,7 +1330,7 @@ form_done:
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 
 form_cleanup:
 
@@ -1348,13 +1354,13 @@ form_cleanup:
 		parser->session->final_entity = final_entity;
 	}
 
-	return 0;
+	return IFF_FAIL;
 }
 
 
 // --- PROP Container ---
 
-static char PRIVATE_IFF_Parser_Parse_PROP
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_PROP
 (
 	struct IFF_Parser *parser
 )
@@ -1368,48 +1374,48 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 	struct IFF_Tag tag;
 	struct IFF_Scope* child_scope = 0;
 	struct IFF_Boundary child_boundary;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	// 1. If blobbed mode, read container size and update parent boundary.
 	if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		result = (IFF_Reader_ReadSize
-	(
+		result = IFF_Reader_ReadSize
+		(
 			parser->reader,
 			parent_flags.as_fields.sizing,
 			parent_flags.as_fields.typing,
 			&container_size
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// A blobbed container must at least hold its type tag (0 would alias
 		// the unbounded sentinel) and must fit the parent's boundary.
 		if (container_size < tag_size)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&parent_scope->boundary, size_len, container_size))
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		parent_scope->boundary.level += size_len + container_size;
 	}
 
 	// 2. Read PROP type tag.
-	result = (IFF_Reader_ReadTag
+	result = IFF_Reader_ReadTag
 	(
 		parser->reader,
 		parent_flags.as_fields.tag_sizing,
 		&prop_type
-	) == IFF_OK);
-	if (!result)
+	);
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Type tags are content identifiers; force classification to TAG.
@@ -1422,7 +1428,7 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 
 	if (IFF_Scope_Allocate(&child_scope))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_Scope_Construct
@@ -1445,13 +1451,13 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
 	{
-		result = (IFF_Reader_ReadTag
-	(
+		result = IFF_Reader_ReadTag
+		(
 			parser->reader,
 			parser->session->current_scope->flags.as_fields.tag_sizing,
 			&tag
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
 			break;
 		}
@@ -1471,12 +1477,12 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 					tag,
 					&scope_ended
 				);
-				if (!result)
+				if (result)
 				{
 					PRIVATE_IFF_Parser_FlushLastDecoder(parser);
 					VPS_ScopedDictionary_EnterScope(parser->session->props);
 					IFF_Parser_Session_LeaveScope(parser->session);
-					return 0;
+					return IFF_FAIL;
 				}
 				if (scope_ended)
 				{
@@ -1492,12 +1498,12 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 					parser,
 					tag
 				);
-				if (!result)
+				if (result)
 				{
 					PRIVATE_IFF_Parser_FlushLastDecoder(parser);
 					VPS_ScopedDictionary_EnterScope(parser->session->props);
 					IFF_Parser_Session_LeaveScope(parser->session);
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 			break;
@@ -1508,7 +1514,7 @@ static char PRIVATE_IFF_Parser_Parse_PROP
 				PRIVATE_IFF_Parser_FlushLastDecoder(parser);
 				VPS_ScopedDictionary_EnterScope(parser->session->props);
 				IFF_Parser_Session_LeaveScope(parser->session);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 	}
@@ -1522,7 +1528,7 @@ prop_done:
 		PRIVATE_IFF_Parser_FlushLastDecoder(parser);
 		VPS_ScopedDictionary_EnterScope(parser->session->props);
 		IFF_Parser_Session_LeaveScope(parser->session);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Flush any pending shard decoder before leaving PROP scope.
@@ -1533,13 +1539,13 @@ prop_done:
 	VPS_ScopedDictionary_EnterScope(parser->session->props);
 	IFF_Parser_Session_LeaveScope(parser->session);
 
-	return 1;
+	return IFF_OK;
 }
 
 
 // --- LIST Container ---
 
-static char PRIVATE_IFF_Parser_Parse_Container_LIST
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_LIST
 (
 	struct IFF_Parser *parser
 )
@@ -1553,48 +1559,48 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 	struct IFF_Tag tag;
 	struct IFF_Scope* child_scope = 0;
 	struct IFF_Boundary child_boundary;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	// 1. If blobbed mode, read container size and update parent boundary.
 	if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		result = (IFF_Reader_ReadSize
-	(
+		result = IFF_Reader_ReadSize
+		(
 			parser->reader,
 			parent_flags.as_fields.sizing,
 			parent_flags.as_fields.typing,
 			&container_size
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// A blobbed container must at least hold its type tag (0 would alias
 		// the unbounded sentinel) and must fit the parent's boundary.
 		if (container_size < tag_size)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&parent_scope->boundary, size_len, container_size))
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		parent_scope->boundary.level += size_len + container_size;
 	}
 
 	// 2. Read LIST type tag.
-	result = (IFF_Reader_ReadTag
+	result = IFF_Reader_ReadTag
 	(
 		parser->reader,
 		parent_flags.as_fields.tag_sizing,
 		&list_type
-	) == IFF_OK);
-	if (!result)
+	);
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Type tags are content identifiers; force classification to TAG.
@@ -1607,7 +1613,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 
 	if (IFF_Scope_Allocate(&child_scope))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_Scope_Construct
@@ -1638,7 +1644,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 		))
 		{
 			IFF_Parser_Session_LeaveScope(parser->session);
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
@@ -1646,13 +1652,13 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
 	{
-		result = (IFF_Reader_ReadTag
-	(
+		result = IFF_Reader_ReadTag
+		(
 			parser->reader,
 			parser->session->current_scope->flags.as_fields.tag_sizing,
 			&tag
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
 			break;
 		}
@@ -1672,10 +1678,10 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 					tag,
 					&scope_ended
 				);
-				if (!result)
+				if (result)
 				{
 					IFF_Parser_Session_LeaveScope(parser->session);
-					return 0;
+					return IFF_FAIL;
 				}
 				if (scope_ended)
 				{
@@ -1691,10 +1697,10 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 					parser,
 					tag
 				);
-				if (!result)
+				if (result)
 				{
 					IFF_Parser_Session_LeaveScope(parser->session);
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 			break;
@@ -1705,10 +1711,10 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 				(
 					parser
 				);
-				if (!result)
+				if (result)
 				{
 					IFF_Parser_Session_LeaveScope(parser->session);
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 			break;
@@ -1718,7 +1724,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 			default:
 			{
 				IFF_Parser_Session_LeaveScope(parser->session);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 	}
@@ -1730,7 +1736,7 @@ list_done:
 		&& child_scope->boundary.level != child_scope->boundary.limit)
 	{
 		IFF_Parser_Session_LeaveScope(parser->session);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 5. Notify the receiving FORM's decoder that the LIST container is closing.
@@ -1752,13 +1758,13 @@ list_done:
 
 	IFF_Parser_Session_LeaveScope(parser->session);
 
-	return 1;
+	return IFF_OK;
 }
 
 
 // --- CAT Container ---
 
-static char PRIVATE_IFF_Parser_Parse_Container_CAT
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_CAT
 (
 	struct IFF_Parser *parser
 )
@@ -1772,48 +1778,48 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 	struct IFF_Tag tag;
 	struct IFF_Scope* child_scope = 0;
 	struct IFF_Boundary child_boundary;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	// 1. If blobbed mode, read container size and update parent boundary.
 	if (parent_flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		result = (IFF_Reader_ReadSize
-	(
+		result = IFF_Reader_ReadSize
+		(
 			parser->reader,
 			parent_flags.as_fields.sizing,
 			parent_flags.as_fields.typing,
 			&container_size
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// A blobbed container must at least hold its type tag (0 would alias
 		// the unbounded sentinel) and must fit the parent's boundary.
 		if (container_size < tag_size)
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&parent_scope->boundary, size_len, container_size))
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 
 		parent_scope->boundary.level += size_len + container_size;
 	}
 
 	// 2. Read CAT type tag.
-	result = (IFF_Reader_ReadTag
+	result = IFF_Reader_ReadTag
 	(
 		parser->reader,
 		parent_flags.as_fields.tag_sizing,
 		&cat_type
-	) == IFF_OK);
-	if (!result)
+	);
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Type tags are content identifiers; force classification to TAG.
@@ -1826,7 +1832,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 
 	if (IFF_Scope_Allocate(&child_scope))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_Scope_Construct
@@ -1857,7 +1863,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 		))
 		{
 			IFF_Parser_Session_LeaveScope(parser->session);
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
@@ -1865,13 +1871,13 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 	while (IFF_Parser_Session_IsActive(parser->session)
 		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
 	{
-		result = (IFF_Reader_ReadTag
-	(
+		result = IFF_Reader_ReadTag
+		(
 			parser->reader,
 			parser->session->current_scope->flags.as_fields.tag_sizing,
 			&tag
-		) == IFF_OK);
-		if (!result)
+		);
+		if (result)
 		{
 			break;
 		}
@@ -1891,10 +1897,10 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 					tag,
 					&scope_ended
 				);
-				if (!result)
+				if (result)
 				{
 					IFF_Parser_Session_LeaveScope(parser->session);
-					return 0;
+					return IFF_FAIL;
 				}
 				if (scope_ended)
 				{
@@ -1910,10 +1916,10 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 					parser,
 					tag
 				);
-				if (!result)
+				if (result)
 				{
 					IFF_Parser_Session_LeaveScope(parser->session);
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 			break;
@@ -1923,7 +1929,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 			default:
 			{
 				IFF_Parser_Session_LeaveScope(parser->session);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 	}
@@ -1935,7 +1941,7 @@ cat_done:
 		&& child_scope->boundary.level != child_scope->boundary.limit)
 	{
 		IFF_Parser_Session_LeaveScope(parser->session);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 5. Notify the receiving FORM's decoder that the CAT container is closing.
@@ -1957,13 +1963,13 @@ cat_done:
 
 	IFF_Parser_Session_LeaveScope(parser->session);
 
-	return 1;
+	return IFF_OK;
 }
 
 
 // --- Data Chunk Parsing ---
 
-static char PRIVATE_IFF_Parser_Parse_Chunk
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Chunk
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
@@ -1978,19 +1984,19 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 	struct IFF_Chunk_Key lookup_key;
 	struct IFF_Parser_State parser_state;
 	VPS_TYPE_16S variant_ordering;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	// 1. Read the chunk (size + data).
-	result = (IFF_Reader_ReadChunk
+	result = IFF_Reader_ReadChunk
 	(
 		parser->reader,
 		&flags.as_fields,
 		&tag,
 		&chunk
-	) == IFF_OK);
-	if (!result)
+	);
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// 2. The declared payload must fit the scope's remaining boundary.
@@ -2002,7 +2008,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		if (!PRIVATE_IFF_Parser_BoundaryHasRoom(&scope->boundary, chunk_size_len, chunk->size + chunk_padding))
 		{
 			IFF_Chunk_Release(chunk);
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 
@@ -2032,10 +2038,10 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		{
 			// Deferred lifecycle: flush any pending decoder, then begin a new
 			// one and store it for future shard continuation.
-			if (!PRIVATE_IFF_Parser_FlushLastDecoder(parser))
+			if (PRIVATE_IFF_Parser_FlushLastDecoder(parser))
 			{
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 
 			if (decoder->begin_decode)
@@ -2043,7 +2049,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 				if (decoder->begin_decode(&parser_state, &custom_state))
 				{
 					IFF_Chunk_Release(chunk);
-					return 0;
+					return IFF_FAIL;
 				}
 			}
 
@@ -2057,7 +2063,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 					IFF_ContextualData_Release(discarded);
 				}
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 
 			// Store decoder for shard continuation — end_decode is deferred.
@@ -2067,7 +2073,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 
 			IFF_Chunk_Release(chunk);
 
-			return 1;
+			return IFF_OK;
 		}
 
 		// Immediate lifecycle (SHARDING not set).
@@ -2076,7 +2082,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 			if (decoder->begin_decode(&parser_state, &custom_state))
 			{
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 
@@ -2090,7 +2096,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 				IFF_ContextualData_Release(discarded);
 			}
 			IFF_Chunk_Release(chunk);
-			return 0;
+			return IFF_FAIL;
 		}
 
 		if (decoder->end_decode)
@@ -2099,7 +2105,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 			{
 				IFF_ContextualData_Release(contextual_data);
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 	}
@@ -2109,10 +2115,10 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		// chunk terminates the shard sequence).
 		if (flags.as_fields.structuring & IFF_Header_Flag_Structuring_SHARDING)
 		{
-			if (!PRIVATE_IFF_Parser_FlushLastDecoder(parser))
+			if (PRIVATE_IFF_Parser_FlushLastDecoder(parser))
 			{
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 
@@ -2120,7 +2126,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		if (IFF_ContextualData_Allocate(&contextual_data))
 		{
 			IFF_Chunk_Release(chunk);
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// Clone the data so contextual_data owns its own copy.
@@ -2131,7 +2137,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 			{
 				IFF_ContextualData_Release(contextual_data);
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 
@@ -2148,7 +2154,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		{
 			if
 			(
-				!IFF_Parser_Session_AddProp
+				IFF_Parser_Session_AddProp
 				(
 					session,
 					&scope->container_type,
@@ -2159,7 +2165,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 			{
 				IFF_ContextualData_Release(contextual_data);
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 			contextual_data = 0; // Dictionary takes ownership.
 		}
@@ -2167,19 +2173,19 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 	else if (scope->form_decoder && scope->form_decoder->process_chunk && contextual_data)
 	{
 		// We are inside a FORM with a decoder — pass the chunk to it.
-		result = (scope->form_decoder->process_chunk
+		result = scope->form_decoder->process_chunk
 		(
 			&parser_state,
 			scope->form_state,
 			&tag,
 			contextual_data
-		) == IFF_OK);
+		);
 		contextual_data = 0; // Form decoder takes ownership.
 
-		if (!result)
+		if (result)
 		{
 			IFF_Chunk_Release(chunk);
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 	else if (contextual_data)
@@ -2191,13 +2197,13 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 
 	IFF_Chunk_Release(chunk);
 
-	return 1;
+	return IFF_OK;
 }
 
 
 // --- Segment Switch ---
 
-static char PRIVATE_IFF_Parser_PushReaderAndSwitch
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_PushReaderAndSwitch
 (
 	struct IFF_Parser *parser
 	, int new_file_handle
@@ -2214,14 +2220,14 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 	if (parser->reader_stack->count >= 16)
 	{
 		close(new_file_handle);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Save current state into a frame.
 	if (IFF_ReaderFrame_Allocate(&frame))
 	{
 		close(new_file_handle);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_ReaderFrame_Construct
@@ -2237,7 +2243,7 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 	{
 		IFF_ReaderFrame_Release(frame);
 		close(new_file_handle);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_List_Node_Construct(node, frame);
@@ -2301,7 +2307,7 @@ static char PRIVATE_IFF_Parser_PushReaderAndSwitch
 
 	IFF_Parser_Session_SetState(session, IFF_Parser_SessionState_SegmentSwitch);
 
-	return 1;
+	return IFF_OK;
 
 rollback:
 
@@ -2327,10 +2333,10 @@ rollback:
 
 	close(new_file_handle);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-static char PRIVATE_IFF_Parser_PopReaderAndRestore
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_PopReaderAndRestore
 (
 	struct IFF_Parser *parser
 )
@@ -2341,7 +2347,7 @@ static char PRIVATE_IFF_Parser_PopReaderAndRestore
 
 	if (!VPS_List_RemoveHead(parser->reader_stack, &node))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	frame = node->data;
@@ -2366,10 +2372,10 @@ static char PRIVATE_IFF_Parser_PopReaderAndRestore
 
 	session->parsing_resumed = 1;
 
-	return 1;
+	return IFF_OK;
 }
 
-static char PRIVATE_IFF_Parser_HandleSegmentRef
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_HandleSegmentRef
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
@@ -2382,19 +2388,19 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 	VPS_TYPE_SIZE num_options = 0;
 	VPS_TYPE_SIZE i;
 	char has_optional = 0;
-	char result;
+	IFF_TYPE_RESULT result;
 
 	// Read the directive chunk.
-	result = (IFF_Reader_ReadChunk
+	result = IFF_Reader_ReadChunk
 	(
 		parser->reader,
 		&flags.as_fields,
 		&tag,
 		&chunk
-	) == IFF_OK);
-	if (!result)
+	);
+	if (result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Track boundary: size field + data payload.
@@ -2447,26 +2453,26 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 			if (has_mandatory)
 			{
 				IFF_Chunk_Release(chunk);
-				return 0;
+				return IFF_FAIL;
 			}
 		}
 
 		IFF_Chunk_Release(chunk);
-		return 1;
+		return IFF_OK;
 	}
 
 	// Wrap chunk data in a DataReader.
 	if (!VPS_DataReader_Allocate(&dr))
 	{
 		IFF_Chunk_Release(chunk);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_DataReader_Construct(dr, chunk->data))
 	{
 		VPS_DataReader_Release(dr);
 		IFF_Chunk_Release(chunk);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Read num_options.
@@ -2474,7 +2480,7 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 	{
 		VPS_DataReader_Release(dr);
 		IFF_Chunk_Release(chunk);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Iterate options.
@@ -2488,7 +2494,7 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 		{
 			VPS_DataReader_Release(dr);
 			IFF_Chunk_Release(chunk);
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// id_size == 0 means optional (skip if unresolved).
@@ -2503,7 +2509,7 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 		{
 			VPS_DataReader_Release(dr);
 			IFF_Chunk_Release(chunk);
-			return 0;
+			return IFF_FAIL;
 		}
 
 		if (!VPS_DataReader_ReadBytes(dr, id_data->bytes, id_size))
@@ -2511,7 +2517,7 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 			VPS_Data_Release(id_data);
 			VPS_DataReader_Release(dr);
 			IFF_Chunk_Release(chunk);
-			return 0;
+			return IFF_FAIL;
 		}
 
 		// Try to resolve this identifier. The resolver is on the IFF
@@ -2536,17 +2542,17 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 	if (has_optional)
 	{
 		// Optional reference — skip silently.
-		return 1;
+		return IFF_OK;
 	}
 
 	// Mandatory reference could not be resolved.
-	return 0;
+	return IFF_FAIL;
 }
 
 
 // --- Segment Parsing ---
 
-static char PRIVATE_IFF_Parser_Parse_Segment
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Segment
 (
 	struct IFF_Parser *parser
 )
@@ -2554,7 +2560,7 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 	struct IFF_Parser_Session* session;
 	struct IFF_Tag tag;
 	union IFF_Header_Flags* current_flags;
-	char result;
+	IFF_TYPE_RESULT result;
 	char first_tag = 1;
 
 	session = parser->session;
@@ -2571,14 +2577,14 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 
 		current_flags = &session->current_scope->flags;
 
-		result = (IFF_Reader_ReadTag
-	(
+		result = IFF_Reader_ReadTag
+		(
 			parser->reader,
 			current_flags->as_fields.tag_sizing,
 			&tag
-		) == IFF_OK);
+		);
 
-		if (!result)
+		if (result)
 		{
 			if (IFF_Reader_IsActive(parser->reader))
 			{
@@ -2590,12 +2596,12 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 			{
 				PRIVATE_IFF_Parser_PopReaderAndRestore(parser);
 				IFF_Parser_Session_SetState(session, IFF_Parser_SessionState_SegmentSwitch);
-				return 1;
+				return IFF_OK;
 			}
 
 			IFF_Parser_Session_SetState(session, IFF_Parser_SessionState_Complete);
 
-			return 1;
+			return IFF_OK;
 		}
 
 		// Bootstrap: if the first tag is a container (not an ' IFF' directive),
@@ -2624,13 +2630,13 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 				if (ref_ordering == 0)
 				{
 					result = PRIVATE_IFF_Parser_HandleSegmentRef(parser, tag);
-					if (!result)
+					if (result)
 					{
 						goto failure;
 					}
 					if (session->session_state == IFF_Parser_SessionState_SegmentSwitch)
 					{
-						return 1;
+						return IFF_OK;
 					}
 					break;
 				}
@@ -2645,7 +2651,7 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 						&scope_ended
 					);
 
-					if (!result)
+					if (result)
 					{
 						goto failure;
 					}
@@ -2655,7 +2661,7 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 					{
 						PRIVATE_IFF_Parser_PopReaderAndRestore(parser);
 						IFF_Parser_Session_SetState(session, IFF_Parser_SessionState_SegmentSwitch);
-						return 1;
+						return IFF_OK;
 					}
 				}
 			}
@@ -2669,7 +2675,7 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 					tag
 				);
 
-				if (!result)
+				if (result)
 				{
 					goto failure;
 				}
@@ -2683,18 +2689,18 @@ static char PRIVATE_IFF_Parser_Parse_Segment
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 
 failure:
 	IFF_Parser_Session_SetState(session, IFF_Parser_SessionState_Failed);
 
-	return 0;
+	return IFF_FAIL;
 }
 
 
 // --- Public Entry Point ---
 
-char IFF_Parser_Scan
+IFF_TYPE_RESULT IFF_Parser_Scan
 (
 	struct IFF_Parser *parser
 )
@@ -2703,7 +2709,7 @@ char IFF_Parser_Scan
 
 	if (!parser || !parser->session || !parser->reader)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	session = parser->session;
@@ -2719,10 +2725,15 @@ char IFF_Parser_Scan
 		PRIVATE_IFF_Parser_Parse_Segment(parser);
 	}
 
-	return session->session_state == IFF_Parser_SessionState_Complete;
+	if (session->session_state != IFF_Parser_SessionState_Complete)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Parser_SetSegmentResolver
+IFF_TYPE_RESULT IFF_Parser_SetSegmentResolver
 (
 	struct IFF_Parser *parser,
 	IFF_SegmentResolverFn resolver,
@@ -2731,11 +2742,11 @@ char IFF_Parser_SetSegmentResolver
 {
 	if (!parser)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	parser->segment_resolver = resolver;
 	parser->resolver_context = context;
 
-	return 1;
+	return IFF_OK;
 }

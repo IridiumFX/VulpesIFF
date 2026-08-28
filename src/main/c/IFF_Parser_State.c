@@ -26,7 +26,7 @@ char IFF_Parser_State_FindProp
 	);
 }
 
-char IFF_Parser_State_GetUserData
+IFF_TYPE_RESULT IFF_Parser_State_GetUserData
 (
 	struct IFF_Parser_State *state
 	, void **out_user_data
@@ -34,10 +34,10 @@ char IFF_Parser_State_GetUserData
 {
 	if (!state || !state->session || !out_user_data)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_user_data = state->session->user_data;
 
-	return 1;
+	return IFF_OK;
 }

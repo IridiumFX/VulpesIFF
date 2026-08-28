@@ -55,11 +55,11 @@ static char test_gen_header_at_root(void)
 	TEST_ASSERT(output->limit > 0);
 
 	// Verify the output is parseable and uses IFF-2025 mode.
-	if (!IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(parse_factory, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->iff85_locked == 0);
 
 	result = 1;

@@ -45,11 +45,11 @@ static char test_version_zero_locks_85(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 	TEST_ASSERT(parser->session->iff85_locked == 1);
 
@@ -92,12 +92,12 @@ static char test_unknown_version_fails(void)
 
 	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(factory)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
 
 	// Parse should fail due to unrecognized version.
-	TEST_ASSERT(!IFF_Parser_Scan(parser));
+	TEST_ASSERT_FAIL(IFF_Parser_Scan(parser));
 
 	result = 1;
 
@@ -153,7 +153,7 @@ static char test_unknown_flag_values_fail(void)
 		struct IFF_Parser_Factory *factory = 0;
 		struct IFF_Parser *parser = 0;
 		struct VPS_Data *image = 0;
-		char scan_result = 1;
+		IFF_TYPE_RESULT scan_result = IFF_FAIL;
 
 		unsigned char body_data[4] = {0};
 
@@ -169,9 +169,9 @@ static char test_unknown_flag_values_fail(void)
 			|| !IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)
 			|| !IFF_TestBuilder_EndContainer(builder)
 			|| !IFF_TestBuilder_GetResult(builder, &image)
-			|| !IFF_Parser_Factory_Allocate(&factory)
-			|| !IFF_Parser_Factory_Construct(factory)
-			|| !IFF_Parser_Factory_CreateFromData(factory, image, &parser))
+			|| IFF_Parser_Factory_Allocate(&factory)
+			|| IFF_Parser_Factory_Construct(factory)
+			|| IFF_Parser_Factory_CreateFromData(factory, image, &parser))
 		{
 			IFF_Parser_Release(parser);
 			IFF_Parser_Factory_Release(factory);
@@ -185,7 +185,7 @@ static char test_unknown_flag_values_fail(void)
 		IFF_Parser_Factory_Release(factory);
 		IFF_TestBuilder_Release(builder);
 
-		if (scan_result)
+		if (!scan_result)
 		{
 			printf("    [variant '%s' was accepted]\n", variants[i].label);
 			return 0;

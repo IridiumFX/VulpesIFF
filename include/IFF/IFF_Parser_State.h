@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_Parser_Session;
 struct IFF_Tag;
 struct IFF_ContextualData;
@@ -35,7 +37,7 @@ char IFF_Parser_State_FindProp
  *          sink without global state. out_user_data receives NULL when no
  *          context was attached.
  */
-char IFF_Parser_State_GetUserData
+IFF_TYPE_RESULT IFF_Parser_State_GetUserData
 (
 	struct IFF_Parser_State *state
 	, void **out_user_data

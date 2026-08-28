@@ -99,11 +99,11 @@ static char test_roundtrip_nested_containers(void)
 
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -168,11 +168,11 @@ static char test_roundtrip_all_container_types(void)
 	if (!IFF_Generator_Flush(gen)) goto cleanup;
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -226,12 +226,12 @@ static char test_roundtrip_checksum(void)
 
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -279,11 +279,11 @@ static char test_roundtrip_16bit_le(void)
 	if (!IFF_Generator_Flush(gen)) goto cleanup;
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -329,11 +329,11 @@ static char test_roundtrip_64bit_8tag(void)
 	if (!IFF_Generator_Flush(gen)) goto cleanup;
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -378,11 +378,11 @@ static char test_roundtrip_no_padding_odd_chunk(void)
 	if (!IFF_Generator_Flush(gen)) goto cleanup;
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -430,11 +430,11 @@ static char test_roundtrip_sharding(void)
 	if (!IFF_Generator_Flush(gen)) goto cleanup;
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -482,11 +482,11 @@ static char test_roundtrip_multiple_top_forms(void)
 	if (!IFF_Generator_Flush(gen)) goto cleanup;
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -542,11 +542,11 @@ static char test_roundtrip_def_ref(void)
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	// No resolver registered — REF silently consumed.
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -598,11 +598,11 @@ static char test_roundtrip_ver_rev(void)
 	if (!IFF_Generator_Flush(gen)) goto cleanup;
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;
@@ -663,12 +663,12 @@ static char test_roundtrip_encoder_progressive_checksum(void)
 	if (!IFF_Generator_Flush(gen)) goto cleanup;
 	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
-	if (!IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
-	if (!IFF_Parser_Factory_Construct(pf)) goto cleanup;
-	if (!IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
+	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
+	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
+	if (IFF_Parser_Factory_CreateFromData(pf, output, &parser)) goto cleanup;
 	if (IFF_DataTap_RegisterAlgorithm(parser->reader->tap, xor_algo)) goto cleanup;
 
-	TEST_ASSERT(IFF_Parser_Scan(parser));
+	TEST_ASSERT_OK(IFF_Parser_Scan(parser));
 	TEST_ASSERT(parser->session->session_state == IFF_Parser_SessionState_Complete);
 
 	result = 1;

@@ -206,7 +206,7 @@ A7. Decoder Lifecycle
 | R75 | form_decoder_nested | FormDecoder receives nested FORM via process_nested_form callback. Entity from inner FORM propagated. |
 | R76 | form_decoder_no_registration | FORM with no registered decoder. Chunks read and skipped. Parse succeeds. |
 | R77 | form_decoder_find_prop | FormDecoder calls FindProp in begin_decode. PROP data from enclosing LIST retrieved. **[COVERED: test 17]** |
-| R78 | form_decoder_error_propagation | FormDecoder's begin_decode returns 0. Parse fails. |
+| R78 | form_decoder_error_propagation | FormDecoder's begin_decode reports a failure. Parse fails. |
 
 
 A8. Sharding
@@ -429,8 +429,8 @@ B12. Encoder Framework
 |----|------|-------------|
 | W66 | form_encoder_lifecycle | Register FormEncoder for ILBM. EncodeForm drives begin_encode, produce_chunk (2 chunks), produce_nested_form (done), end_encode. Output is valid FORM. **[COVERED: test 24]** |
 | W67 | form_encoder_empty | FormEncoder produces 0 chunks (produce_chunk immediately sets done=1). Empty FORM emitted. |
-| W68 | form_encoder_begin_fails | FormEncoder's begin_encode returns 0. EncodeForm returns 0. EndForm still called for cleanup. |
-| W69 | form_encoder_produce_chunk_fails | FormEncoder's produce_chunk returns 0 on second chunk. EncodeForm returns 0. Cleanup called. |
+| W68 | form_encoder_begin_fails | FormEncoder's begin_encode reports a failure. EncodeForm fails. EndForm still called for cleanup. |
+| W69 | form_encoder_produce_chunk_fails | FormEncoder's produce_chunk reports a failure on the second chunk. EncodeForm fails. Cleanup called. |
 | W70 | form_encoder_unregistered | EncodeForm called with unregistered form type. Fails (encoder not found). |
 
 ### B12.2 ChunkEncoder

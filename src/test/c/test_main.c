@@ -52,6 +52,11 @@ int main(int argc, char *argv[])
 	RUN_TEST_SUITE(test_suite_parse_version);
 	RUN_TEST_SUITE(test_suite_generate_bytes_written);
 
+	RUN_TEST_SUITE(test_suite_codec_primitives);
+	RUN_TEST_SUITE(test_suite_codec_conversion);
+	RUN_TEST_SUITE(test_suite_codec_images);
+	RUN_TEST_SUITE(test_suite_codec_audio);
+
 	printf("\n=================================\n");
 	printf("      Test Suite Complete        \n");
 	printf("=================================\n");

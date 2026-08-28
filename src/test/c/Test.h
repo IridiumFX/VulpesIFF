@@ -101,3 +101,9 @@ void test_suite_generate_bytes_written(void);
 void test_suite_parse_container_delivery(void);
 void test_suite_generate_container_groups(void);
 void test_suite_file_roundtrip(void);
+
+// --- Codec suites ---
+void test_suite_codec_primitives(void);
+void test_suite_codec_conversion(void);
+void test_suite_codec_images(void);
+void test_suite_codec_audio(void);

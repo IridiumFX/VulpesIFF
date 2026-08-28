@@ -30,14 +30,14 @@ static char test_chunk_even_size(void)
 
 	unsigned char data[10] = {1,2,3,4,5,6,7,8,9,10};
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -71,14 +71,14 @@ static char test_chunk_odd_size_padded(void)
 
 	unsigned char data[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "TEST", data, 5)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "TEST", data, 5)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -110,14 +110,14 @@ static char test_chunk_zero_size(void)
 	struct VPS_Data *image = 0;
 	char result = 0;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "EMTY", 0, 0)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "EMTY", 0, 0)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -159,16 +159,16 @@ static char test_chunk_odd_no_padding_flag(void)
 	header.flags.as_int = 0;
 	header.flags.as_fields.structuring = IFF_Header_Flag_Structuring_NO_PADDING;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "TEST", data5, 5)) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", data4, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "TEST", data5, 5)) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", data4, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -207,14 +207,14 @@ static char test_chunk_large_payload(void)
 		data[i] = (unsigned char)(i & 0xFF);
 	}
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 1024)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 1024)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -250,15 +250,15 @@ static char test_chunk_unknown_tag_skipped(void)
 	unsigned char unknown_data[4] = {0xDE, 0xAD, 0xBE, 0xEF};
 	unsigned char bmhd_data[10] = {0};
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "ZZZZ", unknown_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "ZZZZ", unknown_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;

@@ -71,31 +71,31 @@ static char test_list_multiple_props(void)
 
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
 
 	// First PROP with BMHD filled 0x01.
-	if (!IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd1, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd1, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// Second PROP with BMHD filled 0x02 — should override.
-	if (!IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd2, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd2, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// FORM that queries the prop.
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -145,24 +145,24 @@ static char test_prop_wildcard_type(void)
 
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "PROP", "    ")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "PROP", "    ")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -212,24 +212,24 @@ static char test_prop_specific_type(void)
 
 	IFF_Tag_Construct(&svx_tag, (const unsigned char *)"8SVX", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "    ")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "    ")) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "8SVX")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "VHDR", vhdr_data, 8)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "8SVX")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "VHDR", vhdr_data, 8)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -286,30 +286,30 @@ static char test_prop_fallback_resolution(void)
 
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "    ")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "    ")) goto cleanup;
 
 	// Wildcard PROP with BMHD.
-	if (!IFF_TestBuilder_BeginContainer(builder, "PROP", "    ")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "PROP", "    ")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// Type-specific PROP(ILBM) with CMAP (different chunk tag).
-	if (!IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "CMAP", cmap_data, 6)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "CMAP", cmap_data, 6)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -360,31 +360,31 @@ static char test_prop_between_forms(void)
 
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
 
 	// FORM1 — before PROP, should NOT find BMHD.
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// PROP added mid-sequence.
-	if (!IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "PROP", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// FORM2 — after PROP, should find BMHD.
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreatePropAwareFormDecoder(&form_dec)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;

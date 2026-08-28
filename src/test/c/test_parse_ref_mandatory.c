@@ -47,16 +47,16 @@ static char test_ref_mandatory_no_resolver(void)
 	VPS_Endian_Write32UBE(ref_payload + 4, 4);       // id_size = 4 (mandatory)
 	memcpy(ref_payload + 8, "test", 4);               // id_data
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_AddDirective(builder, " REF", ref_payload, 12)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_AddDirective(builder, " REF", ref_payload, 12)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;

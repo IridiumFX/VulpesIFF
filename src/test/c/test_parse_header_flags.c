@@ -36,15 +36,15 @@ static char PRIVATE_BuildAndParse
 	header.revision = 0;
 	header.flags = flags;
 
-	if (!IFF_TestBuilder_Allocate(out_builder)) return 0;
-	if (!IFF_TestBuilder_Construct(*out_builder)) return 0;
+	if (IFF_TestBuilder_Allocate(out_builder)) return 0;
+	if (IFF_TestBuilder_Construct(*out_builder)) return 0;
 
-	if (!IFF_TestBuilder_AddHeader(*out_builder, &header)) return 0;
-	if (!IFF_TestBuilder_BeginContainer(*out_builder, "FORM", "ILBM")) return 0;
-	if (!IFF_TestBuilder_AddChunk(*out_builder, "BMHD", chunk_data, chunk_size)) return 0;
-	if (!IFF_TestBuilder_EndContainer(*out_builder)) return 0;
+	if (IFF_TestBuilder_AddHeader(*out_builder, &header)) return 0;
+	if (IFF_TestBuilder_BeginContainer(*out_builder, "FORM", "ILBM")) return 0;
+	if (IFF_TestBuilder_AddChunk(*out_builder, "BMHD", chunk_data, chunk_size)) return 0;
+	if (IFF_TestBuilder_EndContainer(*out_builder)) return 0;
 
-	if (!IFF_TestBuilder_GetResult(*out_builder, &image)) return 0;
+	if (IFF_TestBuilder_GetResult(*out_builder, &image)) return 0;
 
 	if (IFF_Parser_Factory_Allocate(out_factory)) return 0;
 	if (IFF_Parser_Factory_Construct(*out_factory)) return 0;
@@ -385,17 +385,17 @@ static char test_flags_strict_containers_match(void)
 	header.flags.as_int = 0;
 	header.flags.as_fields.structuring = IFF_Header_Flag_Structuring_STRICT_CONTAINERS;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -432,18 +432,18 @@ static char test_flags_strict_containers_mismatch(void)
 	header.flags.as_int = 0;
 	header.flags.as_fields.structuring = IFF_Header_Flag_Structuring_STRICT_CONTAINERS;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
 	// FORM type 8SVX does not match LIST type ILBM — strict rejects this.
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "8SVX")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "VHDR", data, 8)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "8SVX")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "VHDR", data, 8)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -480,17 +480,17 @@ static char test_flags_strict_wildcard_parent(void)
 	header.flags.as_int = 0;
 	header.flags.as_fields.structuring = IFF_Header_Flag_Structuring_STRICT_CONTAINERS;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "    ")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "    ")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;

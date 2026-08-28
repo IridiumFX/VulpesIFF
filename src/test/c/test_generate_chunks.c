@@ -282,14 +282,14 @@ static char test_gen_chunk_binary_layout(void)
 	wrap = PRIVATE_WrapData(data, 10);
 
 	// Build reference.
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Build actual.
 	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;

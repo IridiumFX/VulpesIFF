@@ -98,15 +98,15 @@ static char test_gen_filler_binary_layout(void)
 	IFF_Tag_Construct(&type_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
 	// Build reference with TestBuilder.
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddDirective(builder, "    ", filler_data, 8)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddDirective(builder, "    ", filler_data, 8)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Build actual with generator.
 	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;

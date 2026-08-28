@@ -81,23 +81,23 @@ static char test_midstream_iff_enables_sharding(void)
 	IFF_Tag_Construct(&bmhd_tag, (const unsigned char *)"BMHD", 4, IFF_TAG_TYPE_TAG);
 	IFF_Chunk_Key_Construct(&chunk_key, &ilbm_tag, &bmhd_tag);
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
 
 	// Mid-stream ' IFF' directive enables SHARDING.
-	if (!IFF_TestBuilder_AddDirective(builder, " IFF", iff_payload, 12)) goto cleanup;
+	if (IFF_TestBuilder_AddDirective(builder, " IFF", iff_payload, 12)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_AddDirective(builder, "    ", shard_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
+	if (IFF_TestBuilder_AddDirective(builder, "    ", shard_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_TestDecoders_CreateFormDecoder(&form_dec)) goto cleanup;
-	if (!IFF_TestDecoders_CreateShardCountingChunkDecoder(&chunk_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreateFormDecoder(&form_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreateShardCountingChunkDecoder(&chunk_dec)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;

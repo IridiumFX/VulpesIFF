@@ -91,16 +91,16 @@ static IFF_TYPE_RESULT TestChunk_EndDecode
 	return IFF_OK;
 }
 
-char IFF_TestDecoders_CreateChunkDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateChunkDecoder
 (
 	struct IFF_ChunkDecoder **out_decoder
 )
 {
 	struct IFF_ChunkDecoder *dec = 0;
 
-	if (!out_decoder) return 0;
+	if (!out_decoder) return IFF_FAIL;
 
-	if (IFF_ChunkDecoder_Allocate(&dec)) return 0;
+	if (IFF_ChunkDecoder_Allocate(&dec)) return IFF_FAIL;
 
 	if (IFF_ChunkDecoder_Construct
 	(
@@ -111,11 +111,11 @@ char IFF_TestDecoders_CreateChunkDecoder
 	))
 	{
 		IFF_ChunkDecoder_Release(dec);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_decoder = dec;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -134,16 +134,16 @@ static IFF_TYPE_RESULT ShardCounting_ProcessShard
 	return TestChunk_ProcessShard(state, custom_state, chunk_data);
 }
 
-char IFF_TestDecoders_CreateShardCountingChunkDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateShardCountingChunkDecoder
 (
 	struct IFF_ChunkDecoder **out_decoder
 )
 {
 	struct IFF_ChunkDecoder *dec = 0;
 
-	if (!out_decoder) return 0;
+	if (!out_decoder) return IFF_FAIL;
 
-	if (IFF_ChunkDecoder_Allocate(&dec)) return 0;
+	if (IFF_ChunkDecoder_Allocate(&dec)) return IFF_FAIL;
 
 	if (IFF_ChunkDecoder_Construct
 	(
@@ -154,11 +154,11 @@ char IFF_TestDecoders_CreateShardCountingChunkDecoder
 	))
 	{
 		IFF_ChunkDecoder_Release(dec);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_decoder = dec;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -239,16 +239,16 @@ static IFF_TYPE_RESULT TestForm_EndDecode
 	return IFF_OK;
 }
 
-char IFF_TestDecoders_CreateFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 )
 {
 	struct IFF_FormDecoder *dec = 0;
 
-	if (!out_decoder) return 0;
+	if (!out_decoder) return IFF_FAIL;
 
-	if (IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return IFF_FAIL;
 
 	if (IFF_FormDecoder_Construct
 	(
@@ -260,11 +260,11 @@ char IFF_TestDecoders_CreateFormDecoder
 	))
 	{
 		IFF_FormDecoder_Release(dec);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_decoder = dec;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -300,16 +300,16 @@ static IFF_TYPE_RESULT PropAwareForm_BeginDecode
 	return IFF_OK;
 }
 
-char IFF_TestDecoders_CreatePropAwareFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreatePropAwareFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 )
 {
 	struct IFF_FormDecoder *dec = 0;
 
-	if (!out_decoder) return 0;
+	if (!out_decoder) return IFF_FAIL;
 
-	if (IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return IFF_FAIL;
 
 	if (IFF_FormDecoder_Construct
 	(
@@ -321,11 +321,11 @@ char IFF_TestDecoders_CreatePropAwareFormDecoder
 	))
 	{
 		IFF_FormDecoder_Release(dec);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_decoder = dec;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -341,16 +341,16 @@ static IFF_TYPE_RESULT FailingForm_BeginDecode
 	return IFF_FAIL;
 }
 
-char IFF_TestDecoders_CreateFailingFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateFailingFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 )
 {
 	struct IFF_FormDecoder *dec = 0;
 
-	if (!out_decoder) return 0;
+	if (!out_decoder) return IFF_FAIL;
 
-	if (IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return IFF_FAIL;
 
 	if (IFF_FormDecoder_Construct
 	(
@@ -362,11 +362,11 @@ char IFF_TestDecoders_CreateFailingFormDecoder
 	))
 	{
 		IFF_FormDecoder_Release(dec);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_decoder = dec;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -396,16 +396,16 @@ static IFF_TYPE_RESULT NestingAware_ProcessNestedForm
 	return IFF_OK;
 }
 
-char IFF_TestDecoders_CreateNestingAwareFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateNestingAwareFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 )
 {
 	struct IFF_FormDecoder *dec = 0;
 
-	if (!out_decoder) return 0;
+	if (!out_decoder) return IFF_FAIL;
 
-	if (IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return IFF_FAIL;
 
 	if (IFF_FormDecoder_Construct
 	(
@@ -417,11 +417,11 @@ char IFF_TestDecoders_CreateNestingAwareFormDecoder
 	))
 	{
 		IFF_FormDecoder_Release(dec);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out_decoder = dec;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -541,16 +541,16 @@ static IFF_TYPE_RESULT ContainerAware_EndDecode
 	return IFF_OK;
 }
 
-char IFF_TestDecoders_CreateContainerAwareFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateContainerAwareFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 )
 {
 	struct IFF_FormDecoder *dec = 0;
 
-	if (!out_decoder) return 0;
+	if (!out_decoder) return IFF_FAIL;
 
-	if (IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return IFF_FAIL;
 
 	if (IFF_FormDecoder_Construct
 	(
@@ -562,7 +562,7 @@ char IFF_TestDecoders_CreateContainerAwareFormDecoder
 	))
 	{
 		IFF_FormDecoder_Release(dec);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Set the new optional callbacks.
@@ -570,14 +570,14 @@ char IFF_TestDecoders_CreateContainerAwareFormDecoder
 	dec->leave_container = ContainerAware_LeaveContainer;
 
 	*out_decoder = dec;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
 // InnerFormDecoder — simple decoder for child FORMs inside CAT/LIST
 // ===================================================================
 
-char IFF_TestDecoders_CreateInnerFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateInnerFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 )

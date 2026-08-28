@@ -35,15 +35,15 @@ static char test_version_zero_locks_85(void)
 	header.revision = 0;
 	header.flags.as_int = 0;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -82,15 +82,15 @@ static char test_unknown_version_fails(void)
 	header.revision = 0;
 	header.flags.as_int = 0;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -162,13 +162,13 @@ static char test_unknown_flag_values_fail(void)
 		header.revision = 0;
 		header.flags = variants[i].flags;
 
-		if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-		if (!IFF_TestBuilder_Construct(builder)
-			|| !IFF_TestBuilder_AddHeader(builder, &header)
-			|| !IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")
-			|| !IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)
-			|| !IFF_TestBuilder_EndContainer(builder)
-			|| !IFF_TestBuilder_GetResult(builder, &image)
+		if (IFF_TestBuilder_Allocate(&builder)) return 0;
+		if (IFF_TestBuilder_Construct(builder)
+			|| IFF_TestBuilder_AddHeader(builder, &header)
+			|| IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")
+			|| IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)
+			|| IFF_TestBuilder_EndContainer(builder)
+			|| IFF_TestBuilder_GetResult(builder, &image)
 			|| IFF_Parser_Factory_Allocate(&factory)
 			|| IFF_Parser_Factory_Construct(factory)
 			|| IFF_Parser_Factory_CreateFromData(factory, image, &parser))

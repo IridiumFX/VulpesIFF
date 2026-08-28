@@ -304,13 +304,13 @@ static char test_roundtrip_container_groups(void)
 		struct IFF_FormDecoder *bbbb_dec = 0;
 		struct IFF_FormDecoder *cccc_dec = 0;
 
-		if (!IFF_TestDecoders_CreateContainerAwareFormDecoder(&aaaa_dec)) goto cleanup;
-		if (!IFF_TestDecoders_CreateInnerFormDecoder(&bbbb_dec))
+		if (IFF_TestDecoders_CreateContainerAwareFormDecoder(&aaaa_dec)) goto cleanup;
+		if (IFF_TestDecoders_CreateInnerFormDecoder(&bbbb_dec))
 		{
 			IFF_FormDecoder_Release(aaaa_dec);
 			goto cleanup;
 		}
-		if (!IFF_TestDecoders_CreateInnerFormDecoder(&cccc_dec))
+		if (IFF_TestDecoders_CreateInnerFormDecoder(&cccc_dec))
 		{
 			IFF_FormDecoder_Release(aaaa_dec);
 			IFF_FormDecoder_Release(bbbb_dec);

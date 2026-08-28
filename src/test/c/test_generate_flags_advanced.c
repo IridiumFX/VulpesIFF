@@ -65,13 +65,13 @@ static char PRIVATE_GenFlagTest
 	TEST_ASSERT(output != 0);
 
 	// TestBuilder reference.
-	if (!IFF_TestBuilder_Allocate(&builder)) goto cleanup;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
-	if (!IFF_TestBuilder_AddHeader(builder, header)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", chunk_data, chunk_size)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) goto cleanup;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, header)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", chunk_data, chunk_size)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Compare.
 	TEST_ASSERT(output->limit == expected->limit);

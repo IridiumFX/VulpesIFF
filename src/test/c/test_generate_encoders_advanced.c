@@ -43,7 +43,7 @@ static char test_form_encoder_empty(void)
 	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_TestEncoders_CreateEmptyFormEncoder(&enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateEmptyFormEncoder(&enc)) goto cleanup;
 	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
 	enc = 0;
 
@@ -93,7 +93,7 @@ static char test_form_encoder_begin_fails(void)
 	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_TestEncoders_CreateFailBeginFormEncoder(&enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateFailBeginFormEncoder(&enc)) goto cleanup;
 	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
 	enc = 0;
 
@@ -142,7 +142,7 @@ static char test_form_encoder_produce_chunk_fails(void)
 	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_TestEncoders_CreateFailSecondChunkFormEncoder(&enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateFailSecondChunkFormEncoder(&enc)) goto cleanup;
 	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
 	enc = 0;
 
@@ -229,8 +229,8 @@ static char test_chunk_encoder_selective(void)
 	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
-	if (!IFF_TestEncoders_CreateDoublerChunkEncoder(&chunk_enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateDoublerChunkEncoder(&chunk_enc)) goto cleanup;
 
 	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
 	if (IFF_Generator_Factory_RegisterChunkEncoder(gen_factory, &bmhd_tag, chunk_enc)) goto cleanup;

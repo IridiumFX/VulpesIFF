@@ -108,16 +108,16 @@ static IFF_TYPE_RESULT TestForm_EndEncode
 	return IFF_OK;
 }
 
-char IFF_TestEncoders_CreateFormEncoder
+IFF_TYPE_RESULT IFF_TestEncoders_CreateFormEncoder
 (
 	struct IFF_FormEncoder **out
 )
 {
 	struct IFF_FormEncoder *enc = 0;
 
-	if (!out) return 0;
+	if (!out) return IFF_FAIL;
 
-	if (IFF_FormEncoder_Allocate(&enc)) return 0;
+	if (IFF_FormEncoder_Allocate(&enc)) return IFF_FAIL;
 
 	if (IFF_FormEncoder_Construct
 	(
@@ -129,11 +129,11 @@ char IFF_TestEncoders_CreateFormEncoder
 	))
 	{
 		IFF_FormEncoder_Release(enc);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out = enc;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -168,25 +168,25 @@ static IFF_TYPE_RESULT TestDoubler_Encode
 	return IFF_OK;
 }
 
-char IFF_TestEncoders_CreateDoublerChunkEncoder
+IFF_TYPE_RESULT IFF_TestEncoders_CreateDoublerChunkEncoder
 (
 	struct IFF_ChunkEncoder **out
 )
 {
 	struct IFF_ChunkEncoder *enc = 0;
 
-	if (!out) return 0;
+	if (!out) return IFF_FAIL;
 
-	if (IFF_ChunkEncoder_Allocate(&enc)) return 0;
+	if (IFF_ChunkEncoder_Allocate(&enc)) return IFF_FAIL;
 
 	if (IFF_ChunkEncoder_Construct(enc, TestDoubler_Encode))
 	{
 		IFF_ChunkEncoder_Release(enc);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out = enc;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -226,16 +226,16 @@ static IFF_TYPE_RESULT EmptyForm_EndEncode
 	return IFF_OK;
 }
 
-char IFF_TestEncoders_CreateEmptyFormEncoder
+IFF_TYPE_RESULT IFF_TestEncoders_CreateEmptyFormEncoder
 (
 	struct IFF_FormEncoder **out
 )
 {
 	struct IFF_FormEncoder *enc = 0;
 
-	if (!out) return 0;
+	if (!out) return IFF_FAIL;
 
-	if (IFF_FormEncoder_Allocate(&enc)) return 0;
+	if (IFF_FormEncoder_Allocate(&enc)) return IFF_FAIL;
 
 	if (IFF_FormEncoder_Construct
 	(
@@ -247,11 +247,11 @@ char IFF_TestEncoders_CreateEmptyFormEncoder
 	))
 	{
 		IFF_FormEncoder_Release(enc);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out = enc;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -268,16 +268,16 @@ static IFF_TYPE_RESULT FailBegin_BeginEncode
 	return IFF_FAIL;
 }
 
-char IFF_TestEncoders_CreateFailBeginFormEncoder
+IFF_TYPE_RESULT IFF_TestEncoders_CreateFailBeginFormEncoder
 (
 	struct IFF_FormEncoder **out
 )
 {
 	struct IFF_FormEncoder *enc = 0;
 
-	if (!out) return 0;
+	if (!out) return IFF_FAIL;
 
-	if (IFF_FormEncoder_Allocate(&enc)) return 0;
+	if (IFF_FormEncoder_Allocate(&enc)) return IFF_FAIL;
 
 	if (IFF_FormEncoder_Construct
 	(
@@ -289,11 +289,11 @@ char IFF_TestEncoders_CreateFailBeginFormEncoder
 	))
 	{
 		IFF_FormEncoder_Release(enc);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out = enc;
-	return 1;
+	return IFF_OK;
 }
 
 // ===================================================================
@@ -323,16 +323,16 @@ static IFF_TYPE_RESULT FailSecond_ProduceChunk
 	return IFF_FAIL;
 }
 
-char IFF_TestEncoders_CreateFailSecondChunkFormEncoder
+IFF_TYPE_RESULT IFF_TestEncoders_CreateFailSecondChunkFormEncoder
 (
 	struct IFF_FormEncoder **out
 )
 {
 	struct IFF_FormEncoder *enc = 0;
 
-	if (!out) return 0;
+	if (!out) return IFF_FAIL;
 
-	if (IFF_FormEncoder_Allocate(&enc)) return 0;
+	if (IFF_FormEncoder_Allocate(&enc)) return IFF_FAIL;
 
 	if (IFF_FormEncoder_Construct
 	(
@@ -344,9 +344,9 @@ char IFF_TestEncoders_CreateFailSecondChunkFormEncoder
 	))
 	{
 		IFF_FormEncoder_Release(enc);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*out = enc;
-	return 1;
+	return IFF_OK;
 }

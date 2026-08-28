@@ -1,3 +1,5 @@
+#include <IFF/IFF_Result.h>
+
 /**
  * @brief Test decoder implementations for verifying parser decoder dispatch.
  *
@@ -34,7 +36,7 @@ extern int IFF_TestDecoders_ShardCallCount;
  * @details Wraps raw chunk data as IFF_ContextualData with default flags.
  *          Caller must release the returned decoder.
  */
-char IFF_TestDecoders_CreateChunkDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateChunkDecoder
 (
 	struct IFF_ChunkDecoder **out_decoder
 );
@@ -44,7 +46,7 @@ char IFF_TestDecoders_CreateChunkDecoder
  * @details Like TestChunkDecoder, but increments IFF_TestDecoders_ShardCallCount
  *          on each process_shard call. Reset the counter before each test.
  */
-char IFF_TestDecoders_CreateShardCountingChunkDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateShardCountingChunkDecoder
 (
 	struct IFF_ChunkDecoder **out_decoder
 );
@@ -55,7 +57,7 @@ char IFF_TestDecoders_CreateShardCountingChunkDecoder
  *          Produces TestFormState as final_entity.
  *          Caller must release the returned decoder.
  */
-char IFF_TestDecoders_CreateFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 );
@@ -66,7 +68,7 @@ char IFF_TestDecoders_CreateFormDecoder
  *          and sets prop_found=1 if found.
  *          Caller must release the returned decoder.
  */
-char IFF_TestDecoders_CreatePropAwareFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreatePropAwareFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 );
@@ -75,7 +77,7 @@ char IFF_TestDecoders_CreatePropAwareFormDecoder
  * @brief Creates a FailingFormDecoder.
  * @details begin_decode returns 0. Used to test error propagation (R78).
  */
-char IFF_TestDecoders_CreateFailingFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateFailingFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 );
@@ -85,7 +87,7 @@ char IFF_TestDecoders_CreateFailingFormDecoder
  * @details Like TestFormDecoder, but process_nested_form increments
  *          nested_form_count in TestFormState.
  */
-char IFF_TestDecoders_CreateNestingAwareFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateNestingAwareFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 );
@@ -131,7 +133,7 @@ struct ContainerAwareFormState
  *          Logs all events with type tags and nesting depth into an event array
  *          on ContainerAwareFormState.
  */
-char IFF_TestDecoders_CreateContainerAwareFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateContainerAwareFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 );
@@ -142,7 +144,7 @@ char IFF_TestDecoders_CreateContainerAwareFormDecoder
  *          Used inside CAT/LIST to generate entities that bubble up
  *          to the ContainerAwareFormDecoder.
  */
-char IFF_TestDecoders_CreateInnerFormDecoder
+IFF_TYPE_RESULT IFF_TestDecoders_CreateInnerFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 );

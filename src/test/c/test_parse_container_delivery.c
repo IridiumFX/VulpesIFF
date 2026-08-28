@@ -43,8 +43,8 @@ static char setup_factory
 	IFF_Tag_Construct(&bbbb_tag, (const unsigned char *)"BBBB", 4, IFF_TAG_TYPE_TAG);
 	IFF_Tag_Construct(&cccc_tag, (const unsigned char *)"CCCC", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_TestDecoders_CreateContainerAwareFormDecoder(&aaaa_dec)) return 0;
-	if (!IFF_TestDecoders_CreateInnerFormDecoder(&bbbb_dec))
+	if (IFF_TestDecoders_CreateContainerAwareFormDecoder(&aaaa_dec)) return 0;
+	if (IFF_TestDecoders_CreateInnerFormDecoder(&bbbb_dec))
 	{
 		IFF_FormDecoder_Release(aaaa_dec);
 		return 0;
@@ -52,7 +52,7 @@ static char setup_factory
 
 	if (register_cccc)
 	{
-		if (!IFF_TestDecoders_CreateInnerFormDecoder(&cccc_dec))
+		if (IFF_TestDecoders_CreateInnerFormDecoder(&cccc_dec))
 		{
 			IFF_FormDecoder_Release(aaaa_dec);
 			IFF_FormDecoder_Release(bbbb_dec);
@@ -90,22 +90,22 @@ static char test_cat_entity_delivery(void)
 	char result = 0;
 	unsigned char data[4] = { 0x01, 0x02, 0x03, 0x04 };
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
 	for (int i = 0; i < 3; i++)
 	{
-		if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-		if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-		if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+		if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+		if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+		if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 	}
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
 	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
@@ -158,31 +158,31 @@ static char test_two_cats_group_boundaries(void)
 	char result = 0;
 	unsigned char data[4] = {0};
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
 
 	// CAT BBBB with 2 FORMs
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
 	for (int i = 0; i < 2; i++)
 	{
-		if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-		if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-		if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+		if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+		if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+		if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 	}
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// CAT CCCC with 1 FORM
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "CCCC")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "CCCC")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "CCCC")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "CCCC")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 1)) goto cleanup;
 	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
@@ -240,28 +240,28 @@ static char test_consecutive_same_type_cats(void)
 	char result = 0;
 	unsigned char data[4] = {0};
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
 
 	// First CAT BBBB
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// Second CAT BBBB
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
 	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
@@ -312,23 +312,23 @@ static char test_list_cat_nested_delivery(void)
 	char result = 0;
 	unsigned char data[4] = {0};
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "XXXX")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "XXXX")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
 	for (int i = 0; i < 2; i++)
 	{
-		if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-		if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-		if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+		if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+		if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+		if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 	}
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
 	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
@@ -388,21 +388,21 @@ static char test_root_cat_entity_delivery(void)
 	struct IFF_Tag bbbb_tag;
 	IFF_Tag_Construct(&bbbb_tag, (const unsigned char *)"BBBB", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
 	for (int i = 0; i < 2; i++)
 	{
-		if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-		if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-		if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+		if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+		if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+		if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 	}
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_TestDecoders_CreateFormDecoder(&bbbb_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreateFormDecoder(&bbbb_dec)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -450,20 +450,20 @@ static char test_root_list_cat_entity_delivery(void)
 	struct IFF_Tag bbbb_tag;
 	IFF_Tag_Construct(&bbbb_tag, (const unsigned char *)"BBBB", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "XXXX")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "XXXX")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "CAT ", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
-	if (!IFF_TestDecoders_CreateFormDecoder(&bbbb_dec)) goto cleanup;
+	if (IFF_TestDecoders_CreateFormDecoder(&bbbb_dec)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -508,16 +508,16 @@ static char test_direct_nested_form_regression(void)
 	char result = 0;
 	unsigned char data[4] = {0};
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
 	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;
@@ -562,21 +562,21 @@ static char test_list_entity_delivery(void)
 	char result = 0;
 	unsigned char data[4] = {0};
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "BBBB")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "AAAA")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "BBBB")) goto cleanup;
 	for (int i = 0; i < 2; i++)
 	{
-		if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
-		if (!IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
-		if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+		if (IFF_TestBuilder_BeginContainer(builder, "FORM", "BBBB")) goto cleanup;
+		if (IFF_TestBuilder_AddChunk(builder, "DATA", data, 4)) goto cleanup;
+		if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 	}
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (!setup_factory(&factory, &aaaa_dec, 0)) goto cleanup;
 	if (IFF_Parser_Factory_CreateFromData(factory, image, &parser)) goto cleanup;

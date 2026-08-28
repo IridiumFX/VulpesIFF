@@ -1,3 +1,5 @@
+#include <IFF/IFF_Result.h>
+
 /**
  * @brief A simple binary serializer that constructs IFF byte images in memory.
  * @details Independent of both IFF_Parser and IFF_Generator to avoid circular
@@ -31,22 +33,22 @@ struct IFF_TestBuilder
 	int depth;
 };
 
-char IFF_TestBuilder_Allocate
+IFF_TYPE_RESULT IFF_TestBuilder_Allocate
 (
 	struct IFF_TestBuilder **builder
 );
 
-char IFF_TestBuilder_Construct
+IFF_TYPE_RESULT IFF_TestBuilder_Construct
 (
 	struct IFF_TestBuilder *b
 );
 
-char IFF_TestBuilder_Deconstruct
+IFF_TYPE_RESULT IFF_TestBuilder_Deconstruct
 (
 	struct IFF_TestBuilder *b
 );
 
-char IFF_TestBuilder_Release
+IFF_TYPE_RESULT IFF_TestBuilder_Release
 (
 	struct IFF_TestBuilder *b
 );
@@ -57,7 +59,7 @@ char IFF_TestBuilder_Release
  *          Also updates the builder's internal tag_length/size_length/endianness
  *          to match the header flags, so subsequent writes use the right widths.
  */
-char IFF_TestBuilder_AddHeader
+IFF_TYPE_RESULT IFF_TestBuilder_AddHeader
 (
 	struct IFF_TestBuilder *b
 	, const struct IFF_Header *header
@@ -70,7 +72,7 @@ char IFF_TestBuilder_AddHeader
  * @param variant 4-char string: "FORM", "LIST", "CAT " or "PROP"
  * @param type 4-char string: e.g. "ILBM", "    " (wildcard), etc.
  */
-char IFF_TestBuilder_BeginContainer
+IFF_TYPE_RESULT IFF_TestBuilder_BeginContainer
 (
 	struct IFF_TestBuilder *b
 	, const char *variant
@@ -82,7 +84,7 @@ char IFF_TestBuilder_BeginContainer
  * @details In blobbed mode: patches the size field written by BeginContainer.
  *          In progressive mode: writes ' END' + size 0.
  */
-char IFF_TestBuilder_EndContainer
+IFF_TYPE_RESULT IFF_TestBuilder_EndContainer
 (
 	struct IFF_TestBuilder *b
 );
@@ -90,7 +92,7 @@ char IFF_TestBuilder_EndContainer
 /**
  * @brief Write a complete chunk: tag + size + data + padding.
  */
-char IFF_TestBuilder_AddChunk
+IFF_TYPE_RESULT IFF_TestBuilder_AddChunk
 (
 	struct IFF_TestBuilder *b
 	, const char *tag
@@ -102,7 +104,7 @@ char IFF_TestBuilder_AddChunk
  * @brief Write a raw directive: left-padded tag + size + data.
  * @details Useful for custom directives or ' END' in progressive mode.
  */
-char IFF_TestBuilder_AddDirective
+IFF_TYPE_RESULT IFF_TestBuilder_AddDirective
 (
 	struct IFF_TestBuilder *b
 	, const char *tag
@@ -115,7 +117,7 @@ char IFF_TestBuilder_AddDirective
  * @details Returns a pointer to the builder's internal buffer. The caller
  *          must NOT release it — it's owned by the builder.
  */
-char IFF_TestBuilder_GetResult
+IFF_TYPE_RESULT IFF_TestBuilder_GetResult
 (
 	struct IFF_TestBuilder *b
 	, struct VPS_Data **out_data

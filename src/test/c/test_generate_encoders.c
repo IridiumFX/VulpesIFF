@@ -61,7 +61,7 @@ static char test_encode_form_lifecycle(void)
 	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
 	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 
-	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
 	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
 
 	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
@@ -140,24 +140,24 @@ static char test_encode_chunk_encoder_transform(void)
 	entity.chunks[1].size = 4;
 
 	// Build reference with TestBuilder using post-transform data.
-	if (!IFF_TestBuilder_Allocate(&builder)) goto cleanup;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) goto cleanup;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_doubled, 6)) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_doubled, 6)) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Create factory, register FormEncoder + DoublerChunkEncoder.
 	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
 	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 
-	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
 	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
 
-	if (!IFF_TestEncoders_CreateDoublerChunkEncoder(&chunk_enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateDoublerChunkEncoder(&chunk_enc)) goto cleanup;
 	if (IFF_Generator_Factory_RegisterChunkEncoder(gen_factory, &bmhd_tag, chunk_enc)) goto cleanup;
 
 	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
@@ -229,7 +229,7 @@ static char test_encode_progressive_form(void)
 	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
 	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 
-	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
+	if (IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
 	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
 
 	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;

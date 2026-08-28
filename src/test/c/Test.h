@@ -1,3 +1,23 @@
+// --- Two conventions live in this suite ---
+//
+// VulpesIFF functions, and the IFF_Test* helpers that mirror their shape,
+// report IFF_TYPE_RESULT: IFF_OK (0) is success and any non-zero value is
+// the source line that raised the failure. Assert on those with
+// TEST_ASSERT_OK / TEST_ASSERT_FAIL, which print that line on failure.
+//
+// The harness itself keeps the boolean form, because RUN_TEST reads a
+// test's return value as 1 = passed. That covers every test_* function and
+// the file-local helpers whose result becomes a test verdict. Assert on
+// plain values and state with TEST_ASSERT.
+//
+// So in test code:
+//
+//     TEST_ASSERT_OK(IFF_Parser_Scan(parser));                  // IFF status
+//     TEST_ASSERT_FAIL(IFF_Parser_Scan(parser));                // expected to fail
+//     TEST_ASSERT(parser->session->iff85_locked == 1);          // plain value
+//     if (IFF_TestBuilder_AddChunk(b, "BODY", d, 4)) goto out;  // IFF status
+//     return 1;                                                 // test passed
+
 // --- Test Runner Macros ---
 
 #define TEST_ASSERT(condition) \

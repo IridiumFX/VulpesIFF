@@ -12,7 +12,7 @@
 
 // --- Private helpers ---
 
-static char PRIVATE_WriteTag
+static IFF_TYPE_RESULT PRIVATE_WriteTag
 (
 	struct IFF_TestBuilder *b
 	, const char *tag
@@ -39,10 +39,15 @@ static char PRIVATE_WriteTag
 		memcpy(buf, tag, tag_len);
 	}
 
-	return VPS_DataWriter_WriteBytes(b->writer, buf, len);
+	if (!VPS_DataWriter_WriteBytes(b->writer, buf, len))
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-static char PRIVATE_WriteSize
+static IFF_TYPE_RESULT PRIVATE_WriteSize
 (
 	struct IFF_TestBuilder *b
 	, VPS_TYPE_SIZE size
@@ -74,10 +79,15 @@ static char PRIVATE_WriteSize
 			break;
 	}
 
-	return VPS_DataWriter_WriteBytes(b->writer, buf, b->size_length);
+	if (!VPS_DataWriter_WriteBytes(b->writer, buf, b->size_length))
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-static char PRIVATE_PatchSize
+static IFF_TYPE_RESULT PRIVATE_PatchSize
 (
 	struct IFF_TestBuilder *b
 	, VPS_TYPE_SIZE offset
@@ -112,10 +122,10 @@ static char PRIVATE_PatchSize
 
 	memcpy(b->buffer->bytes + offset, buf, b->size_length);
 
-	return 1;
+	return IFF_OK;
 }
 
-static char PRIVATE_WritePadding
+static IFF_TYPE_RESULT PRIVATE_WritePadding
 (
 	struct IFF_TestBuilder *b
 	, VPS_TYPE_SIZE data_size
@@ -123,29 +133,34 @@ static char PRIVATE_WritePadding
 {
 	static const unsigned char zero = 0;
 
-	if (b->no_padding) return 1;
+	if (b->no_padding) return IFF_OK;
 
 	if (data_size & 1)
 	{
-		return VPS_DataWriter_WriteBytes(b->writer, &zero, 1);
+		if (!VPS_DataWriter_WriteBytes(b->writer, &zero, 1))
+		{
+			return IFF_FAIL;
+		}
+
+		return IFF_OK;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
 // --- Lifecycle ---
 
-char IFF_TestBuilder_Allocate
+IFF_TYPE_RESULT IFF_TestBuilder_Allocate
 (
 	struct IFF_TestBuilder **builder
 )
 {
 	struct IFF_TestBuilder *b;
 
-	if (!builder) return 0;
+	if (!builder) return IFF_FAIL;
 
 	b = calloc(1, sizeof(struct IFF_TestBuilder));
-	if (!b) return 0;
+	if (!b) return IFF_FAIL;
 
 	if (!VPS_Data_Allocate(&b->buffer, 256, 0))
 	{
@@ -159,24 +174,24 @@ char IFF_TestBuilder_Allocate
 
 	*builder = b;
 
-	return 1;
+	return IFF_OK;
 
 cleanup:
 
 	IFF_TestBuilder_Release(b);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_TestBuilder_Construct
+IFF_TYPE_RESULT IFF_TestBuilder_Construct
 (
 	struct IFF_TestBuilder *b
 )
 {
-	if (!b) return 0;
+	if (!b) return IFF_FAIL;
 
-	if (!VPS_Data_Construct(b->buffer)) return 0;
-	if (!VPS_DataWriter_Construct(b->writer, b->buffer)) return 0;
+	if (!VPS_Data_Construct(b->buffer)) return IFF_FAIL;
+	if (!VPS_DataWriter_Construct(b->writer, b->buffer)) return IFF_FAIL;
 
 	// Default to IFF-85 settings.
 	b->tag_length = 4;
@@ -186,23 +201,23 @@ char IFF_TestBuilder_Construct
 	b->no_padding = 0;
 	b->depth = 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_TestBuilder_Deconstruct
+IFF_TYPE_RESULT IFF_TestBuilder_Deconstruct
 (
 	struct IFF_TestBuilder *b
 )
 {
-	if (!b) return 0;
+	if (!b) return IFF_FAIL;
 
 	VPS_DataWriter_Deconstruct(b->writer);
 	VPS_Data_Deconstruct(b->buffer);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_TestBuilder_Release
+IFF_TYPE_RESULT IFF_TestBuilder_Release
 (
 	struct IFF_TestBuilder *b
 )
@@ -215,12 +230,12 @@ char IFF_TestBuilder_Release
 		free(b);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
 // --- Structure builders ---
 
-char IFF_TestBuilder_AddHeader
+IFF_TYPE_RESULT IFF_TestBuilder_AddHeader
 (
 	struct IFF_TestBuilder *b
 	, const struct IFF_Header *header
@@ -228,10 +243,10 @@ char IFF_TestBuilder_AddHeader
 {
 	unsigned char payload[12];
 
-	if (!b || !header) return 0;
+	if (!b || !header) return IFF_FAIL;
 
 	// Write the ' IFF' directive tag.
-	if (!PRIVATE_WriteTag(b, " IFF", 1)) return 0;
+	if (PRIVATE_WriteTag(b, " IFF", 1)) return IFF_FAIL;
 
 	// The header payload is always 12 bytes:
 	//   version (2 BE) + revision (2 BE) + flags (8 bytes)
@@ -240,8 +255,8 @@ char IFF_TestBuilder_AddHeader
 	VPS_Endian_Write64UBE(payload + 4, header->flags.as_int);
 
 	// Write size (12) in current config, then the payload.
-	if (!PRIVATE_WriteSize(b, 12)) return 0;
-	if (!VPS_DataWriter_WriteBytes(b->writer, payload, 12)) return 0;
+	if (PRIVATE_WriteSize(b, 12)) return IFF_FAIL;
+	if (!VPS_DataWriter_WriteBytes(b->writer, payload, 12)) return IFF_FAIL;
 
 	// Update builder config from the header flags.
 	b->tag_length = IFF_Header_Flags_GetTagLength(header->flags.as_fields.tag_sizing);
@@ -250,51 +265,51 @@ char IFF_TestBuilder_AddHeader
 	b->is_progressive = (header->flags.as_fields.operating == IFF_Header_Operating_PROGRESSIVE) ? 1 : 0;
 	b->no_padding = (header->flags.as_fields.structuring & IFF_Header_Flag_Structuring_NO_PADDING) ? 1 : 0;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_TestBuilder_BeginContainer
+IFF_TYPE_RESULT IFF_TestBuilder_BeginContainer
 (
 	struct IFF_TestBuilder *b
 	, const char *variant
 	, const char *type
 )
 {
-	if (!b || !variant || !type) return 0;
-	if (b->depth >= IFF_TEST_BUILDER_MAX_DEPTH) return 0;
+	if (!b || !variant || !type) return IFF_FAIL;
+	if (b->depth >= IFF_TEST_BUILDER_MAX_DEPTH) return IFF_FAIL;
 
 	// Write the variant tag (FORM, LIST, CAT , PROP) — always data-style (right-padded).
-	if (!PRIVATE_WriteTag(b, variant, 0)) return 0;
+	if (PRIVATE_WriteTag(b, variant, 0)) return IFF_FAIL;
 
 	if (!b->is_progressive)
 	{
 		// Blobbed mode: record patch offset, write placeholder size.
 		b->patch_offsets[b->depth] = b->buffer->limit;
-		if (!PRIVATE_WriteSize(b, 0)) return 0;
+		if (PRIVATE_WriteSize(b, 0)) return IFF_FAIL;
 	}
 
 	// Write the type tag (right-padded data tag).
-	if (!PRIVATE_WriteTag(b, type, 0)) return 0;
+	if (PRIVATE_WriteTag(b, type, 0)) return IFF_FAIL;
 
 	b->depth++;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_TestBuilder_EndContainer
+IFF_TYPE_RESULT IFF_TestBuilder_EndContainer
 (
 	struct IFF_TestBuilder *b
 )
 {
-	if (!b || b->depth <= 0) return 0;
+	if (!b || b->depth <= 0) return IFF_FAIL;
 
 	b->depth--;
 
 	if (b->is_progressive)
 	{
 		// Write ' END' directive + size 0.
-		if (!PRIVATE_WriteTag(b, " END", 1)) return 0;
-		if (!PRIVATE_WriteSize(b, 0)) return 0;
+		if (PRIVATE_WriteTag(b, " END", 1)) return IFF_FAIL;
+		if (PRIVATE_WriteSize(b, 0)) return IFF_FAIL;
 	}
 	else
 	{
@@ -303,13 +318,13 @@ char IFF_TestBuilder_EndContainer
 		VPS_TYPE_SIZE content_start = patch_offset + b->size_length;
 		VPS_TYPE_SIZE content_size = b->buffer->limit - content_start;
 
-		if (!PRIVATE_PatchSize(b, patch_offset, content_size)) return 0;
+		if (PRIVATE_PatchSize(b, patch_offset, content_size)) return IFF_FAIL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_TestBuilder_AddChunk
+IFF_TYPE_RESULT IFF_TestBuilder_AddChunk
 (
 	struct IFF_TestBuilder *b
 	, const char *tag
@@ -317,23 +332,23 @@ char IFF_TestBuilder_AddChunk
 	, VPS_TYPE_SIZE size
 )
 {
-	if (!b || !tag) return 0;
-	if (size > 0 && !data) return 0;
+	if (!b || !tag) return IFF_FAIL;
+	if (size > 0 && !data) return IFF_FAIL;
 
-	if (!PRIVATE_WriteTag(b, tag, 0)) return 0;
-	if (!PRIVATE_WriteSize(b, size)) return 0;
+	if (PRIVATE_WriteTag(b, tag, 0)) return IFF_FAIL;
+	if (PRIVATE_WriteSize(b, size)) return IFF_FAIL;
 
 	if (size > 0)
 	{
-		if (!VPS_DataWriter_WriteBytes(b->writer, data, size)) return 0;
+		if (!VPS_DataWriter_WriteBytes(b->writer, data, size)) return IFF_FAIL;
 	}
 
-	if (!PRIVATE_WritePadding(b, size)) return 0;
+	if (PRIVATE_WritePadding(b, size)) return IFF_FAIL;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_TestBuilder_AddDirective
+IFF_TYPE_RESULT IFF_TestBuilder_AddDirective
 (
 	struct IFF_TestBuilder *b
 	, const char *tag
@@ -341,31 +356,31 @@ char IFF_TestBuilder_AddDirective
 	, VPS_TYPE_SIZE size
 )
 {
-	if (!b || !tag) return 0;
-	if (size > 0 && !data) return 0;
+	if (!b || !tag) return IFF_FAIL;
+	if (size > 0 && !data) return IFF_FAIL;
 
-	if (!PRIVATE_WriteTag(b, tag, 1)) return 0;
-	if (!PRIVATE_WriteSize(b, size)) return 0;
+	if (PRIVATE_WriteTag(b, tag, 1)) return IFF_FAIL;
+	if (PRIVATE_WriteSize(b, size)) return IFF_FAIL;
 
 	if (size > 0)
 	{
-		if (!VPS_DataWriter_WriteBytes(b->writer, data, size)) return 0;
+		if (!VPS_DataWriter_WriteBytes(b->writer, data, size)) return IFF_FAIL;
 	}
 
-	if (!PRIVATE_WritePadding(b, size)) return 0;
+	if (PRIVATE_WritePadding(b, size)) return IFF_FAIL;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_TestBuilder_GetResult
+IFF_TYPE_RESULT IFF_TestBuilder_GetResult
 (
 	struct IFF_TestBuilder *b
 	, struct VPS_Data **out_data
 )
 {
-	if (!b || !out_data) return 0;
+	if (!b || !out_data) return IFF_FAIL;
 
 	*out_data = b->buffer;
 
-	return 1;
+	return IFF_OK;
 }

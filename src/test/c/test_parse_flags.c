@@ -59,35 +59,35 @@ static char test_midstream_iff_narrows_size(void)
 	header_16.flags.as_int = 0;
 	header_16.flags.as_fields.sizing = IFF_Header_Sizing_16;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
 	// 1. Write initial header (sets builder to 32-bit sizes).
-	if (!IFF_TestBuilder_AddHeader(builder, &header_32)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header_32)) goto cleanup;
 
 	// 2. Begin LIST with 32-bit sizes.
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
 
 	// 3. First FORM with 32-bit sizes.
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// 4. Mid-stream ' IFF' directive (written with current 32-bit size format).
 	//    AddHeader updates builder to 16-bit sizes automatically.
-	if (!IFF_TestBuilder_AddHeader(builder, &header_16)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header_16)) goto cleanup;
 
 	// 5. Second FORM with 16-bit sizes (builder is now in 16-bit mode).
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
-	if (!IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BODY", body_data, 4)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
 	// 6. End LIST — must use original 32-bit size for the patch.
 	//    Temporarily restore size_length for correct patching.
 	builder->size_length = 4;
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;
@@ -149,14 +149,14 @@ static char test_midstream_iff_rejects_progressive_in_blobbed(void)
 	header_progressive.flags.as_int = 0;
 	header_progressive.flags.as_fields.operating = IFF_Header_Operating_PROGRESSIVE;
 
-	if (!IFF_TestBuilder_Allocate(&builder)) return 0;
-	if (!IFF_TestBuilder_Construct(builder)) goto cleanup;
+	if (IFF_TestBuilder_Allocate(&builder)) return 0;
+	if (IFF_TestBuilder_Construct(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_AddHeader(builder, &header_blobbed)) goto cleanup;
+	if (IFF_TestBuilder_AddHeader(builder, &header_blobbed)) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "LIST", "ILBM")) goto cleanup;
 
-	if (!IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
+	if (IFF_TestBuilder_BeginContainer(builder, "FORM", "ILBM")) goto cleanup;
 
 	// Write the illegal mid-stream ' IFF' directive manually.
 	// We use AddHeader which serializes the IFF directive payload.
@@ -167,18 +167,18 @@ static char test_midstream_iff_rejects_progressive_in_blobbed(void)
 		VPS_Endian_Write16UBE(iff_payload, header_progressive.version);
 		VPS_Endian_Write16UBE(iff_payload + 2, header_progressive.revision);
 		VPS_Endian_Write64UBE(iff_payload + 4, header_progressive.flags.as_int);
-		if (!IFF_TestBuilder_AddDirective(builder, " IFF", iff_payload, 12)) goto cleanup;
+		if (IFF_TestBuilder_AddDirective(builder, " IFF", iff_payload, 12)) goto cleanup;
 	}
 
 	// Add chunk data so the FORM has content after the directive
 	// (though it won't be reached due to parse failure).
-	if (!IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
+	if (IFF_TestBuilder_AddChunk(builder, "BMHD", bmhd_data, 10)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_EndContainer(builder)) goto cleanup;
+	if (IFF_TestBuilder_EndContainer(builder)) goto cleanup;
 
-	if (!IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
+	if (IFF_TestBuilder_GetResult(builder, &image)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(factory)) goto cleanup;

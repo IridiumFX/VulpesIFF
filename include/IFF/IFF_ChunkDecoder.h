@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_Parser_State;
 struct VPS_Data;
 struct IFF_ContextualData;
@@ -15,14 +17,14 @@ struct IFF_ContextualData;
 struct IFF_ChunkDecoder
 {
 	// Called for the first part of a chunk. Allows allocation of a custom state object.
-	char (*begin_decode)
+	IFF_TYPE_RESULT (*begin_decode)
 	(
 		struct IFF_Parser_State *state
 		, void **custom_state // The decoder's internal state for reassembly.
 	);
 
 	// Called for each data slice of a chunk (will be called once for non-sharded chunks).
-	char (*process_shard)
+	IFF_TYPE_RESULT (*process_shard)
 	(
 		struct IFF_Parser_State *state
 		, void *custom_state
@@ -30,7 +32,7 @@ struct IFF_ChunkDecoder
 	);
 
 	// Called after the last shard. Finalizes the object and releases the custom state.
-	char (*end_decode)
+	IFF_TYPE_RESULT (*end_decode)
 	(
 		struct IFF_Parser_State *state
 		, void *custom_state
@@ -38,26 +40,26 @@ struct IFF_ChunkDecoder
 	);
 };
 
-char IFF_ChunkDecoder_Allocate
+IFF_TYPE_RESULT IFF_ChunkDecoder_Allocate
 (
 	struct IFF_ChunkDecoder **item
 );
 
-char IFF_ChunkDecoder_Construct
+IFF_TYPE_RESULT IFF_ChunkDecoder_Construct
 (
 	struct IFF_ChunkDecoder *item
-	, char (*begin_decode)
+	, IFF_TYPE_RESULT (*begin_decode)
 	(
 		struct IFF_Parser_State *state
 		, void **custom_state
 	)
-	, char (*process_shard)
+	, IFF_TYPE_RESULT (*process_shard)
 	(
 		struct IFF_Parser_State *state
 		, void *custom_state
 		, const struct VPS_Data *chunk_data
 	)
-	, char (*end_decode)
+	, IFF_TYPE_RESULT (*end_decode)
 	(
 		struct IFF_Parser_State *state
 		, void *custom_state
@@ -65,12 +67,25 @@ char IFF_ChunkDecoder_Construct
 	)
 );
 
-char IFF_ChunkDecoder_Deconstruct
+IFF_TYPE_RESULT IFF_ChunkDecoder_Deconstruct
 (
 	struct IFF_ChunkDecoder *item
 );
 
-char IFF_ChunkDecoder_Release
+IFF_TYPE_RESULT IFF_ChunkDecoder_Release
 (
 	struct IFF_ChunkDecoder *item
+);
+
+/*
+ * --- VulpesCore boundary adapter ---
+ *
+ * The decoder/encoder registries are VulpesCore dictionaries, which expect
+ * the boolean convention (1 = success). Register this shim as the release
+ * hook rather than casting the function above.
+ */
+
+char IFF_ChunkDecoder_VPS_Release
+(
+	void *item
 );

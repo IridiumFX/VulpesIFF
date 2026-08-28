@@ -22,7 +22,7 @@ struct TestFormEncoderState
 	int chunk_index;
 };
 
-static char TestForm_BeginEncode
+static IFF_TYPE_RESULT TestForm_BeginEncode
 (
 	struct IFF_Generator_State *state
 	, void *source_entity
@@ -30,16 +30,16 @@ static char TestForm_BeginEncode
 )
 {
 	struct TestFormEncoderState *s = calloc(1, sizeof(struct TestFormEncoderState));
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 
 	s->entity = (struct TestSourceEntity *)source_entity;
 	s->chunk_index = 0;
 
 	*custom_state = s;
-	return 1;
+	return IFF_OK;
 }
 
-static char TestForm_ProduceChunk
+static IFF_TYPE_RESULT TestForm_ProduceChunk
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -52,12 +52,12 @@ static char TestForm_ProduceChunk
 	struct TestSourceChunk *chunk;
 	struct VPS_Data *data = 0;
 
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 
 	if (s->chunk_index >= s->entity->chunk_count)
 	{
 		*out_done = 1;
-		return 1;
+		return IFF_OK;
 	}
 
 	chunk = &s->entity->chunks[s->chunk_index];
@@ -72,7 +72,7 @@ static char TestForm_ProduceChunk
 
 	if (!VPS_Data_Allocate(&data, chunk->size, chunk->size))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	memcpy(data->bytes, chunk->data, chunk->size);
@@ -82,10 +82,10 @@ static char TestForm_ProduceChunk
 
 	s->chunk_index++;
 
-	return 1;
+	return IFF_OK;
 }
 
-static char TestForm_ProduceNestedForm
+static IFF_TYPE_RESULT TestForm_ProduceNestedForm
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -95,17 +95,17 @@ static char TestForm_ProduceNestedForm
 )
 {
 	*out_done = 1;
-	return 1;
+	return IFF_OK;
 }
 
-static char TestForm_EndEncode
+static IFF_TYPE_RESULT TestForm_EndEncode
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
 )
 {
 	free(custom_state);
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_TestEncoders_CreateFormEncoder
@@ -117,9 +117,9 @@ char IFF_TestEncoders_CreateFormEncoder
 
 	if (!out) return 0;
 
-	if (!IFF_FormEncoder_Allocate(&enc)) return 0;
+	if (IFF_FormEncoder_Allocate(&enc)) return 0;
 
-	if (!IFF_FormEncoder_Construct
+	if (IFF_FormEncoder_Construct
 	(
 		enc
 		, TestForm_BeginEncode
@@ -140,7 +140,7 @@ char IFF_TestEncoders_CreateFormEncoder
 // TestDoublerChunkEncoder — doubles every byte
 // ===================================================================
 
-static char TestDoubler_Encode
+static IFF_TYPE_RESULT TestDoubler_Encode
 (
 	struct IFF_Generator_State *state
 	, void *source_object
@@ -151,11 +151,11 @@ static char TestDoubler_Encode
 	struct VPS_Data *result = 0;
 	VPS_TYPE_SIZE i;
 
-	if (!src || !out_data) return 0;
+	if (!src || !out_data) return IFF_FAIL;
 
 	if (!VPS_Data_Allocate(&result, src->limit * 2, src->limit * 2))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	for (i = 0; i < src->limit; i++)
@@ -165,7 +165,7 @@ static char TestDoubler_Encode
 	}
 
 	*out_data = result;
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_TestEncoders_CreateDoublerChunkEncoder
@@ -177,9 +177,9 @@ char IFF_TestEncoders_CreateDoublerChunkEncoder
 
 	if (!out) return 0;
 
-	if (!IFF_ChunkEncoder_Allocate(&enc)) return 0;
+	if (IFF_ChunkEncoder_Allocate(&enc)) return 0;
 
-	if (!IFF_ChunkEncoder_Construct(enc, TestDoubler_Encode))
+	if (IFF_ChunkEncoder_Construct(enc, TestDoubler_Encode))
 	{
 		IFF_ChunkEncoder_Release(enc);
 		return 0;
@@ -193,7 +193,7 @@ char IFF_TestEncoders_CreateDoublerChunkEncoder
 // EmptyFormEncoder — produce_chunk immediately sets done=1
 // ===================================================================
 
-static char EmptyForm_BeginEncode
+static IFF_TYPE_RESULT EmptyForm_BeginEncode
 (
 	struct IFF_Generator_State *state
 	, void *source_entity
@@ -201,10 +201,10 @@ static char EmptyForm_BeginEncode
 )
 {
 	*custom_state = 0;
-	return 1;
+	return IFF_OK;
 }
 
-static char EmptyForm_ProduceChunk
+static IFF_TYPE_RESULT EmptyForm_ProduceChunk
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -214,16 +214,16 @@ static char EmptyForm_ProduceChunk
 )
 {
 	*out_done = 1;
-	return 1;
+	return IFF_OK;
 }
 
-static char EmptyForm_EndEncode
+static IFF_TYPE_RESULT EmptyForm_EndEncode
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
 )
 {
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_TestEncoders_CreateEmptyFormEncoder
@@ -235,9 +235,9 @@ char IFF_TestEncoders_CreateEmptyFormEncoder
 
 	if (!out) return 0;
 
-	if (!IFF_FormEncoder_Allocate(&enc)) return 0;
+	if (IFF_FormEncoder_Allocate(&enc)) return 0;
 
-	if (!IFF_FormEncoder_Construct
+	if (IFF_FormEncoder_Construct
 	(
 		enc
 		, EmptyForm_BeginEncode
@@ -258,14 +258,14 @@ char IFF_TestEncoders_CreateEmptyFormEncoder
 // FailBeginFormEncoder — begin_encode returns 0
 // ===================================================================
 
-static char FailBegin_BeginEncode
+static IFF_TYPE_RESULT FailBegin_BeginEncode
 (
 	struct IFF_Generator_State *state
 	, void *source_entity
 	, void **custom_state
 )
 {
-	return 0;
+	return IFF_FAIL;
 }
 
 char IFF_TestEncoders_CreateFailBeginFormEncoder
@@ -277,9 +277,9 @@ char IFF_TestEncoders_CreateFailBeginFormEncoder
 
 	if (!out) return 0;
 
-	if (!IFF_FormEncoder_Allocate(&enc)) return 0;
+	if (IFF_FormEncoder_Allocate(&enc)) return 0;
 
-	if (!IFF_FormEncoder_Construct
+	if (IFF_FormEncoder_Construct
 	(
 		enc
 		, FailBegin_BeginEncode
@@ -300,7 +300,7 @@ char IFF_TestEncoders_CreateFailBeginFormEncoder
 // FailSecondChunkFormEncoder — produce_chunk fails on 2nd call
 // ===================================================================
 
-static char FailSecond_ProduceChunk
+static IFF_TYPE_RESULT FailSecond_ProduceChunk
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -311,7 +311,7 @@ static char FailSecond_ProduceChunk
 {
 	struct TestFormEncoderState *s = custom_state;
 
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 
 	// First chunk succeeds normally.
 	if (s->chunk_index == 0)
@@ -320,7 +320,7 @@ static char FailSecond_ProduceChunk
 	}
 
 	// Second and subsequent calls fail.
-	return 0;
+	return IFF_FAIL;
 }
 
 char IFF_TestEncoders_CreateFailSecondChunkFormEncoder
@@ -332,9 +332,9 @@ char IFF_TestEncoders_CreateFailSecondChunkFormEncoder
 
 	if (!out) return 0;
 
-	if (!IFF_FormEncoder_Allocate(&enc)) return 0;
+	if (IFF_FormEncoder_Allocate(&enc)) return 0;
 
-	if (!IFF_FormEncoder_Construct
+	if (IFF_FormEncoder_Construct
 	(
 		enc
 		, TestForm_BeginEncode

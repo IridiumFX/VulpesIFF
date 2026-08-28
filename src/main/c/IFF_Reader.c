@@ -113,7 +113,7 @@ cleanup:
 	*item = 0;
 	IFF_Reader_Release(reader);
 
-	return  0;
+	return IFF_FAIL;
 }
 
 IFF_TYPE_RESULT IFF_Reader_Construct

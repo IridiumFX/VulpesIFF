@@ -29,26 +29,26 @@ struct PassthroughState
 	struct VPS_Data* accumulated;
 };
 
-static char passthrough_begin(struct IFF_Parser_State* state, void** custom_state)
+static IFF_TYPE_RESULT passthrough_begin(struct IFF_Parser_State* state, void** custom_state)
 {
 	(void)state;
 	struct PassthroughState* ps = calloc(1, sizeof(struct PassthroughState));
-	if (!ps) return 0;
+	if (!ps) return IFF_FAIL;
 	*custom_state = ps;
-	return 1;
+	return IFF_OK;
 }
 
-static char passthrough_shard(struct IFF_Parser_State* state, void* custom_state, const struct VPS_Data* chunk_data)
+static IFF_TYPE_RESULT passthrough_shard(struct IFF_Parser_State* state, void* custom_state, const struct VPS_Data* chunk_data)
 {
 	(void)state;
 	struct PassthroughState* ps = (struct PassthroughState*)custom_state;
-	if (!ps || !chunk_data || chunk_data->size == 0) return 1;
+	if (!ps || !chunk_data || chunk_data->size == 0) return IFF_OK;
 
 	if (!ps->accumulated)
 	{
 		if (!VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)chunk_data, 0, chunk_data->size))
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 	else
@@ -57,21 +57,21 @@ static char passthrough_shard(struct IFF_Parser_State* state, void* custom_state
 		VPS_TYPE_SIZE old_size = ps->accumulated->size;
 		VPS_TYPE_SIZE new_size = old_size + chunk_data->size;
 		VPS_TYPE_8U* new_buf = realloc(ps->accumulated->bytes, new_size);
-		if (!new_buf) return 0;
+		if (!new_buf) return IFF_FAIL;
 		memcpy(new_buf + old_size, chunk_data->bytes, chunk_data->size);
 		ps->accumulated->bytes = new_buf;
 		ps->accumulated->size = new_size;
 		ps->accumulated->limit = new_size;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-static char passthrough_end(struct IFF_Parser_State* state, void* custom_state, struct IFF_ContextualData** out)
+static IFF_TYPE_RESULT passthrough_end(struct IFF_Parser_State* state, void* custom_state, struct IFF_ContextualData** out)
 {
 	(void)state;
 	struct PassthroughState* ps = (struct PassthroughState*)custom_state;
-	if (!ps || !out) return 0;
+	if (!ps || !out) return IFF_FAIL;
 
 	if (ps->accumulated)
 	{
@@ -87,12 +87,12 @@ static char passthrough_end(struct IFF_Parser_State* state, void* custom_state, 
 	}
 
 	free(ps);
-	return 1;
+	return IFF_OK;
 }
 
 static char create_passthrough_decoder(struct IFF_ChunkDecoder** dec)
 {
-	if (!IFF_ChunkDecoder_Allocate(dec)) return 0;
+	if (IFF_ChunkDecoder_Allocate(dec)) return 0;
 	IFF_ChunkDecoder_Construct(*dec, passthrough_begin, passthrough_shard, passthrough_end);
 	return 1;
 }
@@ -101,16 +101,16 @@ static char create_passthrough_decoder(struct IFF_ChunkDecoder** dec)
 /* ILBM FormDecoder                                                   */
 /* ================================================================== */
 
-static char ilbm_begin(struct IFF_Parser_State* state, void** custom_state)
+static IFF_TYPE_RESULT ilbm_begin(struct IFF_Parser_State* state, void** custom_state)
 {
 	(void)state;
 	struct ILBM_State* s = calloc(1, sizeof(struct ILBM_State));
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 	*custom_state = s;
-	return 1;
+	return IFF_OK;
 }
 
-static char ilbm_process_chunk
+static IFF_TYPE_RESULT ilbm_process_chunk
 (
 	struct IFF_Parser_State* state,
 	void* custom_state,
@@ -120,7 +120,7 @@ static char ilbm_process_chunk
 {
 	(void)state;
 	struct ILBM_State* s = (struct ILBM_State*)custom_state;
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 
 	VPS_TYPE_16S ordering;
 
@@ -150,7 +150,7 @@ static char ilbm_process_chunk
 			VPS_DataReader_Read16SBE(&reader, &s->bmhd.pageHeight);
 			s->has_bmhd = 1;
 			IFF_ContextualData_Release(cd);
-			return 1;
+			return IFF_OK;
 		}
 	}
 
@@ -172,7 +172,7 @@ static char ilbm_process_chunk
 				VPS_DataReader_Read8U(&reader, &s->palette[i].b);
 			}
 			IFF_ContextualData_Release(cd);
-			return 1;
+			return IFF_OK;
 		}
 	}
 
@@ -187,7 +187,7 @@ static char ilbm_process_chunk
 			VPS_DataReader_Construct(&reader, cd->data);
 			VPS_DataReader_Read32UBE(&reader, &s->camg_mode);
 			IFF_ContextualData_Release(cd);
-			return 1;
+			return IFF_OK;
 		}
 	}
 
@@ -208,23 +208,23 @@ static char ilbm_process_chunk
 			if (!VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->limit))
 			{
 				IFF_ContextualData_Release(cd);
-				return 0;
+				return IFF_FAIL;
 			}
 			s->has_body = 1;
 			IFF_ContextualData_Release(cd);
-			return 1;
+			return IFF_OK;
 		}
 	}
 
 	/* Unknown chunk — release and continue. */
 	if (cd) IFF_ContextualData_Release(cd);
-	return 1;
+	return IFF_OK;
 }
 
-static char ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** out_final_entity)
+static IFF_TYPE_RESULT ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** out_final_entity)
 {
 	struct ILBM_State* s = (struct ILBM_State*)custom_state;
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 
 	/* Try pulling CMAP from PROP if we didn't get one in a chunk. */
 	if (s->palette_size == 0)
@@ -254,7 +254,7 @@ static char ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** 
 		if (s->body_data) VPS_Data_Release(s->body_data);
 		free(s);
 		*out_final_entity = NULL;
-		return 1;
+		return IFF_OK;
 	}
 
 	int w = s->bmhd.w;
@@ -278,7 +278,7 @@ static char ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** 
 			VPS_Data_Release(s->body_data);
 			free(s);
 			*out_final_entity = NULL;
-			return 1;
+			return IFF_OK;
 		}
 	}
 	else
@@ -292,7 +292,7 @@ static char ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** 
 			VPS_Data_Release(s->body_data);
 			free(s);
 			*out_final_entity = NULL;
-			return 1;
+			return IFF_OK;
 		}
 		body_pixels = s->body_data->bytes;
 	}
@@ -306,7 +306,7 @@ static char ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** 
 		VPS_Data_Release(s->body_data);
 		free(s);
 		*out_final_entity = NULL;
-		return 1;
+		return IFF_OK;
 	}
 	memset(pixels, 0, pixel_bytes);
 
@@ -351,7 +351,7 @@ static char ilbm_end(struct IFF_Parser_State* state, void* custom_state, void** 
 		*out_final_entity = NULL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
 /* ================================================================== */

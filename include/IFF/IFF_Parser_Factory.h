@@ -54,7 +54,7 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 (
 	struct IFF_Parser_Factory* item,
 	const struct IFF_Tag* directive_tag,
-	char (*processor)
+	IFF_TYPE_RESULT (*processor)
 	(
 		const struct IFF_Chunk *chunk,
 		struct IFF_DirectiveResult *result

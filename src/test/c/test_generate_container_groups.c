@@ -35,7 +35,7 @@ struct GroupEncoderState
 	unsigned char data[4];
 };
 
-static char group_begin_encode
+static IFF_TYPE_RESULT group_begin_encode
 (
 	struct IFF_Generator_State *state
 	, void *source_entity
@@ -43,13 +43,13 @@ static char group_begin_encode
 )
 {
 	struct GroupEncoderState *s = calloc(1, sizeof(*s));
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 	s->data[0] = 0xAA; s->data[1] = 0xBB; s->data[2] = 0xCC; s->data[3] = 0xDD;
 	*custom_state = s;
-	return 1;
+	return IFF_OK;
 }
 
-static char group_produce_chunk
+static IFF_TYPE_RESULT group_produce_chunk
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -63,7 +63,7 @@ static char group_produce_chunk
 	if (s->chunk_index >= 1)
 	{
 		*out_done = 1;
-		return 1;
+		return IFF_OK;
 	}
 
 	IFF_Tag_Construct(out_tag, (const unsigned char *)"DATA", 4, IFF_TAG_TYPE_TAG);
@@ -71,11 +71,11 @@ static char group_produce_chunk
 	memcpy((*out_data)->bytes, s->data, 4);
 	s->chunk_index++;
 	*out_done = 0;
-	return 1;
+	return IFF_OK;
 }
 
 // Two groups: CAT BBBB (2 entities), CAT CCCC (1 entity)
-static char group_begin_container_group
+static IFF_TYPE_RESULT group_begin_container_group
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -89,7 +89,7 @@ static char group_begin_container_group
 	if (s->group_index >= 2)
 	{
 		*out_done = 1;
-		return 1;
+		return IFF_OK;
 	}
 
 	*out_container_variant = IFF_TAG_SYSTEM_CAT;
@@ -102,10 +102,10 @@ static char group_begin_container_group
 	s->entity_index = 0;
 	s->group_index++;
 	*out_done = 0;
-	return 1;
+	return IFF_OK;
 }
 
-static char group_produce_grouped_form
+static IFF_TYPE_RESULT group_produce_grouped_form
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -121,7 +121,7 @@ static char group_produce_grouped_form
 	if (s->entity_index >= limit)
 	{
 		*out_done = 1;
-		return 1;
+		return IFF_OK;
 	}
 
 	if (s->group_index == 1)
@@ -134,10 +134,10 @@ static char group_produce_grouped_form
 	*out_entity = s;
 	s->entity_index++;
 	*out_done = 0;
-	return 1;
+	return IFF_OK;
 }
 
-static char group_produce_nested_form
+static IFF_TYPE_RESULT group_produce_nested_form
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -147,17 +147,17 @@ static char group_produce_nested_form
 )
 {
 	*out_done = 1;
-	return 1;
+	return IFF_OK;
 }
 
-static char group_end_encode
+static IFF_TYPE_RESULT group_end_encode
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
 )
 {
 	free(custom_state);
-	return 1;
+	return IFF_OK;
 }
 
 /* Inner FORM encoder — produces one DATA chunk */
@@ -168,7 +168,7 @@ struct InnerEncoderState
 	char chunk_produced;
 };
 
-static char inner_begin_encode
+static IFF_TYPE_RESULT inner_begin_encode
 (
 	struct IFF_Generator_State *state
 	, void *source_entity
@@ -176,13 +176,13 @@ static char inner_begin_encode
 )
 {
 	struct InnerEncoderState *s = calloc(1, sizeof(*s));
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 	s->data[0] = 0xAA; s->data[1] = 0xBB; s->data[2] = 0xCC; s->data[3] = 0xDD;
 	*custom_state = s;
-	return 1;
+	return IFF_OK;
 }
 
-static char inner_produce_chunk
+static IFF_TYPE_RESULT inner_produce_chunk
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -196,7 +196,7 @@ static char inner_produce_chunk
 	if (s->chunk_produced)
 	{
 		*out_done = 1;
-		return 1;
+		return IFF_OK;
 	}
 
 	IFF_Tag_Construct(out_tag, (const unsigned char *)"DATA", 4, IFF_TAG_TYPE_TAG);
@@ -204,10 +204,10 @@ static char inner_produce_chunk
 	memcpy((*out_data)->bytes, s->data, 4);
 	s->chunk_produced = 1;
 	*out_done = 0;
-	return 1;
+	return IFF_OK;
 }
 
-static char inner_produce_nested_form
+static IFF_TYPE_RESULT inner_produce_nested_form
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
@@ -217,17 +217,17 @@ static char inner_produce_nested_form
 )
 {
 	*out_done = 1;
-	return 1;
+	return IFF_OK;
 }
 
-static char inner_end_encode
+static IFF_TYPE_RESULT inner_end_encode
 (
 	struct IFF_Generator_State *state
 	, void *custom_state
 )
 {
 	free(custom_state);
-	return 1;
+	return IFF_OK;
 }
 
 /* ================================================================== */
@@ -259,7 +259,7 @@ static char test_roundtrip_container_groups(void)
 	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 
 	/* AAAA encoder with container groups */
-	if (!IFF_FormEncoder_Allocate(&aaaa_enc)) goto cleanup;
+	if (IFF_FormEncoder_Allocate(&aaaa_enc)) goto cleanup;
 	IFF_FormEncoder_Construct(aaaa_enc,
 		group_begin_encode, group_produce_chunk,
 		group_produce_nested_form, group_end_encode);
@@ -270,7 +270,7 @@ static char test_roundtrip_container_groups(void)
 	aaaa_enc = 0;
 
 	/* BBBB inner encoder */
-	if (!IFF_FormEncoder_Allocate(&bbbb_enc)) goto cleanup;
+	if (IFF_FormEncoder_Allocate(&bbbb_enc)) goto cleanup;
 	IFF_FormEncoder_Construct(bbbb_enc,
 		inner_begin_encode, inner_produce_chunk,
 		inner_produce_nested_form, inner_end_encode);
@@ -278,7 +278,7 @@ static char test_roundtrip_container_groups(void)
 	bbbb_enc = 0;
 
 	/* CCCC inner encoder (same as BBBB) */
-	if (!IFF_FormEncoder_Allocate(&cccc_enc)) goto cleanup;
+	if (IFF_FormEncoder_Allocate(&cccc_enc)) goto cleanup;
 	IFF_FormEncoder_Construct(cccc_enc,
 		inner_begin_encode, inner_produce_chunk,
 		inner_produce_nested_form, inner_end_encode);

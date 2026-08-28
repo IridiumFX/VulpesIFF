@@ -7,25 +7,30 @@
 #include <IFF/IFF_Generator_State.h>
 #include <IFF/IFF_ChunkEncoder.h>
 
-char IFF_ChunkEncoder_Allocate
+IFF_TYPE_RESULT IFF_ChunkEncoder_Allocate
 (
 	struct IFF_ChunkEncoder **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*item = calloc(1, sizeof(struct IFF_ChunkEncoder));
 
-	return (*item != 0);
+	if (!*item)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_ChunkEncoder_Construct
+IFF_TYPE_RESULT IFF_ChunkEncoder_Construct
 (
 	struct IFF_ChunkEncoder *item
-	, char (*encode)
+	, IFF_TYPE_RESULT (*encode)
 	(
 		struct IFF_Generator_State *state
 		, void *source_object
@@ -37,15 +42,15 @@ char IFF_ChunkEncoder_Construct
 	// register fine and then be silently skipped by the generator.
 	if (!item || !encode)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->encode = encode;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ChunkEncoder_Deconstruct
+IFF_TYPE_RESULT IFF_ChunkEncoder_Deconstruct
 (
 	struct IFF_ChunkEncoder *item
 )
@@ -55,10 +60,10 @@ char IFF_ChunkEncoder_Deconstruct
 		item->encode = 0;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ChunkEncoder_Release
+IFF_TYPE_RESULT IFF_ChunkEncoder_Release
 (
 	struct IFF_ChunkEncoder *item
 )
@@ -69,5 +74,16 @@ char IFF_ChunkEncoder_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
+}
+
+
+// --- VulpesCore boundary adapter ---
+
+char IFF_ChunkEncoder_VPS_Release
+(
+	void *item
+)
+{
+	return IFF_ChunkEncoder_Release(item) == IFF_OK;
 }

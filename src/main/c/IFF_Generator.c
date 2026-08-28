@@ -2018,7 +2018,7 @@ char IFF_Generator_EncodeForm
 	/* Call begin_encode */
 	if (encoder->begin_encode)
 	{
-		if (!encoder->begin_encode(&state, source_entity, &custom_state))
+		if (encoder->begin_encode(&state, source_entity, &custom_state))
 		{
 			PRIVATE_IFF_Generator_AbortContainer(gen);
 			return 0;
@@ -2034,7 +2034,7 @@ char IFF_Generator_EncodeForm
 			chunk_data = 0;
 			memset(&chunk_tag, 0, sizeof(chunk_tag));
 
-			if (!encoder->produce_chunk(&state, custom_state, &chunk_tag, &chunk_data, &done))
+			if (encoder->produce_chunk(&state, custom_state, &chunk_tag, &chunk_data, &done))
 			{
 				goto encode_failure;
 			}
@@ -2051,7 +2051,7 @@ char IFF_Generator_EncodeForm
 				{
 					struct VPS_Data *encoded_data = 0;
 
-					if (!chunk_encoder->encode(&state, chunk_data, &encoded_data))
+					if (chunk_encoder->encode(&state, chunk_data, &encoded_data))
 					{
 						VPS_Data_Release(chunk_data);
 						goto encode_failure;
@@ -2086,7 +2086,7 @@ char IFF_Generator_EncodeForm
 			memset(&container_variant, 0, sizeof(container_variant));
 			memset(&container_type, 0, sizeof(container_type));
 
-			if (!encoder->begin_container_group(&state, custom_state,
+			if (encoder->begin_container_group(&state, custom_state,
 				&container_variant, &container_type, &done))
 			{
 				goto encode_failure;
@@ -2125,7 +2125,7 @@ char IFF_Generator_EncodeForm
 
 						memset(&grouped_type, 0, sizeof(grouped_type));
 
-						if (!encoder->produce_grouped_form(&state, custom_state,
+						if (encoder->produce_grouped_form(&state, custom_state,
 							&grouped_type, &grouped_entity, &group_done))
 						{
 							goto encode_failure;
@@ -2169,7 +2169,7 @@ char IFF_Generator_EncodeForm
 
 			memset(&nested_type, 0, sizeof(nested_type));
 
-			if (!encoder->produce_nested_form(&state, custom_state, &nested_type, &nested_entity, &done))
+			if (encoder->produce_nested_form(&state, custom_state, &nested_type, &nested_entity, &done))
 			{
 				goto encode_failure;
 			}
@@ -2188,7 +2188,7 @@ char IFF_Generator_EncodeForm
 	 * (end_encode has already run, so don't jump to encode_failure). */
 	if (encoder->end_encode)
 	{
-		if (!encoder->end_encode(&state, custom_state))
+		if (encoder->end_encode(&state, custom_state))
 		{
 			PRIVATE_IFF_Generator_AbortContainer(gen);
 			return 0;

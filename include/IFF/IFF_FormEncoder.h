@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct VPS_Data;
 
 /**
@@ -17,7 +19,7 @@ struct IFF_FormEncoder
 	/**
 	 * @brief Called when the generator enters a FORM. Sets up encoder state.
 	 */
-	char (*begin_encode)
+	IFF_TYPE_RESULT (*begin_encode)
 	(
 		struct IFF_Generator_State *state
 		, void *source_entity
@@ -27,7 +29,7 @@ struct IFF_FormEncoder
 	/**
 	 * @brief Called to produce the next chunk. Sets out_done=1 when finished.
 	 */
-	char (*produce_chunk)
+	IFF_TYPE_RESULT (*produce_chunk)
 	(
 		struct IFF_Generator_State *state
 		, void *custom_state
@@ -39,7 +41,7 @@ struct IFF_FormEncoder
 	/**
 	 * @brief Called to produce nested FORMs. Sets out_done=1 when finished.
 	 */
-	char (*produce_nested_form)
+	IFF_TYPE_RESULT (*produce_nested_form)
 	(
 		struct IFF_Generator_State *state
 		, void *custom_state
@@ -51,7 +53,7 @@ struct IFF_FormEncoder
 	/**
 	 * @brief Called after all chunks/forms are produced. Releases encoder state.
 	 */
-	char (*end_encode)
+	IFF_TYPE_RESULT (*end_encode)
 	(
 		struct IFF_Generator_State *state
 		, void *custom_state
@@ -63,7 +65,7 @@ struct IFF_FormEncoder
 	 *          produce_nested_form. Each invocation opens one CAT or LIST.
 	 *          Sets out_done=1 when no more container groups.
 	 */
-	char (*begin_container_group)
+	IFF_TYPE_RESULT (*begin_container_group)
 	(
 		struct IFF_Generator_State *state
 		, void *custom_state
@@ -77,7 +79,7 @@ struct IFF_FormEncoder
 	 * @details Optional. Called in a loop after begin_container_group opens
 	 *          a container. Sets out_done=1 when the group is complete.
 	 */
-	char (*produce_grouped_form)
+	IFF_TYPE_RESULT (*produce_grouped_form)
 	(
 		struct IFF_Generator_State *state
 		, void *custom_state
@@ -87,26 +89,39 @@ struct IFF_FormEncoder
 	);
 };
 
-char IFF_FormEncoder_Allocate
+IFF_TYPE_RESULT IFF_FormEncoder_Allocate
 (
 	struct IFF_FormEncoder **item
 );
 
-char IFF_FormEncoder_Construct
+IFF_TYPE_RESULT IFF_FormEncoder_Construct
 (
 	struct IFF_FormEncoder *item
-	, char (*begin_encode)(struct IFF_Generator_State*, void*, void**)
-	, char (*produce_chunk)(struct IFF_Generator_State*, void*, struct IFF_Tag*, struct VPS_Data**, char*)
-	, char (*produce_nested_form)(struct IFF_Generator_State*, void*, struct IFF_Tag*, void**, char*)
-	, char (*end_encode)(struct IFF_Generator_State*, void*)
+	, IFF_TYPE_RESULT (*begin_encode)(struct IFF_Generator_State*, void*, void**)
+	, IFF_TYPE_RESULT (*produce_chunk)(struct IFF_Generator_State*, void*, struct IFF_Tag*, struct VPS_Data**, char*)
+	, IFF_TYPE_RESULT (*produce_nested_form)(struct IFF_Generator_State*, void*, struct IFF_Tag*, void**, char*)
+	, IFF_TYPE_RESULT (*end_encode)(struct IFF_Generator_State*, void*)
 );
 
-char IFF_FormEncoder_Deconstruct
+IFF_TYPE_RESULT IFF_FormEncoder_Deconstruct
 (
 	struct IFF_FormEncoder *item
 );
 
-char IFF_FormEncoder_Release
+IFF_TYPE_RESULT IFF_FormEncoder_Release
 (
 	struct IFF_FormEncoder *item
+);
+
+/*
+ * --- VulpesCore boundary adapter ---
+ *
+ * The decoder/encoder registries are VulpesCore dictionaries, which expect
+ * the boolean convention (1 = success). Register this shim as the release
+ * hook rather than casting the function above.
+ */
+
+char IFF_FormEncoder_VPS_Release
+(
+	void *item
 );

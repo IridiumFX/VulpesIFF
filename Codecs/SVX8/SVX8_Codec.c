@@ -24,24 +24,29 @@
 
 struct PassthroughState8 { struct VPS_Data* accumulated; };
 
-static char pt8_begin(struct IFF_Parser_State* state, void** cs)
+static IFF_TYPE_RESULT pt8_begin(struct IFF_Parser_State* state, void** cs)
 {
 	(void)state;
 	*cs = calloc(1, sizeof(struct PassthroughState8));
-	return (*cs != NULL);
+	if (!*cs)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-static char pt8_shard(struct IFF_Parser_State* state, void* cs, const struct VPS_Data* data)
+static IFF_TYPE_RESULT pt8_shard(struct IFF_Parser_State* state, void* cs, const struct VPS_Data* data)
 {
 	(void)state;
 	struct PassthroughState8* ps = cs;
-	if (!ps || !data || data->size == 0) return 1;
+	if (!ps || !data || data->size == 0) return IFF_OK;
 
 	if (!ps->accumulated)
 	{
 		if (!VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)data, 0, data->size))
 		{
-			return 0;
+			return IFF_FAIL;
 		}
 	}
 	else
@@ -49,20 +54,20 @@ static char pt8_shard(struct IFF_Parser_State* state, void* cs, const struct VPS
 		VPS_TYPE_SIZE old = ps->accumulated->size;
 		VPS_TYPE_SIZE new_sz = old + data->size;
 		VPS_TYPE_8U* buf = realloc(ps->accumulated->bytes, new_sz);
-		if (!buf) return 0;
+		if (!buf) return IFF_FAIL;
 		memcpy(buf + old, data->bytes, data->size);
 		ps->accumulated->bytes = buf;
 		ps->accumulated->size = new_sz;
 		ps->accumulated->limit = new_sz;
 	}
-	return 1;
+	return IFF_OK;
 }
 
-static char pt8_end(struct IFF_Parser_State* state, void* cs, struct IFF_ContextualData** out)
+static IFF_TYPE_RESULT pt8_end(struct IFF_Parser_State* state, void* cs, struct IFF_ContextualData** out)
 {
 	(void)state;
 	struct PassthroughState8* ps = cs;
-	if (!ps || !out) return 0;
+	if (!ps || !out) return IFF_FAIL;
 
 	if (ps->accumulated)
 	{
@@ -75,27 +80,27 @@ static char pt8_end(struct IFF_Parser_State* state, void* cs, struct IFF_Context
 	else *out = NULL;
 
 	free(ps);
-	return 1;
+	return IFF_OK;
 }
 
 /* ================================================================== */
 /* 8SVX FormDecoder                                                   */
 /* ================================================================== */
 
-static char svx8_begin(struct IFF_Parser_State* state, void** cs)
+static IFF_TYPE_RESULT svx8_begin(struct IFF_Parser_State* state, void** cs)
 {
 	(void)state;
 	struct SVX8_State* s = calloc(1, sizeof(struct SVX8_State));
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 	*cs = s;
-	return 1;
+	return IFF_OK;
 }
 
-static char svx8_chunk(struct IFF_Parser_State* state, void* cs, struct IFF_Tag* tag, struct IFF_ContextualData* cd)
+static IFF_TYPE_RESULT svx8_chunk(struct IFF_Parser_State* state, void* cs, struct IFF_Tag* tag, struct IFF_ContextualData* cd)
 {
 	(void)state;
 	struct SVX8_State* s = cs;
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 	VPS_TYPE_16S ord;
 
 	/* VHDR */
@@ -118,7 +123,7 @@ static char svx8_chunk(struct IFF_Parser_State* state, void* cs, struct IFF_Tag*
 			VPS_DataReader_Read32SBE(&r, &s->vhdr.volume);
 			s->has_vhdr = 1;
 			IFF_ContextualData_Release(cd);
-			return 1;
+			return IFF_OK;
 		}
 	}
 
@@ -138,30 +143,30 @@ static char svx8_chunk(struct IFF_Parser_State* state, void* cs, struct IFF_Tag*
 			if (!VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->limit))
 			{
 				IFF_ContextualData_Release(cd);
-				return 0;
+				return IFF_FAIL;
 			}
 			s->has_body = 1;
 			IFF_ContextualData_Release(cd);
-			return 1;
+			return IFF_OK;
 		}
 	}
 
 	if (cd) IFF_ContextualData_Release(cd);
-	return 1;
+	return IFF_OK;
 }
 
-static char svx8_end(struct IFF_Parser_State* state, void* cs, void** out)
+static IFF_TYPE_RESULT svx8_end(struct IFF_Parser_State* state, void* cs, void** out)
 {
 	(void)state;
 	struct SVX8_State* s = cs;
-	if (!s) return 0;
+	if (!s) return IFF_FAIL;
 
 	if (!s->has_vhdr || !s->has_body || !s->body_data)
 	{
 		if (s->body_data) VPS_Data_Release(s->body_data);
 		free(s);
 		*out = NULL;
-		return 1;
+		return IFF_OK;
 	}
 
 	struct SVX8_Result* result = calloc(1, sizeof(struct SVX8_Result));
@@ -170,7 +175,7 @@ static char svx8_end(struct IFF_Parser_State* state, void* cs, void** out)
 		VPS_Data_Release(s->body_data);
 		free(s);
 		*out = NULL;
-		return 1;
+		return IFF_OK;
 	}
 
 	result->vhdr = s->vhdr;
@@ -196,7 +201,7 @@ static char svx8_end(struct IFF_Parser_State* state, void* cs, void** out)
 			VPS_Data_Release(s->body_data);
 			free(s);
 			*out = NULL;
-			return 1;
+			return IFF_OK;
 		}
 		VPS_Data_Release(s->body_data);
 	}
@@ -209,7 +214,7 @@ static char svx8_end(struct IFF_Parser_State* state, void* cs, void** out)
 
 	free(s);
 	*out = result;
-	return 1;
+	return IFF_OK;
 }
 
 /* ================================================================== */

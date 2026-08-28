@@ -76,7 +76,7 @@ char IFF_Parser_Factory_Construct
 		, IFF_Tag_VPS_Hash
 		, IFF_Tag_VPS_Compare
 		, IFF_Tag_VPS_Release
-		, (char (*)(void *)) IFF_FormDecoder_Release // Registered decoders are owned by the factory
+		, IFF_FormDecoder_VPS_Release // Registered decoders are owned by the factory
 		, 2
 		, 7500
 		, 8
@@ -87,7 +87,7 @@ char IFF_Parser_Factory_Construct
 		, IFF_Chunk_Key_VPS_Hash
 		, IFF_Chunk_Key_VPS_Compare
 		, IFF_Chunk_Key_VPS_Release
-		, (char (*)(void *)) IFF_ChunkDecoder_Release // Registered decoders are owned by the factory
+		, IFF_ChunkDecoder_VPS_Release // Registered decoders are owned by the factory
 		, 2
 		, 7500
 		, 8
@@ -233,7 +233,7 @@ char IFF_Parser_Factory_RegisterDirectiveProcessor
 (
 	struct IFF_Parser_Factory* item,
 	const struct IFF_Tag* directive_tag,
-	char (*processor)
+	IFF_TYPE_RESULT (*processor)
 	(
 		const struct IFF_Chunk *chunk,
 		struct IFF_DirectiveResult *result

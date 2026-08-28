@@ -26,20 +26,20 @@ struct TestChunkState
 	struct VPS_Data *accumulated;
 };
 
-static char TestChunk_BeginDecode
+static IFF_TYPE_RESULT TestChunk_BeginDecode
 (
 	struct IFF_Parser_State *state
 	, void **custom_state
 )
 {
 	struct TestChunkState *cs = calloc(1, sizeof(struct TestChunkState));
-	if (!cs) return 0;
+	if (!cs) return IFF_FAIL;
 
 	*custom_state = cs;
-	return 1;
+	return IFF_OK;
 }
 
-static char TestChunk_ProcessShard
+static IFF_TYPE_RESULT TestChunk_ProcessShard
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -48,7 +48,7 @@ static char TestChunk_ProcessShard
 {
 	struct TestChunkState *cs = custom_state;
 
-	if (!cs) return 0;
+	if (!cs) return IFF_FAIL;
 
 	if (chunk_data && chunk_data->limit > 0)
 	{
@@ -58,10 +58,10 @@ static char TestChunk_ProcessShard
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-static char TestChunk_EndDecode
+static IFF_TYPE_RESULT TestChunk_EndDecode
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -72,14 +72,14 @@ static char TestChunk_EndDecode
 	struct IFF_ContextualData *cd = 0;
 	union IFF_Header_Flags flags;
 
-	if (!cs || !out) return 0;
+	if (!cs || !out) return IFF_FAIL;
 
 	flags.as_int = 0;
 
 	if (IFF_ContextualData_Allocate(&cd))
 	{
 		free(cs);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_ContextualData_Construct(cd, flags, cs->accumulated);
@@ -88,7 +88,7 @@ static char TestChunk_EndDecode
 	*out = cd;
 	free(cs);
 
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_TestDecoders_CreateChunkDecoder
@@ -100,9 +100,9 @@ char IFF_TestDecoders_CreateChunkDecoder
 
 	if (!out_decoder) return 0;
 
-	if (!IFF_ChunkDecoder_Allocate(&dec)) return 0;
+	if (IFF_ChunkDecoder_Allocate(&dec)) return 0;
 
-	if (!IFF_ChunkDecoder_Construct
+	if (IFF_ChunkDecoder_Construct
 	(
 		dec
 		, TestChunk_BeginDecode
@@ -122,7 +122,7 @@ char IFF_TestDecoders_CreateChunkDecoder
 // ShardCountingChunkDecoder — increments global counter per shard
 // ===================================================================
 
-static char ShardCounting_ProcessShard
+static IFF_TYPE_RESULT ShardCounting_ProcessShard
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -143,9 +143,9 @@ char IFF_TestDecoders_CreateShardCountingChunkDecoder
 
 	if (!out_decoder) return 0;
 
-	if (!IFF_ChunkDecoder_Allocate(&dec)) return 0;
+	if (IFF_ChunkDecoder_Allocate(&dec)) return 0;
 
-	if (!IFF_ChunkDecoder_Construct
+	if (IFF_ChunkDecoder_Construct
 	(
 		dec
 		, TestChunk_BeginDecode
@@ -165,14 +165,14 @@ char IFF_TestDecoders_CreateShardCountingChunkDecoder
 // TestFormDecoder — collects chunks, produces TestFormState
 // ===================================================================
 
-static char TestForm_BeginDecode
+static IFF_TYPE_RESULT TestForm_BeginDecode
 (
 	struct IFF_Parser_State *state
 	, void **custom_state
 )
 {
 	struct TestFormState *fs = calloc(1, sizeof(struct TestFormState));
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	fs->chunk_count = 0;
 	fs->has_bmhd = 0;
@@ -180,10 +180,10 @@ static char TestForm_BeginDecode
 	fs->nested_form_count = 0;
 
 	*custom_state = fs;
-	return 1;
+	return IFF_OK;
 }
 
-static char TestForm_ProcessChunk
+static IFF_TYPE_RESULT TestForm_ProcessChunk
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -195,7 +195,7 @@ static char TestForm_ProcessChunk
 	struct IFF_Tag bmhd_tag;
 	VPS_TYPE_16S ordering;
 
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	fs->chunk_count++;
 
@@ -211,10 +211,10 @@ static char TestForm_ProcessChunk
 	// Release the contextual data (form decoder owns it now).
 	IFF_ContextualData_Release(contextual_data);
 
-	return 1;
+	return IFF_OK;
 }
 
-static char TestForm_ProcessNestedForm
+static IFF_TYPE_RESULT TestForm_ProcessNestedForm
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -223,10 +223,10 @@ static char TestForm_ProcessNestedForm
 )
 {
 	// No-op for test purposes.
-	return 1;
+	return IFF_OK;
 }
 
-static char TestForm_EndDecode
+static IFF_TYPE_RESULT TestForm_EndDecode
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -236,7 +236,7 @@ static char TestForm_EndDecode
 	// Pass the TestFormState as the final entity.
 	// Caller is responsible for freeing it.
 	*out_final_entity = custom_state;
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_TestDecoders_CreateFormDecoder
@@ -248,9 +248,9 @@ char IFF_TestDecoders_CreateFormDecoder
 
 	if (!out_decoder) return 0;
 
-	if (!IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return 0;
 
-	if (!IFF_FormDecoder_Construct
+	if (IFF_FormDecoder_Construct
 	(
 		dec
 		, TestForm_BeginDecode
@@ -271,7 +271,7 @@ char IFF_TestDecoders_CreateFormDecoder
 // PropAwareFormDecoder — calls FindProp in begin_decode
 // ===================================================================
 
-static char PropAwareForm_BeginDecode
+static IFF_TYPE_RESULT PropAwareForm_BeginDecode
 (
 	struct IFF_Parser_State *state
 	, void **custom_state
@@ -281,7 +281,7 @@ static char PropAwareForm_BeginDecode
 	struct IFF_Tag bmhd_tag;
 	struct IFF_ContextualData *prop_data = 0;
 
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	fs->chunk_count = 0;
 	fs->has_bmhd = 0;
@@ -297,7 +297,7 @@ static char PropAwareForm_BeginDecode
 	}
 
 	*custom_state = fs;
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_TestDecoders_CreatePropAwareFormDecoder
@@ -309,9 +309,9 @@ char IFF_TestDecoders_CreatePropAwareFormDecoder
 
 	if (!out_decoder) return 0;
 
-	if (!IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return 0;
 
-	if (!IFF_FormDecoder_Construct
+	if (IFF_FormDecoder_Construct
 	(
 		dec
 		, PropAwareForm_BeginDecode
@@ -332,13 +332,13 @@ char IFF_TestDecoders_CreatePropAwareFormDecoder
 // FailingFormDecoder — begin_decode returns 0
 // ===================================================================
 
-static char FailingForm_BeginDecode
+static IFF_TYPE_RESULT FailingForm_BeginDecode
 (
 	struct IFF_Parser_State *state
 	, void **custom_state
 )
 {
-	return 0;
+	return IFF_FAIL;
 }
 
 char IFF_TestDecoders_CreateFailingFormDecoder
@@ -350,9 +350,9 @@ char IFF_TestDecoders_CreateFailingFormDecoder
 
 	if (!out_decoder) return 0;
 
-	if (!IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return 0;
 
-	if (!IFF_FormDecoder_Construct
+	if (IFF_FormDecoder_Construct
 	(
 		dec
 		, FailingForm_BeginDecode
@@ -373,7 +373,7 @@ char IFF_TestDecoders_CreateFailingFormDecoder
 // NestingAwareFormDecoder — tracks nested forms
 // ===================================================================
 
-static char NestingAware_ProcessNestedForm
+static IFF_TYPE_RESULT NestingAware_ProcessNestedForm
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -383,7 +383,7 @@ static char NestingAware_ProcessNestedForm
 {
 	struct TestFormState *fs = custom_state;
 
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	fs->nested_form_count++;
 
@@ -393,7 +393,7 @@ static char NestingAware_ProcessNestedForm
 		free(final_entity);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_TestDecoders_CreateNestingAwareFormDecoder
@@ -405,9 +405,9 @@ char IFF_TestDecoders_CreateNestingAwareFormDecoder
 
 	if (!out_decoder) return 0;
 
-	if (!IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return 0;
 
-	if (!IFF_FormDecoder_Construct
+	if (IFF_FormDecoder_Construct
 	(
 		dec
 		, TestForm_BeginDecode
@@ -450,20 +450,20 @@ static void ContainerAware_LogEvent
 	ev->tag[4] = '\0';
 }
 
-static char ContainerAware_BeginDecode
+static IFF_TYPE_RESULT ContainerAware_BeginDecode
 (
 	struct IFF_Parser_State *state
 	, void **custom_state
 )
 {
 	struct ContainerAwareFormState *fs = calloc(1, sizeof(struct ContainerAwareFormState));
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	*custom_state = fs;
-	return 1;
+	return IFF_OK;
 }
 
-static char ContainerAware_ProcessChunk
+static IFF_TYPE_RESULT ContainerAware_ProcessChunk
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -472,15 +472,15 @@ static char ContainerAware_ProcessChunk
 )
 {
 	struct ContainerAwareFormState *fs = custom_state;
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	fs->chunk_count++;
 
 	if (contextual_data) IFF_ContextualData_Release(contextual_data);
-	return 1;
+	return IFF_OK;
 }
 
-static char ContainerAware_ProcessNestedForm
+static IFF_TYPE_RESULT ContainerAware_ProcessNestedForm
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -489,16 +489,16 @@ static char ContainerAware_ProcessNestedForm
 )
 {
 	struct ContainerAwareFormState *fs = custom_state;
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	fs->nested_form_count++;
 	ContainerAware_LogEvent(fs, CONTAINER_EVENT_ENTITY, form_type, fs->container_depth);
 
 	if (final_entity) free(final_entity);
-	return 1;
+	return IFF_OK;
 }
 
-static char ContainerAware_EnterContainer
+static IFF_TYPE_RESULT ContainerAware_EnterContainer
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -507,14 +507,14 @@ static char ContainerAware_EnterContainer
 )
 {
 	struct ContainerAwareFormState *fs = custom_state;
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	fs->container_depth++;
 	ContainerAware_LogEvent(fs, CONTAINER_EVENT_ENTER, container_type, fs->container_depth);
-	return 1;
+	return IFF_OK;
 }
 
-static char ContainerAware_LeaveContainer
+static IFF_TYPE_RESULT ContainerAware_LeaveContainer
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -523,14 +523,14 @@ static char ContainerAware_LeaveContainer
 )
 {
 	struct ContainerAwareFormState *fs = custom_state;
-	if (!fs) return 0;
+	if (!fs) return IFF_FAIL;
 
 	ContainerAware_LogEvent(fs, CONTAINER_EVENT_LEAVE, container_type, fs->container_depth);
 	fs->container_depth--;
-	return 1;
+	return IFF_OK;
 }
 
-static char ContainerAware_EndDecode
+static IFF_TYPE_RESULT ContainerAware_EndDecode
 (
 	struct IFF_Parser_State *state
 	, void *custom_state
@@ -538,7 +538,7 @@ static char ContainerAware_EndDecode
 )
 {
 	*out_final_entity = custom_state;
-	return 1;
+	return IFF_OK;
 }
 
 char IFF_TestDecoders_CreateContainerAwareFormDecoder
@@ -550,9 +550,9 @@ char IFF_TestDecoders_CreateContainerAwareFormDecoder
 
 	if (!out_decoder) return 0;
 
-	if (!IFF_FormDecoder_Allocate(&dec)) return 0;
+	if (IFF_FormDecoder_Allocate(&dec)) return 0;
 
-	if (!IFF_FormDecoder_Construct
+	if (IFF_FormDecoder_Construct
 	(
 		dec
 		, ContainerAware_BeginDecode

@@ -9,7 +9,7 @@
 #include <IFF/IFF_Parser.h>
 #include <IFF/IFF_Directive_IFF_Processor.h>
 
-char IFF_Directive_IFF_Process
+IFF_TYPE_RESULT IFF_Directive_IFF_Process
 (
 	const struct IFF_Chunk* chunk,
 	struct IFF_DirectiveResult *result
@@ -20,7 +20,7 @@ char IFF_Directive_IFF_Process
 
 	if (!chunk || !chunk->data || !result)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Use a data reader to safely parse the chunk's payload.
@@ -33,7 +33,7 @@ char IFF_Directive_IFF_Process
 		// The chunk data is malformed.
 		result->action = IFF_ACTION_HALT;
 		result->payload.error_code = IFF_ERROR_MALFORMED_DATA;
-		return 1;
+		return IFF_OK;
 	}
 
 	// --- Version Validation ---
@@ -41,7 +41,7 @@ char IFF_Directive_IFF_Process
 	if (header.version == IFF_Header_Version_1985)
 	{
 		result->action = IFF_ACTION_LOCK_IFF85;
-		return 1;
+		return IFF_OK;
 	}
 
 	// Only version 40 (IFF-2025) is supported beyond IFF-85.
@@ -49,7 +49,7 @@ char IFF_Directive_IFF_Process
 	{
 		result->action = IFF_ACTION_HALT;
 		result->payload.error_code = IFF_ERROR_UNSUPPORTED_FEATURE;
-		return 1;
+		return IFF_OK;
 	}
 
 	// --- Flag Field Validation ---
@@ -84,7 +84,7 @@ char IFF_Directive_IFF_Process
 	{
 		result->action = IFF_ACTION_HALT;
 		result->payload.error_code = IFF_ERROR_UNSUPPORTED_FEATURE;
-		return 1;
+		return IFF_OK;
 	}
 
 	// --- Host Capability Check ---
@@ -94,7 +94,7 @@ char IFF_Directive_IFF_Process
 		// This is a 32-bit build, but the file is requesting 64-bit sizes.
 		result->action = IFF_ACTION_HALT;
 		result->payload.error_code = IFF_ERROR_UNSUPPORTED_FEATURE;
-		return 1;
+		return IFF_OK;
 	}
 
 	// The request is valid and supported.
@@ -102,5 +102,5 @@ char IFF_Directive_IFF_Process
 	result->action = IFF_ACTION_UPDATE_FLAGS;
 	result->payload.new_flags = header.flags;
 
-	return 1;
+	return IFF_OK;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct VPS_Data;
 
 /**
@@ -17,9 +19,9 @@ struct IFF_ChunkEncoder
 	 * @param state The generator state for configuration access.
 	 * @param source_object The structured object to encode.
 	 * @param out_data Receives the encoded data. Caller takes ownership.
-	 * @return 1 on success, 0 on failure.
+	 * @return IFF_OK on success, non-zero on failure.
 	 */
-	char (*encode)
+	IFF_TYPE_RESULT (*encode)
 	(
 		struct IFF_Generator_State *state
 		, void *source_object
@@ -27,15 +29,15 @@ struct IFF_ChunkEncoder
 	);
 };
 
-char IFF_ChunkEncoder_Allocate
+IFF_TYPE_RESULT IFF_ChunkEncoder_Allocate
 (
 	struct IFF_ChunkEncoder **item
 );
 
-char IFF_ChunkEncoder_Construct
+IFF_TYPE_RESULT IFF_ChunkEncoder_Construct
 (
 	struct IFF_ChunkEncoder *item
-	, char (*encode)
+	, IFF_TYPE_RESULT (*encode)
 	(
 		struct IFF_Generator_State *state
 		, void *source_object
@@ -43,12 +45,25 @@ char IFF_ChunkEncoder_Construct
 	)
 );
 
-char IFF_ChunkEncoder_Deconstruct
+IFF_TYPE_RESULT IFF_ChunkEncoder_Deconstruct
 (
 	struct IFF_ChunkEncoder *item
 );
 
-char IFF_ChunkEncoder_Release
+IFF_TYPE_RESULT IFF_ChunkEncoder_Release
 (
 	struct IFF_ChunkEncoder *item
+);
+
+/*
+ * --- VulpesCore boundary adapter ---
+ *
+ * The decoder/encoder registries are VulpesCore dictionaries, which expect
+ * the boolean convention (1 = success). Register this shim as the release
+ * hook rather than casting the function above.
+ */
+
+char IFF_ChunkEncoder_VPS_Release
+(
+	void *item
 );

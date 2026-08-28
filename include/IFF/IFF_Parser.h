@@ -1,9 +1,11 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct VPS_Data;
 struct IFF_Chunk;
 
-typedef char (*IFF_SegmentResolverFn)
+typedef IFF_TYPE_RESULT (*IFF_SegmentResolverFn)
 (
 	void *context,
 	const struct VPS_Data *identifier,

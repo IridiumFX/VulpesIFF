@@ -65,7 +65,7 @@ char IFF_Generator_Factory_Construct
 		, IFF_Tag_VPS_Hash
 		, IFF_Tag_VPS_Compare
 		, IFF_Tag_VPS_Release
-		, (char (*)(void *)) IFF_FormEncoder_Release // Registered encoders are owned by the factory
+		, IFF_FormEncoder_VPS_Release // Registered encoders are owned by the factory
 		, 2
 		, 7500
 		, 8
@@ -77,7 +77,7 @@ char IFF_Generator_Factory_Construct
 		, IFF_Tag_VPS_Hash
 		, IFF_Tag_VPS_Compare
 		, IFF_Tag_VPS_Release
-		, (char (*)(void *)) IFF_ChunkEncoder_Release // Registered encoders are owned by the factory
+		, IFF_ChunkEncoder_VPS_Release // Registered encoders are owned by the factory
 		, 2
 		, 7500
 		, 8

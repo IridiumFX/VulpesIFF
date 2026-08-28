@@ -11,36 +11,41 @@
 #include <IFF/IFF_ChunkDecoder.h>
 
 
-char IFF_ChunkDecoder_Allocate
+IFF_TYPE_RESULT IFF_ChunkDecoder_Allocate
 (
 	struct IFF_ChunkDecoder **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	*item = calloc(1, sizeof(struct IFF_ChunkDecoder));
 
-	return (char)(*item != 0);
+	if (!*item)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_ChunkDecoder_Construct
+IFF_TYPE_RESULT IFF_ChunkDecoder_Construct
 (
 	struct IFF_ChunkDecoder *item
-	, char (*begin_decode)
+	, IFF_TYPE_RESULT (*begin_decode)
 	(
 		struct IFF_Parser_State *state
 		, void **custom_state
 	)
-	, char (*process_shard)
+	, IFF_TYPE_RESULT (*process_shard)
 	(
 		struct IFF_Parser_State *state
 		, void *custom_state
 		, const struct VPS_Data *chunk_data
 	)
-	, char (*end_decode)
+	, IFF_TYPE_RESULT (*end_decode)
 	(
 		struct IFF_Parser_State *state
 		, void *custom_state
@@ -50,41 +55,52 @@ char IFF_ChunkDecoder_Construct
 {
 	if (!item || !process_shard) // process_shard is the only mandatory function
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	item->begin_decode = begin_decode;
 	item->process_shard = process_shard;
 	item->end_decode = end_decode;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ChunkDecoder_Deconstruct
+IFF_TYPE_RESULT IFF_ChunkDecoder_Deconstruct
 (
 	struct IFF_ChunkDecoder *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_ChunkDecoder_Release
+IFF_TYPE_RESULT IFF_ChunkDecoder_Release
 (
 	struct IFF_ChunkDecoder *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	IFF_ChunkDecoder_Deconstruct(item);
 	free(item);
 
-	return 1;
+	return IFF_OK;
+}
+
+
+// --- VulpesCore boundary adapter ---
+
+char IFF_ChunkDecoder_VPS_Release
+(
+	void *item
+)
+{
+	return IFF_ChunkDecoder_Release(item) == IFF_OK;
 }

@@ -440,7 +440,7 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 	// Finalize the pending decoder.
 	if (scope->last_chunk_decoder->end_decode)
 	{
-		if (!scope->last_chunk_decoder->end_decode
+		if (scope->last_chunk_decoder->end_decode
 		(
 			&parser_state,
 			scope->last_chunk_state,
@@ -481,7 +481,7 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 	}
 	else if (scope->form_decoder && scope->form_decoder->process_chunk && contextual_data)
 	{
-		char result = scope->form_decoder->process_chunk
+		IFF_TYPE_RESULT result = scope->form_decoder->process_chunk
 		(
 			&parser_state,
 			scope->form_state,
@@ -490,7 +490,7 @@ static char PRIVATE_IFF_Parser_FlushLastDecoder
 		);
 		contextual_data = 0;
 
-		if (!result)
+		if (result)
 		{
 			scope->last_chunk_decoder = 0;
 			scope->last_chunk_state = 0;
@@ -526,7 +526,7 @@ char IFF_Parser_ExecuteDirective
 	}
 
 	// Find the registered processor for this directive tag.
-	char (*processor)
+	IFF_TYPE_RESULT (*processor)
 	(
 		const struct IFF_Chunk *chunk,
 		struct IFF_DirectiveResult *result
@@ -545,7 +545,7 @@ char IFF_Parser_ExecuteDirective
 		// A registered processor that fails means the directive payload is
 		// malformed — fail the parse. (Unregistered directives are skipped
 		// below for forward compatibility.)
-		result = processor(directive_chunk, &directive_result);
+		result = (processor(directive_chunk, &directive_result) == IFF_OK);
 		if (!result)
 		{
 			return 0;
@@ -930,12 +930,12 @@ static char PRIVATE_IFF_Parser_Parse_Directive
 				struct IFF_Parser_State parser_state;
 				parser_state.session = parser->session;
 
-				result = scope->last_chunk_decoder->process_shard
+				result = (scope->last_chunk_decoder->process_shard
 				(
 					&parser_state,
 					scope->last_chunk_state,
 					chunk->data
-				);
+				) == IFF_OK);
 
 				IFF_Chunk_Release(chunk);
 
@@ -1153,7 +1153,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_FORM
 
 		if (decoder->begin_decode)
 		{
-			if (!decoder->begin_decode(&parser_state, &child_scope->form_state))
+			if (decoder->begin_decode(&parser_state, &child_scope->form_state))
 			{
 				IFF_Parser_Session_LeaveScope(parser->session);
 				return 0;
@@ -1629,7 +1629,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_LIST
 		struct IFF_Parser_State parser_state;
 		parser_state.session = parser->session;
 
-		if (!child_scope->receiving_form_scope->form_decoder->enter_container
+		if (child_scope->receiving_form_scope->form_decoder->enter_container
 		(
 			&parser_state,
 			child_scope->receiving_form_scope->form_state,
@@ -1848,7 +1848,7 @@ static char PRIVATE_IFF_Parser_Parse_Container_CAT
 		struct IFF_Parser_State parser_state;
 		parser_state.session = parser->session;
 
-		if (!child_scope->receiving_form_scope->form_decoder->enter_container
+		if (child_scope->receiving_form_scope->form_decoder->enter_container
 		(
 			&parser_state,
 			child_scope->receiving_form_scope->form_state,
@@ -2040,14 +2040,14 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 
 			if (decoder->begin_decode)
 			{
-				if (!decoder->begin_decode(&parser_state, &custom_state))
+				if (decoder->begin_decode(&parser_state, &custom_state))
 				{
 					IFF_Chunk_Release(chunk);
 					return 0;
 				}
 			}
 
-			if (!decoder->process_shard(&parser_state, custom_state, chunk->data))
+			if (decoder->process_shard(&parser_state, custom_state, chunk->data))
 			{
 				// Give the decoder its end call so custom_state is released.
 				if (decoder->end_decode)
@@ -2073,14 +2073,14 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 		// Immediate lifecycle (SHARDING not set).
 		if (decoder->begin_decode)
 		{
-			if (!decoder->begin_decode(&parser_state, &custom_state))
+			if (decoder->begin_decode(&parser_state, &custom_state))
 			{
 				IFF_Chunk_Release(chunk);
 				return 0;
 			}
 		}
 
-		if (!decoder->process_shard(&parser_state, custom_state, chunk->data))
+		if (decoder->process_shard(&parser_state, custom_state, chunk->data))
 		{
 			// Give the decoder its end call so custom_state is released.
 			if (decoder->end_decode)
@@ -2095,7 +2095,7 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 
 		if (decoder->end_decode)
 		{
-			if (!decoder->end_decode(&parser_state, custom_state, &contextual_data))
+			if (decoder->end_decode(&parser_state, custom_state, &contextual_data))
 			{
 				IFF_ContextualData_Release(contextual_data);
 				IFF_Chunk_Release(chunk);
@@ -2167,13 +2167,13 @@ static char PRIVATE_IFF_Parser_Parse_Chunk
 	else if (scope->form_decoder && scope->form_decoder->process_chunk && contextual_data)
 	{
 		// We are inside a FORM with a decoder — pass the chunk to it.
-		result = scope->form_decoder->process_chunk
+		result = (scope->form_decoder->process_chunk
 		(
 			&parser_state,
 			scope->form_state,
 			&tag,
 			contextual_data
-		);
+		) == IFF_OK);
 		contextual_data = 0; // Form decoder takes ownership.
 
 		if (!result)
@@ -2514,8 +2514,9 @@ static char PRIVATE_IFF_Parser_HandleSegmentRef
 			return 0;
 		}
 
-		// Try to resolve this identifier.
-		if (parser->segment_resolver(parser->resolver_context, id_data, &fh))
+		// Try to resolve this identifier. The resolver is on the IFF
+		// convention, so a successful resolution returns IFF_OK.
+		if (!parser->segment_resolver(parser->resolver_context, id_data, &fh))
 		{
 			VPS_Data_Release(id_data);
 			VPS_DataReader_Release(dr);

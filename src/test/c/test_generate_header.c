@@ -40,17 +40,17 @@ static char test_gen_header_at_root(void)
 
 	IFF_Tag_Construct(&type_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	TEST_ASSERT(IFF_Generator_WriteHeader(gen, &header));
+	TEST_ASSERT_OK(IFF_Generator_WriteHeader(gen, &header));
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	TEST_ASSERT(output->limit > 0);
 
@@ -90,16 +90,16 @@ static char test_gen_header_inside_container_fails(void)
 
 	IFF_Tag_Construct(&type_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
 
 	// WriteHeader inside FORM should fail.
-	TEST_ASSERT(!IFF_Generator_WriteHeader(gen, &header));
+	TEST_ASSERT_FAIL(IFF_Generator_WriteHeader(gen, &header));
 
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	result = 1;
 
@@ -127,14 +127,14 @@ static char test_gen_header_updates_flags(void)
 	header.flags.as_int = 0;
 	header.flags.as_fields.operating = IFF_Header_Operating_PROGRESSIVE;
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	// Before WriteHeader: default IFF-85 flags.
 	TEST_ASSERT(gen->flags.as_fields.operating == IFF_Header_Operating_BLOBBED);
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 
 	// After WriteHeader: flags updated to progressive.
 	TEST_ASSERT(gen->flags.as_fields.operating == IFF_Header_Operating_PROGRESSIVE);
@@ -182,16 +182,16 @@ static char test_gen_header_binary_layout(void)
 	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Build actual with generator.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
 
 	// Compare entire output.
 	TEST_ASSERT(actual->limit == expected->limit);
@@ -230,16 +230,16 @@ static char test_gen_header_uses_iff85_config(void)
 
 	IFF_Tag_Construct(&type_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	// The header directive must use IFF-85 encoding:
 	// Bytes 0-3: ' IFF' tag (4 bytes, left-padded: 0x20 0x49 0x46 0x46)

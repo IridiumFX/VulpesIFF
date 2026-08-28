@@ -106,22 +106,22 @@ static char test_checksum_roundtrip(void)
 
 	// --- Generator: create output with checksum span ---
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	// Register the algorithm on the generator's write tap.
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
-	if (!IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit > 0);
 

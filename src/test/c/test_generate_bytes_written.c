@@ -49,21 +49,21 @@ static char test_bytes_written_single_chunk(void)
 	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	wrap = PRIVATE_Wrap(data, 10);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
 	// IFF-85 defaults: 4-byte tags, 4-byte sizes.
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
 
 	scope = PRIVATE_CurrentScope(gen);
 	TEST_ASSERT(scope != 0);
 	// tag(4) + size(4) + data(10) = 18
 	TEST_ASSERT(scope->bytes_written == 18);
 
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
 	result = 1;
 
@@ -99,21 +99,21 @@ static char test_bytes_written_two_chunks(void)
 	bw = PRIVATE_Wrap(body_data, 10);
 	cw = PRIVATE_Wrap(cmap_data, 6);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &bw)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &cmap, &cw)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &bw)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &cmap, &cw)) goto cleanup;
 
 	scope = PRIVATE_CurrentScope(gen);
 	TEST_ASSERT(scope != 0);
 	// 18 + 14 = 32
 	TEST_ASSERT(scope->bytes_written == 32);
 
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
 	result = 1;
 
@@ -145,21 +145,21 @@ static char test_bytes_written_filler(void)
 
 	IFF_Tag_Construct(&ilbm, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteFiller(gen, 8)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteFiller(gen, 8)) goto cleanup;
 
 	scope = PRIVATE_CurrentScope(gen);
 	TEST_ASSERT(scope != 0);
 	// tag(4) + size(4) + data(8) = 16
 	TEST_ASSERT(scope->bytes_written == 16);
 
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
 	result = 1;
 
@@ -191,20 +191,20 @@ static char test_bytes_written_nested(void)
 	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	wrap = PRIVATE_Wrap(data, 4);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginList(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
 
 	// Inner scope: tag(4) + size(4) + data(4) = 12
 	scope = PRIVATE_CurrentScope(gen);
 	TEST_ASSERT(scope != 0);
 	TEST_ASSERT(scope->bytes_written == 12);
 
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	// After EndForm, parent (LIST) scope includes the full nested FORM.
 	// Parent bytes_written = FORM_tag(4) + size(4) + type_tag(4) + inner(12) = 24
@@ -213,8 +213,8 @@ static char test_bytes_written_nested(void)
 	TEST_ASSERT(scope != 0);
 	TEST_ASSERT(scope->bytes_written > 0);
 
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
 	result = 1;
 

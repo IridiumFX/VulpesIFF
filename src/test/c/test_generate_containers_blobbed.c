@@ -64,15 +64,15 @@ static char test_gen_form_empty_blobbed(void)
 	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Build actual.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
 
 	TEST_ASSERT(actual->limit == expected->limit);
 	TEST_ASSERT(actual->limit == 12);
@@ -130,20 +130,20 @@ static char test_gen_nested_blobbed_accumulation(void)
 	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Build actual.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginCat(gen, &wildcard_tag)) goto cleanup;
-	if (!IFF_Generator_BeginList(gen, &list_type_tag)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &form_type_tag)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_BeginCat(gen, &wildcard_tag)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &list_type_tag)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &form_type_tag)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
 
 	TEST_ASSERT(actual->limit == expected->limit);
 	TEST_ASSERT(memcmp(actual->bytes, expected->bytes, actual->limit) == 0);
@@ -188,17 +188,17 @@ static char test_gen_blobbed_size_patching(void)
 	bmhd_wrap = PRIVATE_WrapData(bmhd_data, 10);
 	body_wrap = PRIVATE_WrapData(body_data, 4);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	// Read FORM size field at offset 4 (after FORM tag).
 	form_size = VPS_Endian_Read32UBE(output->bytes + 4);
@@ -278,23 +278,23 @@ static char test_gen_prop_blobbed(void)
 	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Build actual.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginList(gen, &list_type)) goto cleanup;
-	if (!IFF_Generator_BeginProp(gen, &prop_type)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &cmap_tag, &cmap_wrap)) goto cleanup;
-	if (!IFF_Generator_EndProp(gen)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &form_type)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &list_type)) goto cleanup;
+	if (IFF_Generator_BeginProp(gen, &prop_type)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &cmap_tag, &cmap_wrap)) goto cleanup;
+	if (IFF_Generator_EndProp(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &form_type)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
 
 	TEST_ASSERT(actual->limit == expected->limit);
 	TEST_ASSERT(memcmp(actual->bytes, expected->bytes, actual->limit) == 0);

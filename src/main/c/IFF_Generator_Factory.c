@@ -10,7 +10,7 @@
 #include <IFF/IFF_Generator.h>
 #include <IFF/IFF_Generator_Factory.h>
 
-char IFF_Generator_Factory_Allocate
+IFF_TYPE_RESULT IFF_Generator_Factory_Allocate
 (
 	struct IFF_Generator_Factory **item
 )
@@ -19,13 +19,13 @@ char IFF_Generator_Factory_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	factory = calloc(1, sizeof(struct IFF_Generator_Factory));
 	if (!factory)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (!VPS_Dictionary_Allocate(&factory->form_encoders, 17))
@@ -40,23 +40,23 @@ char IFF_Generator_Factory_Allocate
 
 	*item = factory;
 
-	return 1;
+	return IFF_OK;
 
 failure:
 
 	IFF_Generator_Factory_Release(factory);
 
-	return 0;
+	return IFF_FAIL;
 }
 
-char IFF_Generator_Factory_Construct
+IFF_TYPE_RESULT IFF_Generator_Factory_Construct
 (
 	struct IFF_Generator_Factory *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Construct
@@ -83,26 +83,26 @@ char IFF_Generator_Factory_Construct
 		, 8
 	);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Generator_Factory_Deconstruct
+IFF_TYPE_RESULT IFF_Generator_Factory_Deconstruct
 (
 	struct IFF_Generator_Factory *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	VPS_Dictionary_Deconstruct(item->form_encoders);
 	VPS_Dictionary_Deconstruct(item->chunk_encoders);
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Generator_Factory_Release
+IFF_TYPE_RESULT IFF_Generator_Factory_Release
 (
 	struct IFF_Generator_Factory *item
 )
@@ -115,10 +115,10 @@ char IFF_Generator_Factory_Release
 		free(item);
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Generator_Factory_RegisterFormEncoder
+IFF_TYPE_RESULT IFF_Generator_Factory_RegisterFormEncoder
 (
 	struct IFF_Generator_Factory *item
 	, const struct IFF_Tag *form_tag
@@ -131,12 +131,12 @@ char IFF_Generator_Factory_RegisterFormEncoder
 
 	if (!item || !item->form_encoders || !form_tag || !encoder)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (IFF_Tag_Clone(form_tag, &key_clone))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Add consumes the clone only when it creates a new entry; on the
@@ -150,10 +150,15 @@ char IFF_Generator_Factory_RegisterFormEncoder
 		IFF_Tag_Release(key_clone);
 	}
 
-	return result;
+	if (!result)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Generator_Factory_RegisterChunkEncoder
+IFF_TYPE_RESULT IFF_Generator_Factory_RegisterChunkEncoder
 (
 	struct IFF_Generator_Factory *item
 	, const struct IFF_Tag *chunk_tag
@@ -166,12 +171,12 @@ char IFF_Generator_Factory_RegisterChunkEncoder
 
 	if (!item || !item->chunk_encoders || !chunk_tag || !encoder)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	if (IFF_Tag_Clone(chunk_tag, &key_clone))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
 	// Add consumes the clone only when it creates a new entry (see
@@ -184,10 +189,15 @@ char IFF_Generator_Factory_RegisterChunkEncoder
 		IFF_Tag_Release(key_clone);
 	}
 
-	return result;
+	if (!result)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }
 
-char IFF_Generator_Factory_Create
+IFF_TYPE_RESULT IFF_Generator_Factory_Create
 (
 	struct IFF_Generator_Factory *factory
 	, int file_handle
@@ -198,18 +208,18 @@ char IFF_Generator_Factory_Create
 
 	if (!factory || !out_generator)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_Generator_Allocate(&gen))
+	if (IFF_Generator_Allocate(&gen))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_Generator_Construct(gen, file_handle))
+	if (IFF_Generator_Construct(gen, file_handle))
 	{
 		IFF_Generator_Release(gen);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	/* Transfer encoder registries to the generator (borrowed, not owned) */
@@ -218,10 +228,10 @@ char IFF_Generator_Factory_Create
 
 	*out_generator = gen;
 
-	return 1;
+	return IFF_OK;
 }
 
-char IFF_Generator_Factory_CreateToData
+IFF_TYPE_RESULT IFF_Generator_Factory_CreateToData
 (
 	struct IFF_Generator_Factory *factory
 	, struct IFF_Generator **out_generator
@@ -231,18 +241,18 @@ char IFF_Generator_Factory_CreateToData
 
 	if (!factory || !out_generator)
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_Generator_Allocate(&gen))
+	if (IFF_Generator_Allocate(&gen))
 	{
-		return 0;
+		return IFF_FAIL;
 	}
 
-	if (!IFF_Generator_ConstructToData(gen))
+	if (IFF_Generator_ConstructToData(gen))
 	{
 		IFF_Generator_Release(gen);
-		return 0;
+		return IFF_FAIL;
 	}
 
 	gen->form_encoders = factory->form_encoders;
@@ -250,5 +260,5 @@ char IFF_Generator_Factory_CreateToData
 
 	*out_generator = gen;
 
-	return 1;
+	return IFF_OK;
 }

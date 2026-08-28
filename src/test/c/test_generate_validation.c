@@ -23,9 +23,9 @@ static char PRIVATE_CreateMemoryGenerator
 	, struct IFF_Generator **out_gen
 )
 {
-	if (!IFF_Generator_Factory_Allocate(out_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(*out_factory)) return 0;
-	if (!IFF_Generator_Factory_CreateToData(*out_factory, out_gen)) return 0;
+	if (IFF_Generator_Factory_Allocate(out_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(*out_factory)) return 0;
+	if (IFF_Generator_Factory_CreateToData(*out_factory, out_gen)) return 0;
 
 	return 1;
 }
@@ -70,11 +70,11 @@ static char test_gen_create_to_data(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	TEST_ASSERT(IFF_Generator_GetOutputData(gen, &output));
+	TEST_ASSERT_OK(IFF_Generator_GetOutputData(gen, &output));
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit > 0);
 
@@ -117,9 +117,9 @@ static char test_gen_flush_empty(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	TEST_ASSERT(IFF_Generator_Flush(gen));
+	TEST_ASSERT_OK(IFF_Generator_Flush(gen));
 
-	TEST_ASSERT(IFF_Generator_GetOutputData(gen, &output));
+	TEST_ASSERT_OK(IFF_Generator_GetOutputData(gen, &output));
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit == 0);
 
@@ -144,10 +144,10 @@ static char test_gen_flush_open_scope_fails(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
 
 	// Flush without EndForm should fail.
-	TEST_ASSERT(!IFF_Generator_Flush(gen));
+	TEST_ASSERT_FAIL(IFF_Generator_Flush(gen));
 
 	// Clean up the scope so Release doesn't leak.
 	IFF_Generator_EndForm(gen);
@@ -178,7 +178,7 @@ static char test_gen_chunk_at_root_fails(void)
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
 	// Chunks require a FORM or PROP container; root rejects them.
-	TEST_ASSERT(!IFF_Generator_WriteChunk(gen, &tag, &wrap));
+	TEST_ASSERT_FAIL(IFF_Generator_WriteChunk(gen, &tag, &wrap));
 
 	result = 1;
 
@@ -207,9 +207,9 @@ static char test_gen_form_allows_chunks(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap));
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap));
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	result = 1;
 
@@ -238,9 +238,9 @@ static char test_gen_list_rejects_chunks(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(!IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap));
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_FAIL(IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap));
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	result = 1;
 
@@ -269,9 +269,9 @@ static char test_gen_cat_rejects_chunks(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginCat(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(!IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap));
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
+	if (IFF_Generator_BeginCat(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_FAIL(IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap));
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
 
 	result = 1;
 
@@ -303,11 +303,11 @@ static char test_gen_prop_allows_chunks(void)
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
 	// PROP must be inside a LIST.
-	if (!IFF_Generator_BeginList(gen, &list_type)) goto cleanup;
-	if (!IFF_Generator_BeginProp(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap));
-	if (!IFF_Generator_EndProp(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &list_type)) goto cleanup;
+	if (IFF_Generator_BeginProp(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_WriteChunk(gen, &chunk_tag, &wrap));
+	if (IFF_Generator_EndProp(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	result = 1;
 
@@ -330,10 +330,10 @@ static char test_gen_form_allows_nested_form(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(IFF_Generator_BeginForm(gen, &type_tag));
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginForm(gen, &type_tag));
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	result = 1;
 
@@ -356,10 +356,10 @@ static char test_gen_form_allows_nested_list(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(IFF_Generator_BeginList(gen, &type_tag));
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginList(gen, &type_tag));
+	if (IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	result = 1;
 
@@ -382,11 +382,11 @@ static char test_gen_prop_rejects_container(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_BeginProp(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(!IFF_Generator_BeginForm(gen, &type_tag));
-	if (!IFF_Generator_EndProp(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_BeginProp(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_FAIL(IFF_Generator_BeginForm(gen, &type_tag));
+	if (IFF_Generator_EndProp(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	result = 1;
 
@@ -412,9 +412,9 @@ static char test_gen_cat_rejects_prop(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginCat(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(!IFF_Generator_BeginProp(gen, &prop_type));
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
+	if (IFF_Generator_BeginCat(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_FAIL(IFF_Generator_BeginProp(gen, &prop_type));
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
 
 	result = 1;
 
@@ -439,25 +439,25 @@ static char test_gen_list_allows_all_containers(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
 
 	// FORM inside LIST
-	TEST_ASSERT(IFF_Generator_BeginForm(gen, &type_tag));
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginForm(gen, &type_tag));
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	// Nested LIST inside LIST
-	TEST_ASSERT(IFF_Generator_BeginList(gen, &type_tag));
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginList(gen, &type_tag));
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	// CAT inside LIST
-	TEST_ASSERT(IFF_Generator_BeginCat(gen, &wildcard_tag));
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginCat(gen, &wildcard_tag));
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
 
 	// PROP inside LIST
-	TEST_ASSERT(IFF_Generator_BeginProp(gen, &type_tag));
-	if (!IFF_Generator_EndProp(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginProp(gen, &type_tag));
+	if (IFF_Generator_EndProp(gen)) goto cleanup;
 
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	result = 1;
 
@@ -482,21 +482,21 @@ static char test_gen_cat_allows_form_list_cat(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginCat(gen, &wildcard_tag)) goto cleanup;
+	if (IFF_Generator_BeginCat(gen, &wildcard_tag)) goto cleanup;
 
 	// FORM inside CAT
-	TEST_ASSERT(IFF_Generator_BeginForm(gen, &type_tag));
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginForm(gen, &type_tag));
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	// LIST inside CAT
-	TEST_ASSERT(IFF_Generator_BeginList(gen, &type_tag));
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginList(gen, &type_tag));
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	// Nested CAT inside CAT
-	TEST_ASSERT(IFF_Generator_BeginCat(gen, &wildcard_tag));
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginCat(gen, &wildcard_tag));
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
 
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
 
 	result = 1;
 
@@ -522,19 +522,19 @@ static char test_gen_root_allows_form_list_cat(void)
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
 	// FORM at root
-	TEST_ASSERT(IFF_Generator_BeginForm(gen, &type_tag));
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginForm(gen, &type_tag));
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	// LIST at root
-	TEST_ASSERT(IFF_Generator_BeginList(gen, &type_tag));
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginList(gen, &type_tag));
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	// CAT at root
-	TEST_ASSERT(IFF_Generator_BeginCat(gen, &wildcard_tag));
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginCat(gen, &wildcard_tag));
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
 
 	// PROP at root fails (PROP only valid inside LIST)
-	TEST_ASSERT(!IFF_Generator_BeginProp(gen, &type_tag));
+	TEST_ASSERT_FAIL(IFF_Generator_BeginProp(gen, &type_tag));
 
 	result = 1;
 
@@ -565,12 +565,12 @@ static char test_gen_strict_match(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 
-	if (!IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
-	TEST_ASSERT(IFF_Generator_BeginForm(gen, &type_tag));
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginForm(gen, &type_tag));
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	result = 1;
 
@@ -604,11 +604,11 @@ static char test_gen_strict_mismatch(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 
-	if (!IFF_Generator_BeginList(gen, &list_type)) goto cleanup;
-	TEST_ASSERT(!IFF_Generator_BeginForm(gen, &form_type));
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &list_type)) goto cleanup;
+	TEST_ASSERT_FAIL(IFF_Generator_BeginForm(gen, &form_type));
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	result = 1;
 
@@ -642,12 +642,12 @@ static char test_gen_strict_wildcard(void)
 
 	if (!PRIVATE_CreateMemoryGenerator(&factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
 
-	if (!IFF_Generator_BeginCat(gen, &wildcard_tag)) goto cleanup;
-	TEST_ASSERT(IFF_Generator_BeginForm(gen, &form_type));
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
+	if (IFF_Generator_BeginCat(gen, &wildcard_tag)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_BeginForm(gen, &form_type));
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
 
 	result = 1;
 

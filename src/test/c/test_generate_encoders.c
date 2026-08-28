@@ -58,19 +58,19 @@ static char test_encode_form_lifecycle(void)
 	entity.chunks[1].size = 4;
 
 	// Create factory, register FormEncoder, create generator.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
 
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	// Drive encoder.
-	if (!IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit > 0);
@@ -151,22 +151,22 @@ static char test_encode_chunk_encoder_transform(void)
 	if (!IFF_TestBuilder_GetResult(builder, &expected)) goto cleanup;
 
 	// Create factory, register FormEncoder + DoublerChunkEncoder.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateDoublerChunkEncoder(&chunk_enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterChunkEncoder(gen_factory, &bmhd_tag, chunk_enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterChunkEncoder(gen_factory, &bmhd_tag, chunk_enc)) goto cleanup;
 
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	// Drive encoder.
-	if (!IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &actual)) goto cleanup;
 
 	// Compare byte-for-byte.
 	TEST_ASSERT(actual->limit == expected->limit);
@@ -226,20 +226,20 @@ static char test_encode_progressive_form(void)
 	entity.chunks[0].size = 10;
 
 	// Create factory, register FormEncoder, create generator.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
 
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	// Write header + encode form.
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit > 0);

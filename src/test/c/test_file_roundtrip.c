@@ -78,15 +78,15 @@ static char test_file_blobbed_roundtrip(void)
 	write_handle = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
 	TEST_ASSERT(write_handle >= 0);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Create(gen_factory, write_handle, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Create(gen_factory, write_handle, &gen)) goto cleanup;
 
-	TEST_ASSERT(IFF_Generator_WriteHeader(gen, &header));
-	TEST_ASSERT(IFF_Generator_BeginForm(gen, &form_tag));
-	TEST_ASSERT(IFF_Generator_WriteChunk(gen, &body_tag, &wrap));
-	TEST_ASSERT(IFF_Generator_EndForm(gen));
-	TEST_ASSERT(IFF_Generator_Flush(gen));
+	TEST_ASSERT_OK(IFF_Generator_WriteHeader(gen, &header));
+	TEST_ASSERT_OK(IFF_Generator_BeginForm(gen, &form_tag));
+	TEST_ASSERT_OK(IFF_Generator_WriteChunk(gen, &body_tag, &wrap));
+	TEST_ASSERT_OK(IFF_Generator_EndForm(gen));
+	TEST_ASSERT_OK(IFF_Generator_Flush(gen));
 
 	IFF_Generator_Release(gen);
 	gen = 0;
@@ -162,25 +162,25 @@ static char test_file_progressive_sharded_roundtrip(void)
 	write_handle = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
 	TEST_ASSERT(write_handle >= 0);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Create(gen_factory, write_handle, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Create(gen_factory, write_handle, &gen)) goto cleanup;
 
-	TEST_ASSERT(IFF_Generator_WriteHeader(gen, &header));
-	TEST_ASSERT(IFF_Generator_BeginForm(gen, &form_tag));
+	TEST_ASSERT_OK(IFF_Generator_WriteHeader(gen, &header));
+	TEST_ASSERT_OK(IFF_Generator_BeginForm(gen, &form_tag));
 
 	// First 16 bytes in the chunk itself, the rest in three shards.
 	piece = PRIVATE_Wrap(data, 16);
-	TEST_ASSERT(IFF_Generator_WriteChunk(gen, &body_tag, &piece));
+	TEST_ASSERT_OK(IFF_Generator_WriteChunk(gen, &body_tag, &piece));
 
 	for (i = 16; i < sizeof(data); i += 16)
 	{
 		piece = PRIVATE_Wrap(data + i, 16);
-		TEST_ASSERT(IFF_Generator_WriteShard(gen, &piece));
+		TEST_ASSERT_OK(IFF_Generator_WriteShard(gen, &piece));
 	}
 
-	TEST_ASSERT(IFF_Generator_EndForm(gen));
-	TEST_ASSERT(IFF_Generator_Flush(gen));
+	TEST_ASSERT_OK(IFF_Generator_EndForm(gen));
+	TEST_ASSERT_OK(IFF_Generator_Flush(gen));
 
 	IFF_Generator_Release(gen);
 	gen = 0;

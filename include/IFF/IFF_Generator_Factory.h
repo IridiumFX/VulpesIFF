@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_Tag;
 struct IFF_FormEncoder;
 struct IFF_ChunkEncoder;
@@ -17,48 +19,48 @@ struct IFF_Generator_Factory
 	struct VPS_Dictionary *chunk_encoders;
 };
 
-char IFF_Generator_Factory_Allocate
+IFF_TYPE_RESULT IFF_Generator_Factory_Allocate
 (
 	struct IFF_Generator_Factory **item
 );
 
-char IFF_Generator_Factory_Construct
+IFF_TYPE_RESULT IFF_Generator_Factory_Construct
 (
 	struct IFF_Generator_Factory *item
 );
 
-char IFF_Generator_Factory_Deconstruct
+IFF_TYPE_RESULT IFF_Generator_Factory_Deconstruct
 (
 	struct IFF_Generator_Factory *item
 );
 
-char IFF_Generator_Factory_Release
+IFF_TYPE_RESULT IFF_Generator_Factory_Release
 (
 	struct IFF_Generator_Factory *item
 );
 
-char IFF_Generator_Factory_RegisterFormEncoder
+IFF_TYPE_RESULT IFF_Generator_Factory_RegisterFormEncoder
 (
 	struct IFF_Generator_Factory *item
 	, const struct IFF_Tag *form_tag
 	, struct IFF_FormEncoder *encoder
 );
 
-char IFF_Generator_Factory_RegisterChunkEncoder
+IFF_TYPE_RESULT IFF_Generator_Factory_RegisterChunkEncoder
 (
 	struct IFF_Generator_Factory *item
 	, const struct IFF_Tag *chunk_tag
 	, struct IFF_ChunkEncoder *encoder
 );
 
-char IFF_Generator_Factory_Create
+IFF_TYPE_RESULT IFF_Generator_Factory_Create
 (
 	struct IFF_Generator_Factory *factory
 	, int file_handle
 	, struct IFF_Generator **out_generator
 );
 
-char IFF_Generator_Factory_CreateToData
+IFF_TYPE_RESULT IFF_Generator_Factory_CreateToData
 (
 	struct IFF_Generator_Factory *factory
 	, struct IFF_Generator **out_generator

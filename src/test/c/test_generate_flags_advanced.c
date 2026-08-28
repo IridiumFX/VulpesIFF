@@ -51,17 +51,17 @@ static char PRIVATE_GenFlagTest
 	wrap = PRIVATE_Wrap(chunk_data, chunk_size);
 
 	// Generator output.
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 	TEST_ASSERT(output != 0);
 
 	// TestBuilder reference.
@@ -160,18 +160,18 @@ static char test_gen_sharding_enabled(void)
 	chunk_wrap = PRIVATE_Wrap(chunk_data, 10);
 	shard_wrap = PRIVATE_Wrap(shard_data, 6);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &chunk_wrap)) goto cleanup;
-	TEST_ASSERT(IFF_Generator_WriteShard(gen, &shard_wrap));
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &chunk_wrap)) goto cleanup;
+	TEST_ASSERT_OK(IFF_Generator_WriteShard(gen, &shard_wrap));
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -249,18 +249,18 @@ static char test_gen_full_featured(void)
 	chunk_wrap = PRIVATE_Wrap(chunk_data, 10);
 	shard_wrap = PRIVATE_Wrap(shard_data, 4);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &chunk_wrap)) goto cleanup;
-	if (!IFF_Generator_WriteShard(gen, &shard_wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &chunk_wrap)) goto cleanup;
+	if (IFF_Generator_WriteShard(gen, &shard_wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;

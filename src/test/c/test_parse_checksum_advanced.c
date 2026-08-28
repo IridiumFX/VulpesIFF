@@ -127,20 +127,20 @@ static char test_checksum_mismatch_fails(void)
 	algo_set = PRIVATE_CreateAlgoSet("TEST-XOR", 9);
 	if (!algo_set) goto cleanup;
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
-	if (!IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 	TEST_ASSERT(output != 0);
 
 	// Corrupt the SUM checksum value. Find ' SUM' tag in the output
@@ -221,21 +221,21 @@ static char test_checksum_empty_span(void)
 	algo_set = PRIVATE_CreateAlgoSet("TEST-XOR", 9);
 	if (!algo_set) goto cleanup;
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
-	if (!IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
 	// No data between CHK and SUM.
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
@@ -293,29 +293,29 @@ static char test_checksum_nested_spans(void)
 	inner_set = PRIVATE_CreateAlgoSet("TEST-XOR", 9);
 	if (!outer_set || !inner_set) goto cleanup;
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
 
 	// Outer span.
-	if (!IFF_Generator_BeginChecksumSpan(gen, outer_set)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, outer_set)) goto cleanup;
 
 	// Inner span (nested inside outer).
-	if (!IFF_Generator_BeginChecksumSpan(gen, inner_set)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, inner_set)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
 
 	// End outer span (covers inner CHK + data + inner SUM).
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
 
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
@@ -374,21 +374,21 @@ static char test_checksum_multiple_algorithms(void)
 	algo_set = PRIVATE_CreateDualAlgoSet("TEST-XOR", 9, "LRC-ISO-1155", 13);
 	if (!algo_set) goto cleanup;
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, lrc_algo)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
-	if (!IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(parse_factory)) goto cleanup;
@@ -449,21 +449,21 @@ static char test_checksum_partial_algorithm_support(void)
 	if (!algo_set) goto cleanup;
 
 	// Generator has both algorithms.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, lrc_algo)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
-	if (!IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	// Parser only has TEST-XOR, not LRC.
 	if (IFF_Parser_Factory_Allocate(&parse_factory)) goto cleanup;

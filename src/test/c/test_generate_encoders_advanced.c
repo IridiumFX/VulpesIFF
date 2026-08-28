@@ -39,18 +39,18 @@ static char test_form_encoder_empty(void)
 
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateEmptyFormEncoder(&enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
 	enc = 0;
 
-	TEST_ASSERT(IFF_Generator_EncodeForm(gen, &ilbm_tag, 0));
-	TEST_ASSERT(IFF_Generator_Flush(gen));
+	TEST_ASSERT_OK(IFF_Generator_EncodeForm(gen, &ilbm_tag, 0));
+	TEST_ASSERT_OK(IFF_Generator_Flush(gen));
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit > 0);
 
@@ -89,16 +89,16 @@ static char test_form_encoder_begin_fails(void)
 
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateFailBeginFormEncoder(&enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
 	enc = 0;
 
 	// EncodeForm should fail because begin_encode returns 0.
-	TEST_ASSERT(!IFF_Generator_EncodeForm(gen, &ilbm_tag, 0));
+	TEST_ASSERT_FAIL(IFF_Generator_EncodeForm(gen, &ilbm_tag, 0));
 
 	result = 1;
 
@@ -138,16 +138,16 @@ static char test_form_encoder_produce_chunk_fails(void)
 
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateFailSecondChunkFormEncoder(&enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, enc)) goto cleanup;
 	enc = 0;
 
 	// EncodeForm: first chunk OK, second fails.
-	TEST_ASSERT(!IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity));
+	TEST_ASSERT_FAIL(IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity));
 
 	result = 1;
 
@@ -173,12 +173,12 @@ static char test_form_encoder_unregistered(void)
 
 	IFF_Tag_Construct(&anim_tag, (const unsigned char *)"ANIM", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	// No encoder registered for ANIM. Should fail.
-	TEST_ASSERT(!IFF_Generator_EncodeForm(gen, &anim_tag, 0));
+	TEST_ASSERT_FAIL(IFF_Generator_EncodeForm(gen, &anim_tag, 0));
 
 	result = 1;
 
@@ -225,22 +225,22 @@ static char test_chunk_encoder_selective(void)
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char *)"ILBM", 4, IFF_TAG_TYPE_TAG);
 	IFF_Tag_Construct(&bmhd_tag, (const unsigned char *)"BMHD", 4, IFF_TAG_TYPE_TAG);
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
 	if (!IFF_TestEncoders_CreateDoublerChunkEncoder(&chunk_enc)) goto cleanup;
 
-	if (!IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterChunkEncoder(gen_factory, &bmhd_tag, chunk_enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterFormEncoder(gen_factory, &ilbm_tag, form_enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterChunkEncoder(gen_factory, &bmhd_tag, chunk_enc)) goto cleanup;
 	form_enc = 0;
 	chunk_enc = 0;
 
-	TEST_ASSERT(IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity));
-	TEST_ASSERT(IFF_Generator_Flush(gen));
+	TEST_ASSERT_OK(IFF_Generator_EncodeForm(gen, &ilbm_tag, &entity));
+	TEST_ASSERT_OK(IFF_Generator_Flush(gen));
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 	TEST_ASSERT(output != 0);
 
 	// Verify sizes:

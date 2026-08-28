@@ -67,23 +67,23 @@ static char test_generate_list_with_prop_roundtrip(void)
 	body_wrap.own_bytes = 0;
 
 	// Create generator in memory mode.
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	// Generate: LIST ILBM { PROP ILBM { BMHD, CMAP }, FORM ILBM { BODY } }
-	if (!IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_BeginProp(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &cmap_tag, &cmap_wrap)) goto cleanup;
-	if (!IFF_Generator_EndProp(gen)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_BeginProp(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &cmap_tag, &cmap_wrap)) goto cleanup;
+	if (IFF_Generator_EndProp(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &type_tag)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit > 0);
@@ -153,21 +153,21 @@ static char test_generate_cat_with_forms_roundtrip(void)
 	vhdr_wrap.limit = 8;
 	vhdr_wrap.own_bytes = 0;
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginCat(gen, &wildcard_tag)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &svx_tag)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &vhdr_tag, &vhdr_wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_BeginCat(gen, &wildcard_tag)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &svx_tag)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &vhdr_tag, &vhdr_wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit > 0);
@@ -235,21 +235,21 @@ static char test_generate_nested_list_roundtrip(void)
 	body_wrap.limit = 4;
 	body_wrap.own_bytes = 0;
 
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
-	if (!IFF_Generator_BeginList(gen, &wildcard_tag)) goto cleanup;
-	if (!IFF_Generator_BeginList(gen, &ilbm_tag)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &wildcard_tag)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm_tag)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &bmhd_tag, &bmhd_wrap)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_tag, &body_wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	TEST_ASSERT(output != 0);
 	TEST_ASSERT(output->limit > 0);

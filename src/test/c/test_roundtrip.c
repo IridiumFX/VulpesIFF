@@ -80,24 +80,24 @@ static char test_roundtrip_nested_containers(void)
 	bw = PRIVATE_Wrap(bmhd, 10);
 	dw = PRIVATE_Wrap(body, 4);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_BeginCat(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_BeginList(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_BeginProp(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &bmhd_t, &bw)) goto cleanup;
-	if (!IFF_Generator_EndProp(gen)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body_t, &dw)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_BeginCat(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_BeginProp(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &bmhd_t, &bw)) goto cleanup;
+	if (IFF_Generator_EndProp(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body_t, &dw)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -137,36 +137,36 @@ static char test_roundtrip_all_container_types(void)
 	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	wrap = PRIVATE_Wrap(data, 4);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
 
 	// FORM
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
 
 	// LIST with PROP
-	if (!IFF_Generator_BeginList(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_BeginProp(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndProp(gen)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndList(gen)) goto cleanup;
+	if (IFF_Generator_BeginList(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_BeginProp(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndProp(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndList(gen)) goto cleanup;
 
 	// CAT
-	if (!IFF_Generator_BeginCat(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_EndCat(gen)) goto cleanup;
+	if (IFF_Generator_BeginCat(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_EndCat(gen)) goto cleanup;
 
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -211,20 +211,20 @@ static char test_roundtrip_checksum(void)
 	algo_set = PRIVATE_CreateAlgoSet("TEST-XOR", 9);
 	if (!algo_set) goto cleanup;
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
 
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -268,16 +268,16 @@ static char test_roundtrip_16bit_le(void)
 	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	wrap = PRIVATE_Wrap(data, 10);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -318,16 +318,16 @@ static char test_roundtrip_64bit_8tag(void)
 	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	wrap = PRIVATE_Wrap(data, 10);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -367,16 +367,16 @@ static char test_roundtrip_no_padding_odd_chunk(void)
 	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	wrap = PRIVATE_Wrap(data, 5);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -418,17 +418,17 @@ static char test_roundtrip_sharding(void)
 	cw = PRIVATE_Wrap(chunk, 8);
 	sw = PRIVATE_Wrap(shard, 4);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &cw)) goto cleanup;
-	if (!IFF_Generator_WriteShard(gen, &sw)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &cw)) goto cleanup;
+	if (IFF_Generator_WriteShard(gen, &sw)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -468,19 +468,19 @@ static char test_roundtrip_multiple_top_forms(void)
 	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	wrap = PRIVATE_Wrap(data, 4);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &svx)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &svx)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -528,18 +528,18 @@ static char test_roundtrip_def_ref(void)
 	memcpy(ref_id->bytes, "SEG1", 4);
 	ids[0] = ref_id;
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_WriteDEF(gen, def_id)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_WriteREF(gen, 1, ids)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_WriteDEF(gen, def_id)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &wrap)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_WriteREF(gen, 1, ids)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	// No resolver registered — REF silently consumed.
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
@@ -585,18 +585,18 @@ static char test_roundtrip_ver_rev(void)
 	rw = PRIVATE_Wrap(rev, 4);
 	dw = PRIVATE_Wrap(data, 4);
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_WriteVER(gen, &vw)) goto cleanup;
-	if (!IFF_Generator_WriteREV(gen, &rw)) goto cleanup;
-	if (!IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
-	if (!IFF_Generator_WriteChunk(gen, &body, &dw)) goto cleanup;
-	if (!IFF_Generator_EndForm(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_WriteVER(gen, &vw)) goto cleanup;
+	if (IFF_Generator_WriteREV(gen, &rw)) goto cleanup;
+	if (IFF_Generator_BeginForm(gen, &ilbm)) goto cleanup;
+	if (IFF_Generator_WriteChunk(gen, &body, &dw)) goto cleanup;
+	if (IFF_Generator_EndForm(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;
@@ -647,21 +647,21 @@ static char test_roundtrip_encoder_progressive_checksum(void)
 	algo_set = PRIVATE_CreateAlgoSet("TEST-XOR", 9);
 	if (!algo_set) goto cleanup;
 
-	if (!IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
-	if (!IFF_Generator_Factory_Construct(gf)) goto cleanup;
-	if (!IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gf)) goto cleanup;
+	if (IFF_Generator_Factory_Construct(gf)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gf, &gen)) goto cleanup;
 	if (IFF_WriteTap_RegisterAlgorithm(gen->writer->tap, xor_algo)) goto cleanup;
 
 	if (!IFF_TestEncoders_CreateFormEncoder(&form_enc)) goto cleanup;
-	if (!IFF_Generator_Factory_RegisterFormEncoder(gf, &ilbm, form_enc)) goto cleanup;
+	if (IFF_Generator_Factory_RegisterFormEncoder(gf, &ilbm, form_enc)) goto cleanup;
 	form_enc = 0;
 
-	if (!IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
-	if (!IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
-	if (!IFF_Generator_EncodeForm(gen, &ilbm, &entity)) goto cleanup;
-	if (!IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &h)) goto cleanup;
+	if (IFF_Generator_BeginChecksumSpan(gen, algo_set)) goto cleanup;
+	if (IFF_Generator_EncodeForm(gen, &ilbm, &entity)) goto cleanup;
+	if (IFF_Generator_EndChecksumSpan(gen)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	if (IFF_Parser_Factory_Allocate(&pf)) goto cleanup;
 	if (IFF_Parser_Factory_Construct(pf)) goto cleanup;

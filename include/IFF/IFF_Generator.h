@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct VPS_Data;
 struct VPS_Set;
 
@@ -31,53 +33,53 @@ struct IFF_Generator
 	struct VPS_Dictionary *chunk_encoders;
 };
 
-char IFF_Generator_Allocate
+IFF_TYPE_RESULT IFF_Generator_Allocate
 (
 	struct IFF_Generator **item
 );
 
-char IFF_Generator_Construct
+IFF_TYPE_RESULT IFF_Generator_Construct
 (
 	struct IFF_Generator *item
 	, int file_handle
 );
 
-char IFF_Generator_ConstructToData
+IFF_TYPE_RESULT IFF_Generator_ConstructToData
 (
 	struct IFF_Generator *item
 );
 
-char IFF_Generator_GetOutputData
+IFF_TYPE_RESULT IFF_Generator_GetOutputData
 (
 	struct IFF_Generator *gen
 	, struct VPS_Data **out_data
 );
 
-char IFF_Generator_Deconstruct
+IFF_TYPE_RESULT IFF_Generator_Deconstruct
 (
 	struct IFF_Generator *item
 );
 
-char IFF_Generator_Release
+IFF_TYPE_RESULT IFF_Generator_Release
 (
 	struct IFF_Generator *item
 );
 
 /* --- Segment-level --- */
 
-char IFF_Generator_WriteHeader
+IFF_TYPE_RESULT IFF_Generator_WriteHeader
 (
 	struct IFF_Generator *gen
 	, const struct IFF_Header *header
 );
 
-char IFF_Generator_WriteDEF
+IFF_TYPE_RESULT IFF_Generator_WriteDEF
 (
 	struct IFF_Generator *gen
 	, const struct VPS_Data *identifier
 );
 
-char IFF_Generator_WriteREF
+IFF_TYPE_RESULT IFF_Generator_WriteREF
 (
 	struct IFF_Generator *gen
 	, VPS_TYPE_SIZE num_options
@@ -86,55 +88,55 @@ char IFF_Generator_WriteREF
 
 /* --- Container lifecycle --- */
 
-char IFF_Generator_BeginForm
+IFF_TYPE_RESULT IFF_Generator_BeginForm
 (
 	struct IFF_Generator *gen
 	, const struct IFF_Tag *type
 );
 
-char IFF_Generator_EndForm
+IFF_TYPE_RESULT IFF_Generator_EndForm
 (
 	struct IFF_Generator *gen
 );
 
-char IFF_Generator_BeginList
-(
-	struct IFF_Generator *gen
-	, const struct IFF_Tag *type
-);
-
-char IFF_Generator_EndList
-(
-	struct IFF_Generator *gen
-);
-
-char IFF_Generator_BeginCat
+IFF_TYPE_RESULT IFF_Generator_BeginList
 (
 	struct IFF_Generator *gen
 	, const struct IFF_Tag *type
 );
 
-char IFF_Generator_EndCat
+IFF_TYPE_RESULT IFF_Generator_EndList
+(
+	struct IFF_Generator *gen
+);
+
+IFF_TYPE_RESULT IFF_Generator_BeginCat
+(
+	struct IFF_Generator *gen
+	, const struct IFF_Tag *type
+);
+
+IFF_TYPE_RESULT IFF_Generator_EndCat
 (
 	struct IFF_Generator *gen
 );
 
 /* --- PROP (only valid inside LIST) --- */
 
-char IFF_Generator_BeginProp
+IFF_TYPE_RESULT IFF_Generator_BeginProp
 (
 	struct IFF_Generator *gen
 	, const struct IFF_Tag *type
 );
 
-char IFF_Generator_EndProp
+IFF_TYPE_RESULT IFF_Generator_EndProp
 (
 	struct IFF_Generator *gen
 );
 
 /* --- Chunk data --- */
 
-char IFF_Generator_WriteChunk
+IFF_TYPE_RESULT IFF_Generator_WriteChunk
 (
 	struct IFF_Generator *gen
 	, const struct IFF_Tag *tag
@@ -143,26 +145,26 @@ char IFF_Generator_WriteChunk
 
 /* --- Checksum spans --- */
 
-char IFF_Generator_BeginChecksumSpan
+IFF_TYPE_RESULT IFF_Generator_BeginChecksumSpan
 (
 	struct IFF_Generator *gen
 	, const struct VPS_Set *algorithm_ids
 );
 
-char IFF_Generator_EndChecksumSpan
+IFF_TYPE_RESULT IFF_Generator_EndChecksumSpan
 (
 	struct IFF_Generator *gen
 );
 
 /* --- Filler and shard directives --- */
 
-char IFF_Generator_WriteFiller
+IFF_TYPE_RESULT IFF_Generator_WriteFiller
 (
 	struct IFF_Generator *gen
 	, VPS_TYPE_SIZE size
 );
 
-char IFF_Generator_WriteShard
+IFF_TYPE_RESULT IFF_Generator_WriteShard
 (
 	struct IFF_Generator *gen
 	, const struct VPS_Data *data
@@ -170,13 +172,13 @@ char IFF_Generator_WriteShard
 
 /* --- Version and revision directives --- */
 
-char IFF_Generator_WriteVER
+IFF_TYPE_RESULT IFF_Generator_WriteVER
 (
 	struct IFF_Generator *gen
 	, const struct VPS_Data *data
 );
 
-char IFF_Generator_WriteREV
+IFF_TYPE_RESULT IFF_Generator_WriteREV
 (
 	struct IFF_Generator *gen
 	, const struct VPS_Data *data
@@ -184,7 +186,7 @@ char IFF_Generator_WriteREV
 
 /* --- Factory-driven encoding --- */
 
-char IFF_Generator_EncodeForm
+IFF_TYPE_RESULT IFF_Generator_EncodeForm
 (
 	struct IFF_Generator *gen
 	, const struct IFF_Tag *form_type
@@ -193,7 +195,7 @@ char IFF_Generator_EncodeForm
 
 /* --- Finalize --- */
 
-char IFF_Generator_Flush
+IFF_TYPE_RESULT IFF_Generator_Flush
 (
 	struct IFF_Generator *gen
 );

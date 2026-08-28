@@ -255,8 +255,8 @@ static char test_roundtrip_container_groups(void)
 	IFF_Tag_Construct(&cccc_tag, (const unsigned char *)"CCCC", 4, IFF_TAG_TYPE_TAG);
 
 	/* Build generator with encoders */
-	if (!IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
-	if (!IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
+	if (IFF_Generator_Factory_Allocate(&gen_factory)) return 0;
+	if (IFF_Generator_Factory_Construct(gen_factory)) goto cleanup;
 
 	/* AAAA encoder with container groups */
 	if (IFF_FormEncoder_Allocate(&aaaa_enc)) goto cleanup;
@@ -286,17 +286,17 @@ static char test_roundtrip_container_groups(void)
 	cccc_enc = 0;
 
 	/* Generate */
-	if (!IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
+	if (IFF_Generator_Factory_CreateToData(gen_factory, &gen)) goto cleanup;
 
 	struct IFF_Header header;
 	header.version = IFF_Header_Version_2025;
 	header.revision = 0;
 	header.flags.as_int = 0;
 
-	if (!IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
-	if (!IFF_Generator_EncodeForm(gen, &aaaa_tag, 0)) goto cleanup;
-	if (!IFF_Generator_Flush(gen)) goto cleanup;
-	if (!IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
+	if (IFF_Generator_WriteHeader(gen, &header)) goto cleanup;
+	if (IFF_Generator_EncodeForm(gen, &aaaa_tag, 0)) goto cleanup;
+	if (IFF_Generator_Flush(gen)) goto cleanup;
+	if (IFF_Generator_GetOutputData(gen, &output)) goto cleanup;
 
 	/* Parse back */
 	{

@@ -84,24 +84,38 @@ if (result)
 
 ### 2.2 Crossing the VulpesCore boundary
 
-VulpesCore keeps the opposite convention: `1` = success. A `VPS_` call is
-therefore tested for truth, and its failure re-raised as an IFF failure at the
-point of the call:
+VulpesCore reports `VPS_TYPE_RESULT` with the same polarity: `VPS_OK` (0) is
+success. Both typedefs are `unsigned long`, so a `VPS_` result can be tested,
+propagated and returned exactly like an `IFF_TYPE_RESULT` --- no bridging, no
+conversion:
 
 ```c
-if (!VPS_DataWriter_WriteBytes(dw, buf, len))
+IFF_TYPE_RESULT result = VPS_DataWriter_WriteBytes(dw, buf, len);
+if (result)
 {
-    return IFF_FAIL;
+    return result;
 }
-
-return IFF_OK;
 ```
 
+The two remain separate typedefs rather than one shared alias, because neither
+framework includes the other's headers. VulpesCore is buildable on its own;
+VulpesIFF simply agrees with it.
+
 In the other direction, IFF functions registered into VulpesCore callback slots
-are wrapped in a `_VPS_` adapter that translates the polarity back --- for
-example `IFF_Tag_VPS_Hash` alongside `IFF_Tag_Hash`. Register the adapter, never
-the function itself: VulpesCore checks the result of its dictionary hash and
-compare hooks, so a raw cast would fail every lookup silently.
+still go through a `_VPS_` adapter --- `IFF_Tag_VPS_Hash` alongside
+`IFF_Tag_Hash`, and so on. These no longer translate anything. They exist only
+because a callback slot is declared over `void *` while the functions they wrap
+take typed pointers:
+
+```c
+VPS_TYPE_RESULT IFF_Tag_VPS_Hash(void *key, VPS_TYPE_SIZE *key_hash)
+{
+    return IFF_Tag_Hash(key, key_hash);
+}
+```
+
+Where a function already takes `void *` --- `IFF_Chunk_Key_Hash` and
+`IFF_Chunk_Key_Compare` do --- it is registered directly and has no adapter.
 
 ### 2.3 What does not use this type
 
@@ -647,8 +661,10 @@ parser->strict_references = 1;
 
 ## Section 13 --- Migrating from the `char` Convention
 
-Earlier VulpesIFF returned `char`, with `1` for success. If you are porting
-code written against that API, the polarity of every check inverts. Both types
+Earlier VulpesIFF returned `char`, with `1` for success, and so did
+VulpesCore. Both moved together, so code written against either old API
+inverts the same way and there is no longer a mixed boundary between them.
+Predicates are the one place the boolean form survives on purpose. Both types
 are integers, so nothing in the compiler will flag a missed one --- the code
 builds clean and misbehaves at runtime.
 
@@ -688,10 +704,12 @@ propagated result, or a call to another converted function finds them all.
 | Shape                                              | Why it is easy to miss                        |
 |----------------------------------------------------|-----------------------------------------------|
 | `if (!result \|\| other)`                            | Compound conditions do not match `if (!result)` |
-| `if (!A(x) && !B(y) && VPS_C(z))`                  | Mixed conventions in one condition: only the IFF terms flip |
-| `x = IFF_Call(...)` then `if (x)` much later       | No `!` anywhere for a search to catch         |
-| A helper with two return paths                     | One may forward IFF, the other VulpesCore     |
-| `char x = IFF_Call(...)`                           | Truncates a line number to its low 8 bits     |
+| `if (!A(x) && Find(y))`                            | Mixed in one condition: predicates keep the boolean form, so only the status terms flip |
+| `x = Call(...)` then `if (x)` much later           | No `!` anywhere for a search to catch         |
+| A helper with two return paths                     | One may forward a status, the other a predicate |
+| `char x = Call(...)`                               | Truncates a line number to its low 8 bits     |
+| `while (Call(...))`                                | Stops on success and spins on failure         |
+| `x->hook(...)` through a struct member             | The signature guard already accepted the pointer, so it cannot see this |
 
 ### 13.2 Success branches
 

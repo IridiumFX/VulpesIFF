@@ -41,22 +41,24 @@ typedef unsigned long IFF_TYPE_RESULT;
  *
  * Crossing the VulpesCore boundary
  * --------------------------------
- * VulpesCore keeps the boolean convention (1 = success). A VPS_ call is
- * therefore tested for truth, and its failure is re-raised as an IFF failure
- * at the point of the call:
+ * VulpesCore reports VPS_TYPE_RESULT with the same polarity: VPS_OK (0) is
+ * success. Both typedefs are unsigned long, so a VPS_ result is tested,
+ * propagated and returned exactly like an IFF_TYPE_RESULT one:
  *
- *     if (!VPS_DataWriter_WriteBytes(dw, buf, size_length))
+ *     result = VPS_DataWriter_WriteBytes(dw, buf, size_length);
+ *     if (result)
  *     {
- *         return IFF_FAIL;
+ *         return result;
  *     }
  *
- *     return IFF_OK;
+ * They stay separate typedefs rather than one alias because neither framework
+ * includes the other's headers.
  *
  * In the other direction, IFF functions registered into VulpesCore callback
- * slots (dictionary hash/compare, list and dictionary release hooks) are
- * wrapped in a PRIVATE_*_VPSAdapter shim that translates the polarity back.
- * VulpesCore checks the boolean result of hash and key_compare, so a raw cast
- * would fail every lookup silently.
+ * slots still go through a _VPS_ adapter, but those no longer translate
+ * anything: a callback slot is declared over void * while the functions they
+ * wrap take typed pointers. Where a function already takes void * it is
+ * registered directly and has no adapter.
  *
  * What does NOT use this type
  * ---------------------------

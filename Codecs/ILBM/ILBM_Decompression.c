@@ -1,7 +1,7 @@
 #include <string.h>
 #include "ILBM/ILBM_Decompression.h"
 
-char ILBM_DecompressByteRun1
+IFF_TYPE_RESULT ILBM_DecompressByteRun1
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -9,7 +9,7 @@ char ILBM_DecompressByteRun1
 	VPS_TYPE_SIZE dest_size
 )
 {
-	if (!dest || !src) return 0;
+	if (!dest || !src) return IFF_FAIL;
 
 	VPS_TYPE_SIZE si = 0, di = 0;
 
@@ -21,7 +21,7 @@ char ILBM_DecompressByteRun1
 		{
 			/* Literal run: copy next (c + 1) bytes. */
 			VPS_TYPE_SIZE n = (VPS_TYPE_SIZE)(c + 1);
-			if (si + n > src_size || di + n > dest_size) return 0;
+			if (si + n > src_size || di + n > dest_size) return IFF_FAIL;
 			memcpy(dest + di, src + si, n);
 			si += n;
 			di += n;
@@ -30,7 +30,7 @@ char ILBM_DecompressByteRun1
 		{
 			/* Replicate run: repeat next byte (-c + 1) times. */
 			VPS_TYPE_SIZE n = (VPS_TYPE_SIZE)(-c + 1);
-			if (si >= src_size || di + n > dest_size) return 0;
+			if (si >= src_size || di + n > dest_size) return IFF_FAIL;
 			VPS_TYPE_8U v = src[si++];
 			memset(dest + di, v, n);
 			di += n;
@@ -40,5 +40,10 @@ char ILBM_DecompressByteRun1
 
 	/* Success requires the destination to be completely filled; running out
 	 * of input first means the compressed stream was truncated. */
-	return di == dest_size;
+	if (di != dest_size)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }

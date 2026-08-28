@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_Parser_Factory;
 
 /**
@@ -12,9 +14,9 @@ struct IFF_Parser_Factory;
  * After scanning, the parser's final entity will be an SVX8_Result*.
  *
  * @param factory The parser factory to register with.
- * @return 1 on success, 0 on failure.
+ * @return IFF_OK on success, non-zero on failure.
  */
-char SVX8_RegisterDecoders(struct IFF_Parser_Factory* factory);
+IFF_TYPE_RESULT SVX8_RegisterDecoders(struct IFF_Parser_Factory* factory);
 
 /**
  * @brief Result produced by the 8SVX FormDecoder.

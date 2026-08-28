@@ -21,7 +21,7 @@ struct ILBM_Result* VPS_ILBM_LoadFromData(const struct VPS_Data* data)
 	IFF_Parser_Factory_Allocate(&factory);
 	IFF_Parser_Factory_Construct(factory);
 
-	if (!ILBM_RegisterDecoders(factory))
+	if (ILBM_RegisterDecoders(factory))
 	{
 		IFF_Parser_Factory_Release(factory);
 		return NULL;

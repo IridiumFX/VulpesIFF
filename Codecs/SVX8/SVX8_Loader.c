@@ -42,7 +42,7 @@ struct SVX8_Result* VPS_SVX8_LoadFromFile(const char* filepath)
 	IFF_Parser_Factory_Allocate(&factory);
 	IFF_Parser_Factory_Construct(factory);
 
-	if (!SVX8_RegisterDecoders(factory))
+	if (SVX8_RegisterDecoders(factory))
 	{
 		IFF_Parser_Factory_Release(factory);
 		VPS_Data_Release(data);

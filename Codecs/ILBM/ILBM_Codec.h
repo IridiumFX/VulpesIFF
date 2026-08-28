@@ -1,5 +1,7 @@
 #pragma once
 
+#include <IFF/IFF_Result.h>
+
 struct IFF_Parser_Factory;
 
 /**
@@ -12,6 +14,6 @@ struct IFF_Parser_Factory;
  * After scanning, the parser's final entity will be a VPS_BitMap* (RGBA8888).
  *
  * @param factory The parser factory to register with.
- * @return 1 on success, 0 on failure.
+ * @return IFF_OK on success, non-zero on failure.
  */
-char ILBM_RegisterDecoders(struct IFF_Parser_Factory* factory);
+IFF_TYPE_RESULT ILBM_RegisterDecoders(struct IFF_Parser_Factory* factory);

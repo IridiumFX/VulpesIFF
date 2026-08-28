@@ -40,7 +40,7 @@ static VPS_TYPE_8U read_planar_pixel
 	return color_idx;
 }
 
-char ILBM_ConvertPlanarToRGBA
+IFF_TYPE_RESULT ILBM_ConvertPlanarToRGBA
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -49,7 +49,7 @@ char ILBM_ConvertPlanarToRGBA
 	int cmap_size
 )
 {
-	if (!dest || !src || !cmap) return 0;
+	if (!dest || !src || !cmap) return IFF_FAIL;
 	int max_colors = cmap_size / 3;
 
 	for (int y = 0; y < h; y++)
@@ -73,10 +73,10 @@ char ILBM_ConvertPlanarToRGBA
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char ILBM_ConvertEHBToRGBA
+IFF_TYPE_RESULT ILBM_ConvertEHBToRGBA
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -85,7 +85,7 @@ char ILBM_ConvertEHBToRGBA
 	int cmap_size
 )
 {
-	if (!dest || !src || !cmap || cmap_size < 32 * 3) return 0;
+	if (!dest || !src || !cmap || cmap_size < 32 * 3) return IFF_FAIL;
 
 	for (int y = 0; y < h; y++)
 	{
@@ -104,10 +104,10 @@ char ILBM_ConvertEHBToRGBA
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char ILBM_ConvertHAM6ToRGBA
+IFF_TYPE_RESULT ILBM_ConvertHAM6ToRGBA
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -116,7 +116,7 @@ char ILBM_ConvertHAM6ToRGBA
 	int cmap_size
 )
 {
-	if (!dest || !src || !cmap || cmap_size < 16 * 3) return 0;
+	if (!dest || !src || !cmap || cmap_size < 16 * 3) return IFF_FAIL;
 
 	for (int y = 0; y < h; y++)
 	{
@@ -145,10 +145,10 @@ char ILBM_ConvertHAM6ToRGBA
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }
 
-char ILBM_ConvertHAM8ToRGBA
+IFF_TYPE_RESULT ILBM_ConvertHAM8ToRGBA
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -157,7 +157,7 @@ char ILBM_ConvertHAM8ToRGBA
 	int cmap_size
 )
 {
-	if (!dest || !src || !cmap || cmap_size < 64 * 3) return 0;
+	if (!dest || !src || !cmap || cmap_size < 64 * 3) return IFF_FAIL;
 
 	for (int y = 0; y < h; y++)
 	{
@@ -186,5 +186,5 @@ char ILBM_ConvertHAM8ToRGBA
 		}
 	}
 
-	return 1;
+	return IFF_OK;
 }

@@ -1,4 +1,6 @@
 #pragma once
+
+#include <IFF/IFF_Result.h>
 #include <vulpes/VPS_Types.h>
 
 /**
@@ -11,9 +13,9 @@
  * @param src Compressed source data.
  * @param src_size Source data size in bytes.
  * @param num_samples Expected number of output samples.
- * @return 1 on success, 0 on failure.
+ * @return IFF_OK on success, non-zero on failure.
  */
-char SVX8_DecompressFibonacciDelta
+IFF_TYPE_RESULT SVX8_DecompressFibonacciDelta
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,

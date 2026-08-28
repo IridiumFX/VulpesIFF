@@ -193,7 +193,7 @@ static IFF_TYPE_RESULT svx8_end(struct IFF_Parser_State* state, void* cs, void**
 		}
 
 		VPS_Data_Allocate(&result->samples, num_samples, num_samples);
-		if (!result->samples || !SVX8_DecompressFibonacciDelta(
+		if (!result->samples || SVX8_DecompressFibonacciDelta(
 			result->samples->bytes, s->body_data->bytes, s->body_data->size, num_samples))
 		{
 			if (result->samples) VPS_Data_Release(result->samples);
@@ -221,9 +221,9 @@ static IFF_TYPE_RESULT svx8_end(struct IFF_Parser_State* state, void* cs, void**
 /* Registration                                                       */
 /* ================================================================== */
 
-char SVX8_RegisterDecoders(struct IFF_Parser_Factory* factory)
+IFF_TYPE_RESULT SVX8_RegisterDecoders(struct IFF_Parser_Factory* factory)
 {
-	if (!factory) return 0;
+	if (!factory) return IFF_FAIL;
 
 	struct IFF_Tag svx_tag;
 	IFF_Tag_Construct(&svx_tag, (const unsigned char*)"8SVX", 4, IFF_TAG_TYPE_TAG);
@@ -255,5 +255,5 @@ char SVX8_RegisterDecoders(struct IFF_Parser_Factory* factory)
 	IFF_FormDecoder_Construct(form, svx8_begin, svx8_chunk, NULL, svx8_end);
 	IFF_Parser_Factory_RegisterFormDecoder(factory, &svx_tag, form);
 
-	return 1;
+	return IFF_OK;
 }

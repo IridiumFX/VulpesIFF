@@ -1,4 +1,6 @@
 #pragma once
+
+#include <IFF/IFF_Result.h>
 #include <vulpes/VPS_Types.h>
 
 /**
@@ -11,9 +13,9 @@
  * @param nPlanes Number of bitplanes.
  * @param cmap Color palette (RGB triplets).
  * @param cmap_size Size of cmap in bytes.
- * @return 1 on success, 0 on failure.
+ * @return IFF_OK on success, non-zero on failure.
  */
-char ILBM_ConvertPlanarToRGBA
+IFF_TYPE_RESULT ILBM_ConvertPlanarToRGBA
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -23,7 +25,7 @@ char ILBM_ConvertPlanarToRGBA
 );
 
 /** @brief Extra Half-Brite mode (6 planes, 64 colors with dim halves). */
-char ILBM_ConvertEHBToRGBA
+IFF_TYPE_RESULT ILBM_ConvertEHBToRGBA
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -33,7 +35,7 @@ char ILBM_ConvertEHBToRGBA
 );
 
 /** @brief Hold-And-Modify 6-bit mode (6 planes). */
-char ILBM_ConvertHAM6ToRGBA
+IFF_TYPE_RESULT ILBM_ConvertHAM6ToRGBA
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -43,7 +45,7 @@ char ILBM_ConvertHAM6ToRGBA
 );
 
 /** @brief Hold-And-Modify 8-bit mode (8 planes). */
-char ILBM_ConvertHAM8ToRGBA
+IFF_TYPE_RESULT ILBM_ConvertHAM8ToRGBA
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,

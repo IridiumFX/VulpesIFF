@@ -90,11 +90,11 @@ static IFF_TYPE_RESULT passthrough_end(struct IFF_Parser_State* state, void* cus
 	return IFF_OK;
 }
 
-static char create_passthrough_decoder(struct IFF_ChunkDecoder** dec)
+static IFF_TYPE_RESULT create_passthrough_decoder(struct IFF_ChunkDecoder** dec)
 {
-	if (IFF_ChunkDecoder_Allocate(dec)) return 0;
+	if (IFF_ChunkDecoder_Allocate(dec)) return IFF_FAIL;
 	IFF_ChunkDecoder_Construct(*dec, passthrough_begin, passthrough_shard, passthrough_end);
-	return 1;
+	return IFF_OK;
 }
 
 /* ================================================================== */
@@ -271,8 +271,8 @@ static IFF_TYPE_RESULT ilbm_end(struct IFF_Parser_State* state, void* custom_sta
 	if (s->bmhd.compression == 1)
 	{
 		body_pixels = malloc(decompressed_size);
-		if (!body_pixels || !ILBM_DecompressByteRun1(body_pixels, s->body_data->bytes,
-		                                              s->body_data->size, decompressed_size))
+		if (!body_pixels || ILBM_DecompressByteRun1(body_pixels, s->body_data->bytes,
+		                                             s->body_data->size, decompressed_size))
 		{
 			free(body_pixels);
 			VPS_Data_Release(s->body_data);
@@ -313,21 +313,21 @@ static IFF_TYPE_RESULT ilbm_end(struct IFF_Parser_State* state, void* custom_sta
 	/* Convert planar to RGBA. */
 	VPS_TYPE_8U* cmap_flat = (VPS_TYPE_8U*)s->palette;
 	int cmap_bytes = s->palette_size * 3;
-	char success = 0;
+	IFF_TYPE_RESULT convert_result = IFF_FAIL;
 
 	if (is_ham && nPlanes == 8)
-		success = ILBM_ConvertHAM8ToRGBA(pixels, body_pixels, w, h, cmap_flat, cmap_bytes);
+		convert_result = ILBM_ConvertHAM8ToRGBA(pixels, body_pixels, w, h, cmap_flat, cmap_bytes);
 	else if (is_ham && nPlanes == 6)
-		success = ILBM_ConvertHAM6ToRGBA(pixels, body_pixels, w, h, cmap_flat, cmap_bytes);
+		convert_result = ILBM_ConvertHAM6ToRGBA(pixels, body_pixels, w, h, cmap_flat, cmap_bytes);
 	else if (is_ehb)
-		success = ILBM_ConvertEHBToRGBA(pixels, body_pixels, w, h, cmap_flat, cmap_bytes);
+		convert_result = ILBM_ConvertEHBToRGBA(pixels, body_pixels, w, h, cmap_flat, cmap_bytes);
 	else
-		success = ILBM_ConvertPlanarToRGBA(pixels, body_pixels, w, h, nPlanes, cmap_flat, cmap_bytes);
+		convert_result = ILBM_ConvertPlanarToRGBA(pixels, body_pixels, w, h, nPlanes, cmap_flat, cmap_bytes);
 
 	if (s->bmhd.compression == 1) free(body_pixels);
 	VPS_Data_Release(s->body_data);
 
-	if (success)
+	if (!convert_result)
 	{
 		struct ILBM_Result* result = calloc(1, sizeof(struct ILBM_Result));
 		if (result)
@@ -358,9 +358,9 @@ static IFF_TYPE_RESULT ilbm_end(struct IFF_Parser_State* state, void* custom_sta
 /* Registration                                                       */
 /* ================================================================== */
 
-char ILBM_RegisterDecoders(struct IFF_Parser_Factory* factory)
+IFF_TYPE_RESULT ILBM_RegisterDecoders(struct IFF_Parser_Factory* factory)
 {
-	if (!factory) return 0;
+	if (!factory) return IFF_FAIL;
 
 	struct IFF_Tag ilbm_tag;
 	IFF_Tag_Construct(&ilbm_tag, (const unsigned char*)"ILBM", 4, IFF_TAG_TYPE_TAG);
@@ -377,10 +377,10 @@ char ILBM_RegisterDecoders(struct IFF_Parser_Factory* factory)
 		IFF_Chunk_Key_Construct(key, &ilbm_tag, &chunk_tag);
 
 		struct IFF_ChunkDecoder* dec = NULL;
-		if (!create_passthrough_decoder(&dec))
+		if (create_passthrough_decoder(&dec))
 		{
 			IFF_Chunk_Key_Release(key);
-			return 0;
+			return IFF_FAIL;
 		}
 
 		IFF_Parser_Factory_RegisterChunkDecoder(factory, key, dec);
@@ -395,5 +395,5 @@ char ILBM_RegisterDecoders(struct IFF_Parser_Factory* factory)
 	IFF_FormDecoder_Construct(form_dec, ilbm_begin, ilbm_process_chunk, NULL, ilbm_end);
 	IFF_Parser_Factory_RegisterFormDecoder(factory, &ilbm_tag, form_dec);
 
-	return 1;
+	return IFF_OK;
 }

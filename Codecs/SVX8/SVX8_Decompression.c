@@ -11,7 +11,7 @@ static const signed char s_fibonacci_table[16] =
 	  0,   1,   2,  3,  5,  8, 13, 21
 };
 
-char SVX8_DecompressFibonacciDelta
+IFF_TYPE_RESULT SVX8_DecompressFibonacciDelta
 (
 	VPS_TYPE_8U* dest,
 	const VPS_TYPE_8U* src,
@@ -19,7 +19,7 @@ char SVX8_DecompressFibonacciDelta
 	VPS_TYPE_SIZE num_samples
 )
 {
-	if (!dest || !src || src_size < 2) return 0;
+	if (!dest || !src || src_size < 2) return IFF_FAIL;
 
 	/* Canonical 8SVX layout (spec appendix, DUnpack): src[0] is a pad
 	   byte and src[1] is the initial sample value the deltas build on. */
@@ -44,5 +44,10 @@ char SVX8_DecompressFibonacciDelta
 
 	/* A source too short to produce every requested sample would leave
 	   the tail of dest uninitialized; report it as a failure. */
-	return di == num_samples;
+	if (di != num_samples)
+	{
+		return IFF_FAIL;
+	}
+
+	return IFF_OK;
 }

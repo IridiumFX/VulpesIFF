@@ -46,7 +46,7 @@ static IFF_TYPE_RESULT passthrough_shard(struct IFF_Parser_State* state, void* c
 
 	if (!ps->accumulated)
 	{
-		if (!VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)chunk_data, 0, chunk_data->size))
+		if (VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)chunk_data, 0, chunk_data->size))
 		{
 			return IFF_FAIL;
 		}
@@ -205,7 +205,7 @@ static IFF_TYPE_RESULT ilbm_process_chunk
 				VPS_Data_Release(s->body_data);
 				s->body_data = NULL;
 			}
-			if (!VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->limit))
+			if (VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->limit))
 			{
 				IFF_ContextualData_Release(cd);
 				return IFF_FAIL;

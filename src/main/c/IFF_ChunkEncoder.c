@@ -80,10 +80,10 @@ IFF_TYPE_RESULT IFF_ChunkEncoder_Release
 
 // --- VulpesCore boundary adapter ---
 
-char IFF_ChunkEncoder_VPS_Release
+VPS_TYPE_RESULT IFF_ChunkEncoder_VPS_Release
 (
 	void *item
 )
 {
-	return IFF_ChunkEncoder_Release(item) == IFF_OK;
+	return IFF_ChunkEncoder_Release(item);
 }

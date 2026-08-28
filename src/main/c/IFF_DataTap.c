@@ -67,12 +67,12 @@ IFF_TYPE_RESULT IFF_DataTap_Allocate
 		goto cleanup;
 	}
 
-	if (!VPS_Dictionary_Allocate(&tap->registered_algorithms, 17))
+	if (VPS_Dictionary_Allocate(&tap->registered_algorithms, 17))
 	{
 		goto cleanup;
 	}
 
-	if (!VPS_List_Allocate(&tap->active_spans))
+	if (VPS_List_Allocate(&tap->active_spans))
 	{
 		goto cleanup;
 	}
@@ -105,8 +105,8 @@ IFF_TYPE_RESULT IFF_DataTap_Construct
 	// The data are const IFF_ChecksumAlgorithm* pointers, which we also don't own.
 	VPS_Dictionary_Construct(
 		item->registered_algorithms,
-		(char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_String,
-		(char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_String,
+		VPS_Hash_Utils_String,
+		VPS_Compare_Utils_String,
 		0, // No key_release
 		0, // No data_release
 		2, 75, 8
@@ -138,8 +138,8 @@ IFF_TYPE_RESULT IFF_DataTap_ConstructFromData
 
 	VPS_Dictionary_Construct(
 		item->registered_algorithms,
-		(char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_String,
-		(char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_String,
+		VPS_Hash_Utils_String,
+		VPS_Compare_Utils_String,
 		0, 0,
 		2, 75, 8
 	);
@@ -202,7 +202,7 @@ IFF_TYPE_RESULT IFF_DataTap_RegisterAlgorithm
 	}
 
 	// The dictionary does not take ownership of the key or data pointers.
-	if (!VPS_Dictionary_Add(tap->registered_algorithms, (void*)algorithm->identifier, (void*)algorithm))
+	if (VPS_Dictionary_Add(tap->registered_algorithms, (void*)algorithm->identifier, (void*)algorithm))
 	{
 		return IFF_FAIL;
 	}
@@ -271,7 +271,7 @@ IFF_TYPE_RESULT IFF_DataTap_StartSpan
 			{
 				struct IFF_ChecksumCalculator* calc = 0;
 				struct VPS_List_Node* calc_node = 0;
-				if (!IFF_ChecksumCalculator_Allocate(&calc) && !IFF_ChecksumCalculator_Construct(calc, algo) && VPS_List_Node_Allocate(&calc_node))
+				if (!IFF_ChecksumCalculator_Allocate(&calc) && !IFF_ChecksumCalculator_Construct(calc, algo) && !VPS_List_Node_Allocate(&calc_node))
 				{
 					VPS_List_Node_Construct(calc_node, calc);
 					VPS_List_AddTail(new_span->calculators, calc_node);
@@ -290,7 +290,7 @@ IFF_TYPE_RESULT IFF_DataTap_StartSpan
 	}
 
 	// Add the fully populated span to the LIFO stack (head of the list)
-	if (!VPS_List_Node_Allocate(&new_span_node)) { IFF_ChecksumSpan_Release(new_span); return IFF_FAIL; }
+	if (VPS_List_Node_Allocate(&new_span_node)) { IFF_ChecksumSpan_Release(new_span); return IFF_FAIL; }
 	VPS_List_Node_Construct(new_span_node, new_span);
 	VPS_List_AddHead(tap->active_spans, new_span_node);
 
@@ -310,7 +310,7 @@ IFF_TYPE_RESULT IFF_DataTap_EndSpan
 	if (!tap || !expected_checksums) return IFF_FAIL;
 
 	// Pop the most recent span from the LIFO stack
-	if (!VPS_List_RemoveHead(tap->active_spans, &span_node))
+	if (VPS_List_RemoveHead(tap->active_spans, &span_node))
 	{
 		return IFF_FAIL;
 	}
@@ -324,7 +324,7 @@ IFF_TYPE_RESULT IFF_DataTap_EndSpan
 		struct VPS_Data* calculated_data = 0;
 
 		// Finalize the calculation
-		if (!VPS_Data_Allocate(&calculated_data, 0, 0) || calc->algorithm->finalize(calc->context, calculated_data))
+		if (VPS_Data_Allocate(&calculated_data, 0, 0) || calc->algorithm->finalize(calc->context, calculated_data))
 		{
 			VPS_Data_Release(calculated_data);
 			all_match = 0;
@@ -336,7 +336,7 @@ IFF_TYPE_RESULT IFF_DataTap_EndSpan
 		{
 			VPS_TYPE_16S ordering;
 			// Compare using VPS_Data's built-in comparison logic
-			if (!VPS_Compare_Utils_Data(calculated_data, expected_data, &ordering) || ordering != 0)
+			if (VPS_Compare_Utils_Data(calculated_data, expected_data, &ordering) || ordering != 0)
 			{
 				all_match = 0;
 			}

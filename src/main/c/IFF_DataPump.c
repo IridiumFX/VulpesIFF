@@ -99,8 +99,7 @@ IFF_TYPE_RESULT IFF_DataPump_Construct
 	// Construct the I/O pipeline that this reader will manage.
 	if
 	(
-		!VPS_Decoder_Base256_Construct
-		(
+		VPS_Decoder_Base256_Construct(
 			item->base256_decoder
 		)
 	)
@@ -110,8 +109,7 @@ IFF_TYPE_RESULT IFF_DataPump_Construct
 
 	if
 	(
-		!VPS_Data_Construct
-		(
+		VPS_Data_Construct(
 			item->data_buffer
 		)
 	)
@@ -121,8 +119,7 @@ IFF_TYPE_RESULT IFF_DataPump_Construct
 
 	if
 	(
-		!VPS_DataReader_Construct
-		(
+		VPS_DataReader_Construct(
 			item->data_reader
 			, item->data_buffer
 		)
@@ -133,8 +130,7 @@ IFF_TYPE_RESULT IFF_DataPump_Construct
 
 	if
 	(
-		!VPS_StreamReader_Construct
-		(
+		VPS_StreamReader_Construct(
 			item->stream_reader
 			, item->data_buffer
 			, fh
@@ -165,12 +161,12 @@ IFF_TYPE_RESULT IFF_DataPump_ConstructFromData
 	item->stream_reader = 0;
 
 	// Resize the data buffer to fit the source data.
-	if (!VPS_Data_Resize(item->data_buffer, source->limit))
+	if (VPS_Data_Resize(item->data_buffer, source->limit))
 	{
 		return IFF_FAIL;
 	}
 
-	if (!VPS_Data_Construct(item->data_buffer))
+	if (VPS_Data_Construct(item->data_buffer))
 	{
 		return IFF_FAIL;
 	}
@@ -190,8 +186,7 @@ IFF_TYPE_RESULT IFF_DataPump_ConstructFromData
 	// Construct the data reader over the filled buffer.
 	if
 	(
-		!VPS_DataReader_Construct
-		(
+		VPS_DataReader_Construct(
 			item->data_reader
 			, item->data_buffer
 		)
@@ -203,8 +198,7 @@ IFF_TYPE_RESULT IFF_DataPump_ConstructFromData
 	// Construct the base256 decoder for API consistency.
 	if
 	(
-		!VPS_Decoder_Base256_Construct
-		(
+		VPS_Decoder_Base256_Construct(
 			item->base256_decoder
 		)
 	)
@@ -315,8 +309,7 @@ static char IFF_DataPump_PRIVATE_EnsureDataAvailable
 
 	if
 	(
-		!VPS_StreamReader_Read
-		(
+		VPS_StreamReader_Read(
 			pump->stream_reader
 			, bytes_needed
 			, 0
@@ -353,8 +346,7 @@ IFF_TYPE_RESULT IFF_DataPump_ReadRaw
 
 	if
 	(
-		!VPS_Data_Clone
-		(
+		VPS_Data_Clone(
 			out_data
 			, pump->data_buffer
 			, pump->data_buffer->position
@@ -367,8 +359,7 @@ IFF_TYPE_RESULT IFF_DataPump_ReadRaw
 
 	if
 	(
-		!VPS_Data_Seek
-		(
+		VPS_Data_Seek(
 			pump->data_buffer
 			, bytes_to_read
 			, SEEK_CUR
@@ -407,8 +398,7 @@ IFF_TYPE_RESULT IFF_DataPump_Skip
 
 	if
 	(
-		!VPS_Data_Seek
-		(
+		VPS_Data_Seek(
 			pump->data_buffer
 			, bytes_to_skip
 			, SEEK_CUR

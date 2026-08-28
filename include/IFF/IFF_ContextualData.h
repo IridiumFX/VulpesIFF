@@ -1,6 +1,7 @@
 #pragma once
 
 #include <IFF/IFF_Result.h>
+#include <vulpes/VPS_Types.h>
 
 /**
  * @brief Encapsulates a block of data along with the parsing context (flags)
@@ -41,12 +42,11 @@ IFF_TYPE_RESULT IFF_ContextualData_Release
 /*
  * --- VulpesCore boundary adapter ---
  *
- * VulpesCore containers expect the boolean convention (1 = success).
- * Register this shim as the release hook rather than casting the function
- * above, whose polarity is inverted.
+ * Presents the typed release above through the void * a VulpesCore
+ * callback slot expects. No polarity translation: both sides agree now.
  */
 
-char IFF_ContextualData_VPS_Release
+VPS_TYPE_RESULT IFF_ContextualData_VPS_Release
 (
 	void *item
 );

@@ -28,12 +28,12 @@ IFF_TYPE_RESULT IFF_Generator_Factory_Allocate
 		return IFF_FAIL;
 	}
 
-	if (!VPS_Dictionary_Allocate(&factory->form_encoders, 17))
+	if (VPS_Dictionary_Allocate(&factory->form_encoders, 17))
 	{
 		goto failure;
 	}
 
-	if (!VPS_Dictionary_Allocate(&factory->chunk_encoders, 17))
+	if (VPS_Dictionary_Allocate(&factory->chunk_encoders, 17))
 	{
 		goto failure;
 	}
@@ -127,7 +127,7 @@ IFF_TYPE_RESULT IFF_Generator_Factory_RegisterFormEncoder
 {
 	struct IFF_Tag *key_clone;
 	char existed;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item || !item->form_encoders || !form_tag || !encoder)
 	{
@@ -145,12 +145,12 @@ IFF_TYPE_RESULT IFF_Generator_Factory_RegisterFormEncoder
 	existed = VPS_Dictionary_Find(item->form_encoders, key_clone, 0);
 	result = VPS_Dictionary_Add(item->form_encoders, key_clone, encoder);
 
-	if (existed || !result)
+	if (existed || result)
 	{
 		IFF_Tag_Release(key_clone);
 	}
 
-	if (!result)
+	if (result)
 	{
 		return IFF_FAIL;
 	}
@@ -167,7 +167,7 @@ IFF_TYPE_RESULT IFF_Generator_Factory_RegisterChunkEncoder
 {
 	struct IFF_Tag *key_clone;
 	char existed;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item || !item->chunk_encoders || !chunk_tag || !encoder)
 	{
@@ -184,12 +184,12 @@ IFF_TYPE_RESULT IFF_Generator_Factory_RegisterChunkEncoder
 	existed = VPS_Dictionary_Find(item->chunk_encoders, key_clone, 0);
 	result = VPS_Dictionary_Add(item->chunk_encoders, key_clone, encoder);
 
-	if (existed || !result)
+	if (existed || result)
 	{
 		IFF_Tag_Release(key_clone);
 	}
 
-	if (!result)
+	if (result)
 	{
 		return IFF_FAIL;
 	}

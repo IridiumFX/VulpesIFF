@@ -40,17 +40,17 @@ static struct VPS_Set *PRIVATE_CreateAlgoSet(const char *id, VPS_TYPE_SIZE id_le
 	struct VPS_Set *s = 0;
 	struct VPS_Data *d = 0;
 
-	if (!VPS_Data_Allocate(&d, id_len, id_len)) return 0;
-	if (!VPS_Data_Construct(d)) { VPS_Data_Release(d); return 0; }
+	if (VPS_Data_Allocate(&d, id_len, id_len)) return 0;
+	if (VPS_Data_Construct(d)) { VPS_Data_Release(d); return 0; }
 	memcpy(d->bytes, id, id_len);
 	d->limit = id_len;
 
-	if (!VPS_Set_Allocate(&s, 7)) { VPS_Data_Release(d); return 0; }
-	if (!VPS_Set_Construct(s, VPS_Hash_Utils_Data, VPS_Compare_Utils_Data,
-		(char (*)(void *))VPS_Data_Release, 2, 75, 8))
+	if (VPS_Set_Allocate(&s, 7)) { VPS_Data_Release(d); return 0; }
+	if (VPS_Set_Construct(s, VPS_Hash_Utils_Data, VPS_Compare_Utils_Data,
+		(VPS_TYPE_RESULT (*)(void *)) VPS_Data_Release, 2, 75, 8))
 	{ VPS_Set_Release(s); VPS_Data_Release(d); return 0; }
 
-	if (!VPS_Set_Add(s, d)) { VPS_Set_Release(s); return 0; }
+	if (VPS_Set_Add(s, d)) { VPS_Set_Release(s); return 0; }
 	return s;
 }
 
@@ -522,9 +522,9 @@ static char test_roundtrip_def_ref(void)
 	IFF_Tag_Construct(&body, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	wrap = PRIVATE_Wrap(data, 4);
 
-	if (!VPS_Data_Allocate(&def_id, 4, 4)) goto cleanup;
+	if (VPS_Data_Allocate(&def_id, 4, 4)) goto cleanup;
 	memcpy(def_id->bytes, "SEG1", 4);
-	if (!VPS_Data_Allocate(&ref_id, 4, 4)) goto cleanup;
+	if (VPS_Data_Allocate(&ref_id, 4, 4)) goto cleanup;
 	memcpy(ref_id->bytes, "SEG1", 4);
 	ids[0] = ref_id;
 

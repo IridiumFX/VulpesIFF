@@ -251,29 +251,29 @@ IFF_TYPE_RESULT IFF_Tag_Hash
 
 // --- VulpesCore boundary adapters ---
 
-char IFF_Tag_VPS_Hash
+VPS_TYPE_RESULT IFF_Tag_VPS_Hash
 (
 	void *key
 	, VPS_TYPE_SIZE *key_hash
 )
 {
-	return IFF_Tag_Hash(key, key_hash) == IFF_OK;
+	return IFF_Tag_Hash(key, key_hash);
 }
 
-char IFF_Tag_VPS_Compare
+VPS_TYPE_RESULT IFF_Tag_VPS_Compare
 (
 	void *key_1
 	, void *key_2
 	, VPS_TYPE_16S *ordering
 )
 {
-	return IFF_Tag_Compare(key_1, key_2, ordering) == IFF_OK;
+	return IFF_Tag_Compare(key_1, key_2, ordering);
 }
 
-char IFF_Tag_VPS_Release
+VPS_TYPE_RESULT IFF_Tag_VPS_Release
 (
 	void *key
 )
 {
-	return IFF_Tag_Release(key) == IFF_OK;
+	return IFF_Tag_Release(key);
 }

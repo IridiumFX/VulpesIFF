@@ -70,7 +70,7 @@ static IFF_TYPE_RESULT TestForm_ProduceChunk
 		, IFF_TAG_TYPE_TAG
 	);
 
-	if (!VPS_Data_Allocate(&data, chunk->size, chunk->size))
+	if (VPS_Data_Allocate(&data, chunk->size, chunk->size))
 	{
 		return IFF_FAIL;
 	}
@@ -153,7 +153,7 @@ static IFF_TYPE_RESULT TestDoubler_Encode
 
 	if (!src || !out_data) return IFF_FAIL;
 
-	if (!VPS_Data_Allocate(&result, src->limit * 2, src->limit * 2))
+	if (VPS_Data_Allocate(&result, src->limit * 2, src->limit * 2))
 	{
 		return IFF_FAIL;
 	}

@@ -191,29 +191,12 @@ IFF_TYPE_RESULT IFF_Chunk_Key_Clone
 
 // --- VulpesCore boundary adapters ---
 
-char IFF_Chunk_Key_VPS_Hash
-(
-	void *key
-	, VPS_TYPE_SIZE *key_hash
-)
-{
-	return IFF_Chunk_Key_Hash(key, key_hash) == IFF_OK;
-}
 
-char IFF_Chunk_Key_VPS_Compare
-(
-	void *key_1
-	, void *key_2
-	, VPS_TYPE_16S *ordering
-)
-{
-	return IFF_Chunk_Key_Compare(key_1, key_2, ordering) == IFF_OK;
-}
 
-char IFF_Chunk_Key_VPS_Release
+VPS_TYPE_RESULT IFF_Chunk_Key_VPS_Release
 (
 	void *key
 )
 {
-	return IFF_Chunk_Key_Release(key) == IFF_OK;
+	return IFF_Chunk_Key_Release(key);
 }

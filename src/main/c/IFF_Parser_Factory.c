@@ -34,17 +34,17 @@ IFF_TYPE_RESULT IFF_Parser_Factory_Allocate
 		return IFF_FAIL;
 	}
 
-	if (!VPS_Dictionary_Allocate(&subject->form_decoders, 17))
+	if (VPS_Dictionary_Allocate(&subject->form_decoders, 17))
 	{
 		goto failure;
 	}
 
-	if (!VPS_Dictionary_Allocate(&subject->chunk_decoders, 17))
+	if (VPS_Dictionary_Allocate(&subject->chunk_decoders, 17))
 	{
 		goto failure;
 	}
 
-	if (!VPS_Dictionary_Allocate(&subject->directive_processors, 17))
+	if (VPS_Dictionary_Allocate(&subject->directive_processors, 17))
 	{
 		goto failure;
 	}
@@ -84,8 +84,8 @@ IFF_TYPE_RESULT IFF_Parser_Factory_Construct
 	VPS_Dictionary_Construct
 	(
 		item->chunk_decoders
-		, IFF_Chunk_Key_VPS_Hash
-		, IFF_Chunk_Key_VPS_Compare
+		, IFF_Chunk_Key_Hash
+		, IFF_Chunk_Key_Compare
 		, IFF_Chunk_Key_VPS_Release
 		, IFF_ChunkDecoder_VPS_Release // Registered decoders are owned by the factory
 		, 2
@@ -169,7 +169,7 @@ IFF_TYPE_RESULT IFF_Parser_Factory_RegisterFormDecoder
 {
 	struct IFF_Tag *key_clone;
 	char existed;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item || !item->form_decoders || !form_tag || !decoder)
 	{
@@ -188,12 +188,12 @@ IFF_TYPE_RESULT IFF_Parser_Factory_RegisterFormDecoder
 	existed = VPS_Dictionary_Find(item->form_decoders, key_clone, 0);
 	result = VPS_Dictionary_Add(item->form_decoders, key_clone, decoder);
 
-	if (existed || !result)
+	if (existed || result)
 	{
 		IFF_Tag_Release(key_clone);
 	}
 
-	if (!result)
+	if (result)
 	{
 		return IFF_FAIL;
 	}
@@ -210,7 +210,7 @@ IFF_TYPE_RESULT IFF_Parser_Factory_RegisterChunkDecoder
 {
 	struct IFF_Chunk_Key *key_clone;
 	char existed;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item || !item->chunk_decoders || !chunk_key || !decoder)
 	{
@@ -226,12 +226,12 @@ IFF_TYPE_RESULT IFF_Parser_Factory_RegisterChunkDecoder
 	existed = VPS_Dictionary_Find(item->chunk_decoders, key_clone, 0);
 	result = VPS_Dictionary_Add(item->chunk_decoders, key_clone, decoder);
 
-	if (existed || !result)
+	if (existed || result)
 	{
 		IFF_Chunk_Key_Release(key_clone);
 	}
 
-	if (!result)
+	if (result)
 	{
 		return IFF_FAIL;
 	}
@@ -252,7 +252,7 @@ IFF_TYPE_RESULT IFF_Parser_Factory_RegisterDirectiveProcessor
 {
 	struct IFF_Tag* key_clone;
 	char existed;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item || !item->directive_processors || !directive_tag || !processor)
 	{
@@ -270,12 +270,12 @@ IFF_TYPE_RESULT IFF_Parser_Factory_RegisterDirectiveProcessor
 	existed = VPS_Dictionary_Find(item->directive_processors, key_clone, 0);
 	result = VPS_Dictionary_Add(item->directive_processors, key_clone, processor);
 
-	if (existed || !result)
+	if (existed || result)
 	{
 		IFF_Tag_Release(key_clone);
 	}
 
-	if (!result)
+	if (result)
 	{
 		return IFF_FAIL;
 	}

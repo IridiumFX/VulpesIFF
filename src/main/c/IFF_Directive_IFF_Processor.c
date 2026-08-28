@@ -26,9 +26,9 @@ IFF_TYPE_RESULT IFF_Directive_IFF_Process
 	// Use a data reader to safely parse the chunk's payload.
 	VPS_DataReader_Construct(&reader, chunk->data);
 
-	if (!VPS_DataReader_Read16UBE(&reader, &header.version) ||
-		!VPS_DataReader_Read16UBE(&reader, &header.revision) ||
-		!VPS_DataReader_Read64UBE(&reader, &header.flags.as_int))
+	if (VPS_DataReader_Read16UBE(&reader, &header.version) ||
+		VPS_DataReader_Read16UBE(&reader, &header.revision) ||
+		VPS_DataReader_Read64UBE(&reader, &header.flags.as_int))
 	{
 		// The chunk data is malformed.
 		result->action = IFF_ACTION_HALT;

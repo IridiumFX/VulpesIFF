@@ -75,12 +75,12 @@ IFF_TYPE_RESULT IFF_WriteTap_Allocate
 		goto cleanup;
 	}
 
-	if (!VPS_Dictionary_Allocate(&tap->registered_algorithms, 17))
+	if (VPS_Dictionary_Allocate(&tap->registered_algorithms, 17))
 	{
 		goto cleanup;
 	}
 
-	if (!VPS_List_Allocate(&tap->active_spans))
+	if (VPS_List_Allocate(&tap->active_spans))
 	{
 		goto cleanup;
 	}
@@ -115,8 +115,8 @@ IFF_TYPE_RESULT IFF_WriteTap_Construct
 	VPS_Dictionary_Construct
 	(
 		item->registered_algorithms
-		, (char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_String
-		, (char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_String
+		, VPS_Hash_Utils_String
+		, VPS_Compare_Utils_String
 		, 0
 		, 0
 		, 2, 75, 8
@@ -150,8 +150,8 @@ IFF_TYPE_RESULT IFF_WriteTap_ConstructToData
 	VPS_Dictionary_Construct
 	(
 		item->registered_algorithms
-		, (char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_String
-		, (char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_String
+		, VPS_Hash_Utils_String
+		, VPS_Compare_Utils_String
 		, 0
 		, 0
 		, 2, 75, 8
@@ -228,7 +228,7 @@ IFF_TYPE_RESULT IFF_WriteTap_RegisterAlgorithm
 		return IFF_FAIL;
 	}
 
-	if (!VPS_Dictionary_Add(tap->registered_algorithms, (void *)algorithm->identifier, (void *)algorithm))
+	if (VPS_Dictionary_Add(tap->registered_algorithms, (void *)algorithm->identifier, (void *)algorithm))
 	{
 		return IFF_FAIL;
 	}
@@ -312,7 +312,7 @@ IFF_TYPE_RESULT IFF_WriteTap_StartSpan
 				(
 					!IFF_ChecksumCalculator_Allocate(&calc)
 					&& !IFF_ChecksumCalculator_Construct(calc, algo)
-					&& VPS_List_Node_Allocate(&calc_node)
+					&& !VPS_List_Node_Allocate(&calc_node)
 				)
 				{
 					VPS_List_Node_Construct(calc_node, calc);
@@ -330,7 +330,7 @@ IFF_TYPE_RESULT IFF_WriteTap_StartSpan
 		}
 	}
 
-	if (!VPS_List_Node_Allocate(&new_span_node))
+	if (VPS_List_Node_Allocate(&new_span_node))
 	{
 		IFF_ChecksumSpan_Release(new_span);
 		return IFF_FAIL;
@@ -357,14 +357,14 @@ IFF_TYPE_RESULT IFF_WriteTap_EndSpan
 		return IFF_FAIL;
 	}
 
-	if (!VPS_List_RemoveHead(tap->active_spans, &span_node))
+	if (VPS_List_RemoveHead(tap->active_spans, &span_node))
 	{
 		return IFF_FAIL;
 	}
 
 	span = span_node->data;
 
-	if (!VPS_Dictionary_Allocate(&checksums, 7))
+	if (VPS_Dictionary_Allocate(&checksums, 7))
 	{
 		IFF_ChecksumSpan_Release(span);
 		VPS_List_Node_Release(span_node);
@@ -374,10 +374,10 @@ IFF_TYPE_RESULT IFF_WriteTap_EndSpan
 	VPS_Dictionary_Construct
 	(
 		checksums
-		, (char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_String
-		, (char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_String
+		, VPS_Hash_Utils_String
+		, VPS_Compare_Utils_String
 		, 0
-		, (char(*)(void*))VPS_Data_Release
+		, (VPS_TYPE_RESULT (*)(void *)) VPS_Data_Release
 		, 2, 75, 8
 	);
 
@@ -390,7 +390,7 @@ IFF_TYPE_RESULT IFF_WriteTap_EndSpan
 
 			if
 			(
-				!VPS_Data_Allocate(&calculated_data, 0, 0)
+				VPS_Data_Allocate(&calculated_data, 0, 0)
 				|| calc->algorithm->finalize(calc->context, calculated_data)
 			)
 			{
@@ -401,7 +401,7 @@ IFF_TYPE_RESULT IFF_WriteTap_EndSpan
 				return IFF_FAIL;
 			}
 
-			if (!VPS_Dictionary_Add(checksums, (void *)calc->algorithm->identifier, calculated_data))
+			if (VPS_Dictionary_Add(checksums, (void *)calc->algorithm->identifier, calculated_data))
 			{
 				VPS_Data_Release(calculated_data);
 				VPS_Dictionary_Release(checksums);

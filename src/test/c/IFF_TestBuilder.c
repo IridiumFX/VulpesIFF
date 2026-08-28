@@ -39,7 +39,7 @@ static IFF_TYPE_RESULT PRIVATE_WriteTag
 		memcpy(buf, tag, tag_len);
 	}
 
-	if (!VPS_DataWriter_WriteBytes(b->writer, buf, len))
+	if (VPS_DataWriter_WriteBytes(b->writer, buf, len))
 	{
 		return IFF_FAIL;
 	}
@@ -79,7 +79,7 @@ static IFF_TYPE_RESULT PRIVATE_WriteSize
 			break;
 	}
 
-	if (!VPS_DataWriter_WriteBytes(b->writer, buf, b->size_length))
+	if (VPS_DataWriter_WriteBytes(b->writer, buf, b->size_length))
 	{
 		return IFF_FAIL;
 	}
@@ -137,7 +137,7 @@ static IFF_TYPE_RESULT PRIVATE_WritePadding
 
 	if (data_size & 1)
 	{
-		if (!VPS_DataWriter_WriteBytes(b->writer, &zero, 1))
+		if (VPS_DataWriter_WriteBytes(b->writer, &zero, 1))
 		{
 			return IFF_FAIL;
 		}
@@ -162,12 +162,12 @@ IFF_TYPE_RESULT IFF_TestBuilder_Allocate
 	b = calloc(1, sizeof(struct IFF_TestBuilder));
 	if (!b) return IFF_FAIL;
 
-	if (!VPS_Data_Allocate(&b->buffer, 256, 0))
+	if (VPS_Data_Allocate(&b->buffer, 256, 0))
 	{
 		goto cleanup;
 	}
 
-	if (!VPS_DataWriter_Allocate(&b->writer))
+	if (VPS_DataWriter_Allocate(&b->writer))
 	{
 		goto cleanup;
 	}
@@ -190,8 +190,8 @@ IFF_TYPE_RESULT IFF_TestBuilder_Construct
 {
 	if (!b) return IFF_FAIL;
 
-	if (!VPS_Data_Construct(b->buffer)) return IFF_FAIL;
-	if (!VPS_DataWriter_Construct(b->writer, b->buffer)) return IFF_FAIL;
+	if (VPS_Data_Construct(b->buffer)) return IFF_FAIL;
+	if (VPS_DataWriter_Construct(b->writer, b->buffer)) return IFF_FAIL;
 
 	// Default to IFF-85 settings.
 	b->tag_length = 4;
@@ -256,7 +256,7 @@ IFF_TYPE_RESULT IFF_TestBuilder_AddHeader
 
 	// Write size (12) in current config, then the payload.
 	if (PRIVATE_WriteSize(b, 12)) return IFF_FAIL;
-	if (!VPS_DataWriter_WriteBytes(b->writer, payload, 12)) return IFF_FAIL;
+	if (VPS_DataWriter_WriteBytes(b->writer, payload, 12)) return IFF_FAIL;
 
 	// Update builder config from the header flags.
 	b->tag_length = IFF_Header_Flags_GetTagLength(header->flags.as_fields.tag_sizing);
@@ -340,7 +340,7 @@ IFF_TYPE_RESULT IFF_TestBuilder_AddChunk
 
 	if (size > 0)
 	{
-		if (!VPS_DataWriter_WriteBytes(b->writer, data, size)) return IFF_FAIL;
+		if (VPS_DataWriter_WriteBytes(b->writer, data, size)) return IFF_FAIL;
 	}
 
 	if (PRIVATE_WritePadding(b, size)) return IFF_FAIL;
@@ -364,7 +364,7 @@ IFF_TYPE_RESULT IFF_TestBuilder_AddDirective
 
 	if (size > 0)
 	{
-		if (!VPS_DataWriter_WriteBytes(b->writer, data, size)) return IFF_FAIL;
+		if (VPS_DataWriter_WriteBytes(b->writer, data, size)) return IFF_FAIL;
 	}
 
 	if (PRIVATE_WritePadding(b, size)) return IFF_FAIL;

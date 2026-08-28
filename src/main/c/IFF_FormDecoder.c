@@ -51,10 +51,10 @@ IFF_TYPE_RESULT IFF_FormDecoder_Release(struct IFF_FormDecoder *item)
 
 // --- VulpesCore boundary adapter ---
 
-char IFF_FormDecoder_VPS_Release
+VPS_TYPE_RESULT IFF_FormDecoder_VPS_Release
 (
 	void *item
 )
 {
-	return IFF_FormDecoder_Release(item) == IFF_OK;
+	return IFF_FormDecoder_Release(item);
 }

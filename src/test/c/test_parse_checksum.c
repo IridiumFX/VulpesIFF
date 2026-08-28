@@ -83,25 +83,24 @@ static char test_checksum_roundtrip(void)
 	// identifier string. DataTap_StartSpan extracts (const char*)bytes
 	// for dictionary lookup.
 
-	if (!VPS_Data_Allocate(&algo_id, 9, 9)) goto cleanup;
-	if (!VPS_Data_Construct(algo_id)) goto cleanup;
+	if (VPS_Data_Allocate(&algo_id, 9, 9)) goto cleanup;
+	if (VPS_Data_Construct(algo_id)) goto cleanup;
 	memcpy(algo_id->bytes, "TEST-XOR", 9); // includes null terminator
 	algo_id->limit = 9;
 
-	if (!VPS_Set_Allocate(&algo_set, 7)) goto cleanup;
-	if (!VPS_Set_Construct
-	(
+	if (VPS_Set_Allocate(&algo_set, 7)) goto cleanup;
+	if (VPS_Set_Construct(
 		algo_set
 		, VPS_Hash_Utils_Data
 		, VPS_Compare_Utils_Data
-		, (char (*)(void *))VPS_Data_Release
+		, (VPS_TYPE_RESULT (*)(void *)) VPS_Data_Release
 		, 2, 75, 8
 	))
 	{
 		goto cleanup;
 	}
 
-	if (!VPS_Set_Add(algo_set, algo_id)) goto cleanup;
+	if (VPS_Set_Add(algo_set, algo_id)) goto cleanup;
 	algo_id = 0; // set owns it now
 
 	// --- Generator: create output with checksum span ---

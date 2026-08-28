@@ -80,10 +80,10 @@ IFF_TYPE_RESULT IFF_ContextualData_Release
 
 // --- VulpesCore boundary adapter ---
 
-char IFF_ContextualData_VPS_Release
+VPS_TYPE_RESULT IFF_ContextualData_VPS_Release
 (
 	void *item
 )
 {
-	return IFF_ContextualData_Release(item) == IFF_OK;
+	return IFF_ContextualData_Release(item);
 }

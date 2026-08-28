@@ -54,15 +54,15 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_ReleaseBlobbedSpan
 
 /**
  * @brief VulpesCore boundary adapter for the blobbed-span release hook.
- * @details Registered on the blobbed_spans list, which expects the boolean
- *          convention (1 = success).
+ * @details Presents the release above through the void * the list slot
+ *          expects. No polarity translation: both sides agree now.
  */
-static char PRIVATE_IFF_Generator_ReleaseBlobbedSpan_VPS
+static VPS_TYPE_RESULT PRIVATE_IFF_Generator_ReleaseBlobbedSpan_VPS
 (
 	void *ptr
 )
 {
-	return PRIVATE_IFF_Generator_ReleaseBlobbedSpan(ptr) == IFF_OK;
+	return PRIVATE_IFF_Generator_ReleaseBlobbedSpan(ptr);
 }
 
 /**
@@ -146,7 +146,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_BeginBlobbedSpan
 				(
 					!IFF_ChecksumCalculator_Allocate(&calc)
 					&& !IFF_ChecksumCalculator_Construct(calc, algo)
-					&& VPS_List_Node_Allocate(&calc_node)
+					&& !VPS_List_Node_Allocate(&calc_node)
 				)
 				{
 					VPS_List_Node_Construct(calc_node, calc);
@@ -178,7 +178,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_BeginBlobbedSpan
 	bs->span = new_span;
 
 	/* Push onto LIFO stack */
-	if (!VPS_List_Node_Allocate(&bs_node))
+	if (VPS_List_Node_Allocate(&bs_node))
 	{
 		PRIVATE_IFF_Generator_ReleaseBlobbedSpan(bs);
 		return IFF_FAIL;
@@ -207,7 +207,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EndBlobbedSpan
 	}
 
 	/* Pop the most recent blobbed span */
-	if (!VPS_List_RemoveHead(gen->blobbed_spans, &bs_node))
+	if (VPS_List_RemoveHead(gen->blobbed_spans, &bs_node))
 	{
 		return IFF_FAIL;
 	}
@@ -284,7 +284,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EndBlobbedSpan
 	}
 
 	/* Finalize calculators into output dictionary */
-	if (!VPS_Dictionary_Allocate(&checksums, 7))
+	if (VPS_Dictionary_Allocate(&checksums, 7))
 	{
 		goto failure;
 	}
@@ -292,10 +292,10 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EndBlobbedSpan
 	VPS_Dictionary_Construct
 	(
 		checksums
-		, (char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_String
-		, (char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_String
+		, VPS_Hash_Utils_String
+		, VPS_Compare_Utils_String
 		, 0
-		, (char(*)(void*))VPS_Data_Release
+		, (VPS_TYPE_RESULT (*)(void *)) VPS_Data_Release
 		, 2, 75, 8
 	);
 
@@ -308,7 +308,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EndBlobbedSpan
 
 			if
 			(
-				!VPS_Data_Allocate(&calculated_data, 0, 0)
+				VPS_Data_Allocate(&calculated_data, 0, 0)
 				|| calc->algorithm->finalize(calc->context, calculated_data)
 			)
 			{
@@ -316,7 +316,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EndBlobbedSpan
 				goto failure;
 			}
 
-			if (!VPS_Dictionary_Add(checksums, (void *)calc->algorithm->identifier, calculated_data))
+			if (VPS_Dictionary_Add(checksums, (void *)calc->algorithm->identifier, calculated_data))
 			{
 				VPS_Data_Release(calculated_data);
 				goto failure;
@@ -362,7 +362,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_WriteTagTo
 
 	if (tag->type == IFF_TAG_TYPE_DIRECTIVE)
 	{
-		if (!VPS_DataWriter_WriteBytes(dw, tag->data + (IFF_TAG_CANONICAL_SIZE - tag_length), tag_length))
+		if (VPS_DataWriter_WriteBytes(dw, tag->data + (IFF_TAG_CANONICAL_SIZE - tag_length), tag_length))
 		{
 			return IFF_FAIL;
 		}
@@ -371,7 +371,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_WriteTagTo
 	}
 	else
 	{
-		if (!VPS_DataWriter_WriteBytes(dw, tag->data, tag_length))
+		if (VPS_DataWriter_WriteBytes(dw, tag->data, tag_length))
 		{
 			return IFF_FAIL;
 		}
@@ -421,7 +421,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_WriteSizeTo
 			else       VPS_Endian_Write32UBE(buf, (VPS_TYPE_32U)size);
 	}
 
-	if (!VPS_DataWriter_WriteBytes(dw, buf, size_length))
+	if (VPS_DataWriter_WriteBytes(dw, buf, size_length))
 	{
 		return IFF_FAIL;
 	}
@@ -440,7 +440,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_WriteDataTo
 		return IFF_OK;
 	}
 
-	if (!VPS_DataWriter_WriteBytes(dw, data->bytes, data->limit))
+	if (VPS_DataWriter_WriteBytes(dw, data->bytes, data->limit))
 	{
 		return IFF_FAIL;
 	}
@@ -462,7 +462,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_WritePaddingTo
 
 	if (data_size & 1)
 	{
-		if (!VPS_DataWriter_Write8U(dw, 0))
+		if (VPS_DataWriter_Write8U(dw, 0))
 		{
 			return IFF_FAIL;
 		}
@@ -753,7 +753,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EmitRaw
 
 	if (scope && scope->accumulator_writer)
 	{
-		if (!VPS_DataWriter_WriteBytes(scope->accumulator_writer, data, size))
+		if (VPS_DataWriter_WriteBytes(scope->accumulator_writer, data, size))
 		{
 			return IFF_FAIL;
 		}
@@ -883,7 +883,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_BeginContainer
 	}
 
 	/* Prepare the list node (but don't push yet — write tags first) */
-	if (!VPS_List_Node_Allocate(&node))
+	if (VPS_List_Node_Allocate(&node))
 	{
 		IFF_WriteScope_Release(new_scope);
 		return IFF_FAIL;
@@ -951,7 +951,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EndContainer
 	}
 
 	/* Pop the current scope */
-	if (!VPS_List_RemoveTail(gen->scope_stack, &node))
+	if (VPS_List_RemoveTail(gen->scope_stack, &node))
 	{
 		return IFF_FAIL;
 	}
@@ -1016,7 +1016,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EndContainer
 				goto failure;
 			}
 
-			if (!VPS_DataWriter_WriteBytes(parent->accumulator_writer, scope->accumulator->bytes, body_size))
+			if (VPS_DataWriter_WriteBytes(parent->accumulator_writer, scope->accumulator->bytes, body_size))
 			{
 				goto failure;
 			}
@@ -1099,7 +1099,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Generator_AbortContainer
 		return IFF_FAIL;
 	}
 
-	if (!VPS_List_RemoveTail(gen->scope_stack, &node))
+	if (VPS_List_RemoveTail(gen->scope_stack, &node))
 	{
 		return IFF_FAIL;
 	}
@@ -1182,12 +1182,12 @@ IFF_TYPE_RESULT IFF_Generator_Allocate
 		goto cleanup;
 	}
 
-	if (!VPS_List_Allocate(&gen->scope_stack))
+	if (VPS_List_Allocate(&gen->scope_stack))
 	{
 		goto cleanup;
 	}
 
-	if (!VPS_List_Allocate(&gen->blobbed_spans))
+	if (VPS_List_Allocate(&gen->blobbed_spans))
 	{
 		goto cleanup;
 	}
@@ -1364,22 +1364,22 @@ IFF_TYPE_RESULT IFF_Generator_WriteHeader
 	config = &IFF_HEADER_FLAGS_1985.as_fields;
 
 	/* Build payload: version(16BE) + revision(16BE) + flags(64) */
-	if (!VPS_Data_Allocate(&payload, 12, 0) || !VPS_Data_Construct(payload))
+	if (VPS_Data_Allocate(&payload, 12, 0) || VPS_Data_Construct(payload))
 	{
 		VPS_Data_Release(payload);
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataWriter_Allocate(&dw) || !VPS_DataWriter_Construct(dw, payload))
+	if (VPS_DataWriter_Allocate(&dw) || VPS_DataWriter_Construct(dw, payload))
 	{
 		VPS_DataWriter_Release(dw);
 		VPS_Data_Release(payload);
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataWriter_Write16UBE(dw, header->version))   goto cleanup;
-	if (!VPS_DataWriter_Write16UBE(dw, header->revision))  goto cleanup;
-	if (!VPS_DataWriter_Write64UBE(dw, header->flags.as_int)) goto cleanup;
+	if (VPS_DataWriter_Write16UBE(dw, header->version))   goto cleanup;
+	if (VPS_DataWriter_Write16UBE(dw, header->revision))  goto cleanup;
+	if (VPS_DataWriter_Write64UBE(dw, header->flags.as_int)) goto cleanup;
 
 	/* Write as directive chunk: tag=' IFF', size, data */
 	result = IFF_Writer_WriteChunk(gen->writer, config, &IFF_TAG_SYSTEM_IFF, payload);
@@ -1430,14 +1430,14 @@ IFF_TYPE_RESULT IFF_Generator_WriteDEF
 		VPS_TYPE_8U sz_len = IFF_Header_Flags_GetSizeLength(config->sizing);
 		VPS_TYPE_SIZE alloc = sz_len * 2 + identifier->limit;
 
-		if (!VPS_Data_Allocate(&payload, alloc, 0) || !VPS_Data_Construct(payload))
+		if (VPS_Data_Allocate(&payload, alloc, 0) || VPS_Data_Construct(payload))
 		{
 			VPS_Data_Release(payload);
 			return IFF_FAIL;
 		}
 	}
 
-	if (!VPS_DataWriter_Allocate(&dw) || !VPS_DataWriter_Construct(dw, payload))
+	if (VPS_DataWriter_Allocate(&dw) || VPS_DataWriter_Construct(dw, payload))
 	{
 		VPS_DataWriter_Release(dw);
 		VPS_Data_Release(payload);
@@ -1446,7 +1446,7 @@ IFF_TYPE_RESULT IFF_Generator_WriteDEF
 
 	if (PRIVATE_IFF_Generator_WritePayloadSize(dw, config, 1))          goto cleanup;
 	if (PRIVATE_IFF_Generator_WritePayloadSize(dw, config, identifier->limit)) goto cleanup;
-	if (!VPS_DataWriter_WriteBytes(dw, identifier->bytes, identifier->limit))   goto cleanup;
+	if (VPS_DataWriter_WriteBytes(dw, identifier->bytes, identifier->limit))   goto cleanup;
 
 	result = PRIVATE_IFF_Generator_EmitTrackedChunk(gen, &IFF_TAG_SYSTEM_DEF, payload);
 
@@ -1483,13 +1483,13 @@ IFF_TYPE_RESULT IFF_Generator_WriteREF
 
 	config = &gen->flags.as_fields;
 
-	if (!VPS_Data_Allocate(&payload, 128, 0) || !VPS_Data_Construct(payload))
+	if (VPS_Data_Allocate(&payload, 128, 0) || VPS_Data_Construct(payload))
 	{
 		VPS_Data_Release(payload);
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataWriter_Allocate(&dw) || !VPS_DataWriter_Construct(dw, payload))
+	if (VPS_DataWriter_Allocate(&dw) || VPS_DataWriter_Construct(dw, payload))
 	{
 		VPS_DataWriter_Release(dw);
 		VPS_Data_Release(payload);
@@ -1502,7 +1502,7 @@ IFF_TYPE_RESULT IFF_Generator_WriteREF
 	{
 		if (!identifiers[i]) goto cleanup;
 		if (PRIVATE_IFF_Generator_WritePayloadSize(dw, config, identifiers[i]->limit)) goto cleanup;
-		if (!VPS_DataWriter_WriteBytes(dw, identifiers[i]->bytes, identifiers[i]->limit)) goto cleanup;
+		if (VPS_DataWriter_WriteBytes(dw, identifiers[i]->bytes, identifiers[i]->limit)) goto cleanup;
 	}
 
 	result = PRIVATE_IFF_Generator_EmitTrackedChunk(gen, &IFF_TAG_SYSTEM_REF, payload);
@@ -1692,13 +1692,13 @@ IFF_TYPE_RESULT IFF_Generator_BeginChecksumSpan
 	}
 
 	/* Build CHK payload: version(size) + num_ids(size) + {id_size, id_data}... */
-	if (!VPS_Data_Allocate(&payload, 128, 0) || !VPS_Data_Construct(payload))
+	if (VPS_Data_Allocate(&payload, 128, 0) || VPS_Data_Construct(payload))
 	{
 		VPS_Data_Release(payload);
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataWriter_Allocate(&dw) || !VPS_DataWriter_Construct(dw, payload))
+	if (VPS_DataWriter_Allocate(&dw) || VPS_DataWriter_Construct(dw, payload))
 	{
 		VPS_DataWriter_Release(dw);
 		VPS_Data_Release(payload);
@@ -1721,7 +1721,7 @@ IFF_TYPE_RESULT IFF_Generator_BeginChecksumSpan
 			VPS_TYPE_SIZE id_len = strlen((const char *)id_data->bytes);
 
 			if (PRIVATE_IFF_Generator_WritePayloadSize(dw, config, id_len)) goto cleanup;
-			if (!VPS_DataWriter_WriteBytes(dw, id_data->bytes, id_len))      goto cleanup;
+			if (VPS_DataWriter_WriteBytes(dw, id_data->bytes, id_len))      goto cleanup;
 
 			entry_node = entry_node->next;
 		}
@@ -1833,14 +1833,14 @@ IFF_TYPE_RESULT IFF_Generator_EndChecksumSpan
 	}
 
 	/* Build SUM payload: version(size) + num_entries(size) + {id_size, id, sum_size, sum}... */
-	if (!VPS_Data_Allocate(&payload, 128, 0) || !VPS_Data_Construct(payload))
+	if (VPS_Data_Allocate(&payload, 128, 0) || VPS_Data_Construct(payload))
 	{
 		VPS_Data_Release(payload);
 		VPS_Dictionary_Release(computed_checksums);
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataWriter_Allocate(&dw) || !VPS_DataWriter_Construct(dw, payload))
+	if (VPS_DataWriter_Allocate(&dw) || VPS_DataWriter_Construct(dw, payload))
 	{
 		VPS_DataWriter_Release(dw);
 		VPS_Data_Release(payload);
@@ -1869,9 +1869,9 @@ IFF_TYPE_RESULT IFF_Generator_EndChecksumSpan
 			VPS_TYPE_SIZE id_len = strlen(id);
 
 			if (PRIVATE_IFF_Generator_WritePayloadSize(dw, config, id_len))               goto cleanup;
-			if (!VPS_DataWriter_WriteBytes(dw, (const unsigned char *)id, id_len))          goto cleanup;
+			if (VPS_DataWriter_WriteBytes(dw, (const unsigned char *)id, id_len))          goto cleanup;
 			if (PRIVATE_IFF_Generator_WritePayloadSize(dw, config, checksum->limit))      goto cleanup;
-			if (!VPS_DataWriter_WriteBytes(dw, checksum->bytes, checksum->limit))           goto cleanup;
+			if (VPS_DataWriter_WriteBytes(dw, checksum->bytes, checksum->limit))           goto cleanup;
 
 			node = node->next;
 		}
@@ -1925,7 +1925,7 @@ IFF_TYPE_RESULT IFF_Generator_WriteFiller
 
 	if (size > 0)
 	{
-		if (!VPS_Data_Allocate(&filler, size, size) || !VPS_Data_Construct(filler))
+		if (VPS_Data_Allocate(&filler, size, size) || VPS_Data_Construct(filler))
 		{
 			VPS_Data_Release(filler);
 			return IFF_FAIL;

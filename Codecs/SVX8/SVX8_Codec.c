@@ -44,7 +44,7 @@ static IFF_TYPE_RESULT pt8_shard(struct IFF_Parser_State* state, void* cs, const
 
 	if (!ps->accumulated)
 	{
-		if (!VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)data, 0, data->size))
+		if (VPS_Data_Clone(&ps->accumulated, (struct VPS_Data*)data, 0, data->size))
 		{
 			return IFF_FAIL;
 		}
@@ -140,7 +140,7 @@ static IFF_TYPE_RESULT svx8_chunk(struct IFF_Parser_State* state, void* cs, stru
 				VPS_Data_Release(s->body_data);
 				s->body_data = NULL;
 			}
-			if (!VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->limit))
+			if (VPS_Data_Clone(&s->body_data, cd->data, 0, cd->data->limit))
 			{
 				IFF_ContextualData_Release(cd);
 				return IFF_FAIL;

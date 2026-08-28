@@ -293,7 +293,7 @@ IFF_TYPE_RESULT IFF_Parser_Deconstruct
 		{
 			struct VPS_List_Node *node = 0;
 
-			if (VPS_List_RemoveHead(item->reader_stack, &node))
+			if (!VPS_List_RemoveHead(item->reader_stack, &node))
 			{
 				struct IFF_ReaderFrame *frame = node->data;
 
@@ -2133,7 +2133,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Chunk
 		struct VPS_Data* data_clone = 0;
 		if (chunk->data)
 		{
-			if (!VPS_Data_Clone(&data_clone, chunk->data, 0, chunk->data->limit))
+			if (VPS_Data_Clone(&data_clone, chunk->data, 0, chunk->data->limit))
 			{
 				IFF_ContextualData_Release(contextual_data);
 				IFF_Chunk_Release(chunk);
@@ -2239,7 +2239,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_PushReaderAndSwitch
 		session->current_scope->flags
 	);
 
-	if (!VPS_List_Node_Allocate(&node))
+	if (VPS_List_Node_Allocate(&node))
 	{
 		IFF_ReaderFrame_Release(frame);
 		close(new_file_handle);
@@ -2315,7 +2315,7 @@ rollback:
 	{
 		struct VPS_List_Node *popped = 0;
 
-		if (VPS_List_RemoveHead(parser->reader_stack, &popped))
+		if (!VPS_List_RemoveHead(parser->reader_stack, &popped))
 		{
 			struct IFF_ReaderFrame *saved = popped->data;
 
@@ -2345,7 +2345,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_PopReaderAndRestore
 	struct VPS_List_Node *node = 0;
 	struct IFF_ReaderFrame *frame;
 
-	if (!VPS_List_RemoveHead(parser->reader_stack, &node))
+	if (VPS_List_RemoveHead(parser->reader_stack, &node))
 	{
 		return IFF_FAIL;
 	}
@@ -2428,7 +2428,7 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_HandleSegmentRef
 			VPS_TYPE_SIZE sr_i;
 			char has_mandatory = 0;
 
-			if (VPS_DataReader_Allocate(&sr) && VPS_DataReader_Construct(sr, chunk->data))
+			if (!VPS_DataReader_Allocate(&sr) && !VPS_DataReader_Construct(sr, chunk->data))
 			{
 				if (!IFF_Reader_ReadPayloadSize(sr, &flags.as_fields, &sr_num))
 				{
@@ -2462,13 +2462,13 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_HandleSegmentRef
 	}
 
 	// Wrap chunk data in a DataReader.
-	if (!VPS_DataReader_Allocate(&dr))
+	if (VPS_DataReader_Allocate(&dr))
 	{
 		IFF_Chunk_Release(chunk);
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataReader_Construct(dr, chunk->data))
+	if (VPS_DataReader_Construct(dr, chunk->data))
 	{
 		VPS_DataReader_Release(dr);
 		IFF_Chunk_Release(chunk);
@@ -2505,14 +2505,14 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_HandleSegmentRef
 		}
 
 		// Read identifier bytes.
-		if (!VPS_Data_Allocate(&id_data, id_size, id_size))
+		if (VPS_Data_Allocate(&id_data, id_size, id_size))
 		{
 			VPS_DataReader_Release(dr);
 			IFF_Chunk_Release(chunk);
 			return IFF_FAIL;
 		}
 
-		if (!VPS_DataReader_ReadBytes(dr, id_data->bytes, id_size))
+		if (VPS_DataReader_ReadBytes(dr, id_data->bytes, id_size))
 		{
 			VPS_Data_Release(id_data);
 			VPS_DataReader_Release(dr);

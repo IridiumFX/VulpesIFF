@@ -1,6 +1,7 @@
 #pragma once
 
 #include <IFF/IFF_Result.h>
+#include <vulpes/VPS_Types.h>
 
 struct VPS_Data;
 
@@ -116,12 +117,11 @@ IFF_TYPE_RESULT IFF_FormEncoder_Release
 /*
  * --- VulpesCore boundary adapter ---
  *
- * The decoder/encoder registries are VulpesCore dictionaries, which expect
- * the boolean convention (1 = success). Register this shim as the release
- * hook rather than casting the function above.
+ * The decoder/encoder registries are VulpesCore dictionaries. This shim
+ * presents the typed release above through their void * slot.
  */
 
-char IFF_FormEncoder_VPS_Release
+VPS_TYPE_RESULT IFF_FormEncoder_VPS_Release
 (
 	void *item
 );

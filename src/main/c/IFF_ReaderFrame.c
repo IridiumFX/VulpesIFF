@@ -81,10 +81,10 @@ IFF_TYPE_RESULT IFF_ReaderFrame_Release
 
 // --- VulpesCore boundary adapter ---
 
-char IFF_ReaderFrame_VPS_Release
+VPS_TYPE_RESULT IFF_ReaderFrame_VPS_Release
 (
 	void *item
 )
 {
-	return IFF_ReaderFrame_Release(item) == IFF_OK;
+	return IFF_ReaderFrame_Release(item);
 }

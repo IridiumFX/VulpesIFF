@@ -25,17 +25,17 @@ IFF_TYPE_RESULT IFF_WritePump_Allocate
 		return IFF_FAIL;
 	}
 
-	if (!VPS_StreamWriter_Allocate(&pump->stream_writer))
+	if (VPS_StreamWriter_Allocate(&pump->stream_writer))
 	{
 		goto cleanup;
 	}
 
-	if (!VPS_Data_Allocate(&pump->output_buffer, 256, 0))
+	if (VPS_Data_Allocate(&pump->output_buffer, 256, 0))
 	{
 		goto cleanup;
 	}
 
-	if (!VPS_DataWriter_Allocate(&pump->data_writer))
+	if (VPS_DataWriter_Allocate(&pump->data_writer))
 	{
 		goto cleanup;
 	}
@@ -69,7 +69,7 @@ IFF_TYPE_RESULT IFF_WritePump_Construct
 	VPS_Data_Release(item->output_buffer);
 	item->output_buffer = 0;
 
-	if (!VPS_StreamWriter_Construct(item->stream_writer, file_handle))
+	if (VPS_StreamWriter_Construct(item->stream_writer, file_handle))
 	{
 		return IFF_FAIL;
 	}
@@ -92,13 +92,13 @@ IFF_TYPE_RESULT IFF_WritePump_ConstructToData
 	item->stream_writer = 0;
 
 	// Construct the output buffer.
-	if (!VPS_Data_Construct(item->output_buffer))
+	if (VPS_Data_Construct(item->output_buffer))
 	{
 		return IFF_FAIL;
 	}
 
 	// Construct the data writer targeting the output buffer.
-	if (!VPS_DataWriter_Construct(item->data_writer, item->output_buffer))
+	if (VPS_DataWriter_Construct(item->data_writer, item->output_buffer))
 	{
 		return IFF_FAIL;
 	}
@@ -175,7 +175,7 @@ IFF_TYPE_RESULT IFF_WritePump_WriteRaw
 
 	if (pump->data_writer)
 	{
-		if (!VPS_DataWriter_WriteBytes(pump->data_writer, data, size))
+		if (VPS_DataWriter_WriteBytes(pump->data_writer, data, size))
 		{
 			return IFF_FAIL;
 		}
@@ -183,7 +183,7 @@ IFF_TYPE_RESULT IFF_WritePump_WriteRaw
 		return IFF_OK;
 	}
 
-	if (!VPS_StreamWriter_Write(pump->stream_writer, data, size))
+	if (VPS_StreamWriter_Write(pump->stream_writer, data, size))
 	{
 		return IFF_FAIL;
 	}
@@ -206,8 +206,7 @@ IFF_TYPE_RESULT IFF_WritePump_WriteData
 	{
 		if
 		(
-			!VPS_DataWriter_WriteBytes
-			(
+			VPS_DataWriter_WriteBytes(
 				pump->data_writer
 				, data->bytes
 				, data->limit
@@ -222,8 +221,7 @@ IFF_TYPE_RESULT IFF_WritePump_WriteData
 
 	if
 	(
-		!VPS_StreamWriter_Write
-		(
+		VPS_StreamWriter_Write(
 			pump->stream_writer
 			, data->bytes
 			, data->limit
@@ -251,7 +249,7 @@ IFF_TYPE_RESULT IFF_WritePump_Flush
 		return IFF_OK; // No-op in memory mode
 	}
 
-	if (!VPS_StreamWriter_Flush(pump->stream_writer))
+	if (VPS_StreamWriter_Flush(pump->stream_writer))
 	{
 		return IFF_FAIL;
 	}

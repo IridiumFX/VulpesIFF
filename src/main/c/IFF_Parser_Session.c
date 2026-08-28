@@ -31,12 +31,12 @@ IFF_TYPE_RESULT IFF_Parser_Session_Allocate
 		return IFF_FAIL;
 	}
 
-	if (!VPS_List_Allocate(&state->scope_stack))
+	if (VPS_List_Allocate(&state->scope_stack))
 	{
 		goto failure;
 	}
 
-	if (!VPS_ScopedDictionary_Allocate(&state->props, 17))
+	if (VPS_ScopedDictionary_Allocate(&state->props, 17))
 	{
 		goto failure;
 	}
@@ -73,8 +73,8 @@ IFF_TYPE_RESULT IFF_Parser_Session_Construct
 	VPS_ScopedDictionary_Construct
 	(
 		item->props,
-		IFF_Chunk_Key_VPS_Hash,
-		IFF_Chunk_Key_VPS_Compare,
+		IFF_Chunk_Key_Hash,
+		IFF_Chunk_Key_Compare,
 		0, // data_compare is not needed for this implementation.
 		IFF_Chunk_Key_VPS_Release,
 		IFF_ContextualData_VPS_Release,
@@ -162,7 +162,7 @@ IFF_TYPE_RESULT IFF_Parser_Session_EnterScope
 
 	// 2. Enter the mirrored properties scope first: it is the only step
 	//    that can fail after the stack push, and it is cheap to undo.
-	if (!VPS_ScopedDictionary_EnterScope(item->props))
+	if (VPS_ScopedDictionary_EnterScope(item->props))
 	{
 		return IFF_FAIL;
 	}
@@ -172,9 +172,9 @@ IFF_TYPE_RESULT IFF_Parser_Session_EnterScope
 	{
 		if
 		(
-			!VPS_List_Node_Allocate(&node)
-			|| !VPS_List_Node_Construct(node, item->current_scope)
-			|| !VPS_List_AddHead(item->scope_stack, node)
+			VPS_List_Node_Allocate(&node)
+			|| VPS_List_Node_Construct(node, item->current_scope)
+			|| VPS_List_AddHead(item->scope_stack, node)
 		)
 		{
 			VPS_List_Node_Release(node);
@@ -203,7 +203,7 @@ IFF_TYPE_RESULT IFF_Parser_Session_LeaveScope
 	item->current_scope = 0;
 
 	// 2. Pop the parent scope from the stack and make it the new current scope.
-	if (VPS_List_RemoveHead(item->scope_stack, &parent_node))
+	if (!VPS_List_RemoveHead(item->scope_stack, &parent_node))
 	{
 		item->current_scope = parent_node->data;
 		// The list no longer owns the node's data, so we just release the node.
@@ -273,7 +273,7 @@ IFF_TYPE_RESULT IFF_Parser_Session_AddProp
 	// this fresh copy stays ours to release.
 	existed = VPS_ScopedDictionary_Find(item->props, key, 0);
 
-	if (!VPS_ScopedDictionary_Add(item->props, key, prop_data))
+	if (VPS_ScopedDictionary_Add(item->props, key, prop_data))
 	{
 		IFF_Chunk_Key_Release(key);
 		return IFF_FAIL;

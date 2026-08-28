@@ -1,6 +1,7 @@
 #pragma once
 
 #include <IFF/IFF_Result.h>
+#include <vulpes/VPS_Types.h>
 
 /*
  * NOTE:
@@ -89,26 +90,25 @@ IFF_TYPE_RESULT IFF_Tag_Hash
 /*
  * --- VulpesCore boundary adapters ---
  *
- * VulpesCore containers expect the boolean convention (1 = success) and do
- * check the result of hash and compare, so these shims translate polarity.
- * Register these with VPS_Dictionary_Construct rather than casting the
- * functions above, which would invert every lookup.
+ * VulpesCore and VulpesIFF now report the same convention, so these shims
+ * no longer translate anything: they exist only to present the typed
+ * functions above through the void * a VulpesCore callback slot expects.
  */
 
-char IFF_Tag_VPS_Hash
+VPS_TYPE_RESULT IFF_Tag_VPS_Hash
 (
 	void *key
 	, VPS_TYPE_SIZE *key_hash
 );
 
-char IFF_Tag_VPS_Compare
+VPS_TYPE_RESULT IFF_Tag_VPS_Compare
 (
 	void *key_1
 	, void *key_2
 	, VPS_TYPE_16S *ordering
 );
 
-char IFF_Tag_VPS_Release
+VPS_TYPE_RESULT IFF_Tag_VPS_Release
 (
 	void *key
 );

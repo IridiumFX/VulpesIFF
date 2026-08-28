@@ -55,26 +55,26 @@ IFF_TYPE_RESULT IFF_WriteScope_Construct
 	/* In blobbed mode, allocate an accumulator buffer */
 	if (flags.as_fields.operating == IFF_Header_Operating_BLOBBED)
 	{
-		if (!VPS_Data_Allocate(&item->accumulator, 256, 0))
+		if (VPS_Data_Allocate(&item->accumulator, 256, 0))
 		{
 			return IFF_FAIL;
 		}
 
-		if (!VPS_Data_Construct(item->accumulator))
-		{
-			VPS_Data_Release(item->accumulator);
-			item->accumulator = 0;
-			return IFF_FAIL;
-		}
-
-		if (!VPS_DataWriter_Allocate(&item->accumulator_writer))
+		if (VPS_Data_Construct(item->accumulator))
 		{
 			VPS_Data_Release(item->accumulator);
 			item->accumulator = 0;
 			return IFF_FAIL;
 		}
 
-		if (!VPS_DataWriter_Construct(item->accumulator_writer, item->accumulator))
+		if (VPS_DataWriter_Allocate(&item->accumulator_writer))
+		{
+			VPS_Data_Release(item->accumulator);
+			item->accumulator = 0;
+			return IFF_FAIL;
+		}
+
+		if (VPS_DataWriter_Construct(item->accumulator_writer, item->accumulator))
 		{
 			VPS_DataWriter_Release(item->accumulator_writer);
 			item->accumulator_writer = 0;
@@ -122,10 +122,10 @@ IFF_TYPE_RESULT IFF_WriteScope_Release
 
 // --- VulpesCore boundary adapter ---
 
-char IFF_WriteScope_VPS_Release
+VPS_TYPE_RESULT IFF_WriteScope_VPS_Release
 (
 	void *item
 )
 {
-	return IFF_WriteScope_Release(item) == IFF_OK;
+	return IFF_WriteScope_Release(item);
 }

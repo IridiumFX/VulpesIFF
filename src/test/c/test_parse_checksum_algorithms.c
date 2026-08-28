@@ -32,21 +32,21 @@ static struct VPS_Set *PRIVATE_CreateAlgoSet(const char *id, VPS_TYPE_SIZE id_le
 	struct VPS_Set *algo_set = 0;
 	struct VPS_Data *algo_id = 0;
 
-	if (!VPS_Data_Allocate(&algo_id, id_len, id_len)) return 0;
-	if (!VPS_Data_Construct(algo_id)) { VPS_Data_Release(algo_id); return 0; }
+	if (VPS_Data_Allocate(&algo_id, id_len, id_len)) return 0;
+	if (VPS_Data_Construct(algo_id)) { VPS_Data_Release(algo_id); return 0; }
 	memcpy(algo_id->bytes, id, id_len);
 	algo_id->limit = id_len;
 
-	if (!VPS_Set_Allocate(&algo_set, 7)) { VPS_Data_Release(algo_id); return 0; }
-	if (!VPS_Set_Construct(algo_set, VPS_Hash_Utils_Data, VPS_Compare_Utils_Data,
-		(char (*)(void *))VPS_Data_Release, 2, 75, 8))
+	if (VPS_Set_Allocate(&algo_set, 7)) { VPS_Data_Release(algo_id); return 0; }
+	if (VPS_Set_Construct(algo_set, VPS_Hash_Utils_Data, VPS_Compare_Utils_Data,
+		(VPS_TYPE_RESULT (*)(void *)) VPS_Data_Release, 2, 75, 8))
 	{
 		VPS_Set_Release(algo_set);
 		VPS_Data_Release(algo_id);
 		return 0;
 	}
 
-	if (!VPS_Set_Add(algo_set, algo_id)) { VPS_Set_Release(algo_set); return 0; }
+	if (VPS_Set_Add(algo_set, algo_id)) { VPS_Set_Release(algo_set); return 0; }
 
 	return algo_set;
 }

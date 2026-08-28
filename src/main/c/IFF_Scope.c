@@ -72,10 +72,10 @@ IFF_TYPE_RESULT IFF_Scope_Release
 
 // --- VulpesCore boundary adapter ---
 
-char IFF_Scope_VPS_Release
+VPS_TYPE_RESULT IFF_Scope_VPS_Release
 (
 	void *item
 )
 {
-	return IFF_Scope_Release(item) == IFF_OK;
+	return IFF_Scope_Release(item);
 }

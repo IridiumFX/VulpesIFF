@@ -408,7 +408,7 @@ IFF_TYPE_RESULT IFF_Reader_ReadPayloadSize
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataReader_ReadBytes(dr, buf, size_len))
+	if (VPS_DataReader_ReadBytes(dr, buf, size_len))
 	{
 		return IFF_FAIL;
 	}
@@ -436,12 +436,12 @@ IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
 	}
 
 	// Wrap the payload in a DataReader for sequential access.
-	if (!VPS_DataReader_Allocate(&dr))
+	if (VPS_DataReader_Allocate(&dr))
 	{
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataReader_Construct(dr, (struct VPS_Data*)chk_payload))
+	if (VPS_DataReader_Construct(dr, (struct VPS_Data*)chk_payload))
 	{
 		VPS_DataReader_Release(dr);
 		return IFF_FAIL;
@@ -465,7 +465,7 @@ IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
 	}
 
 	// Build a VPS_Set of algorithm identifier strings.
-	if (!VPS_Set_Allocate(&algorithm_ids, 7))
+	if (VPS_Set_Allocate(&algorithm_ids, 7))
 	{
 		goto cleanup;
 	}
@@ -473,9 +473,9 @@ IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
 	VPS_Set_Construct
 	(
 		algorithm_ids,
-		(char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_Data,
-		(char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_Data,
-		(char(*)(void*))VPS_Data_Release,
+		VPS_Hash_Utils_Data,
+		VPS_Compare_Utils_Data,
+		(VPS_TYPE_RESULT (*)(void *)) VPS_Data_Release,
 		2, 75, 8
 	);
 
@@ -490,12 +490,12 @@ IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
 		}
 
 		// Allocate a VPS_Data for the identifier string (+ null terminator).
-		if (!VPS_Data_Allocate(&id_data, id_len + 1, id_len + 1))
+		if (VPS_Data_Allocate(&id_data, id_len + 1, id_len + 1))
 		{
 			goto cleanup;
 		}
 
-		if (!VPS_DataReader_ReadBytes(dr, id_data->bytes, id_len))
+		if (VPS_DataReader_ReadBytes(dr, id_data->bytes, id_len))
 		{
 			VPS_Data_Release(id_data);
 			goto cleanup;
@@ -503,7 +503,7 @@ IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
 
 		id_data->bytes[id_len] = '\0';
 
-		if (!VPS_Set_Add(algorithm_ids, id_data))
+		if (VPS_Set_Add(algorithm_ids, id_data))
 		{
 			VPS_Data_Release(id_data);
 			goto cleanup;
@@ -581,12 +581,12 @@ IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 	}
 
 	// Wrap the payload in a DataReader for sequential access.
-	if (!VPS_DataReader_Allocate(&dr))
+	if (VPS_DataReader_Allocate(&dr))
 	{
 		return IFF_FAIL;
 	}
 
-	if (!VPS_DataReader_Construct(dr, (struct VPS_Data*)sum_payload))
+	if (VPS_DataReader_Construct(dr, (struct VPS_Data*)sum_payload))
 	{
 		VPS_DataReader_Release(dr);
 		return IFF_FAIL;
@@ -610,7 +610,7 @@ IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 	}
 
 	// Build a dictionary mapping identifier strings to expected checksums.
-	if (!VPS_Dictionary_Allocate(&expected_checksums, 7))
+	if (VPS_Dictionary_Allocate(&expected_checksums, 7))
 	{
 		goto cleanup;
 	}
@@ -618,10 +618,10 @@ IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 	VPS_Dictionary_Construct
 	(
 		expected_checksums,
-		(char(*)(void*, VPS_TYPE_SIZE*))VPS_Hash_Utils_String,
-		(char(*)(void*, void*, VPS_TYPE_16S*))VPS_Compare_Utils_String,
+		VPS_Hash_Utils_String,
+		VPS_Compare_Utils_String,
 		0,                                          // keys are interior pointers to id_data->bytes; released via data_release
-		(char(*)(void*))VPS_Data_Release,           // release expected checksum VPS_Data
+		(VPS_TYPE_RESULT (*)(void *)) VPS_Data_Release,           // release expected checksum VPS_Data
 		2, 75, 8
 	);
 
@@ -638,12 +638,12 @@ IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 			goto cleanup;
 		}
 
-		if (!VPS_Data_Allocate(&id_data, id_len + 1, id_len + 1))
+		if (VPS_Data_Allocate(&id_data, id_len + 1, id_len + 1))
 		{
 			goto cleanup;
 		}
 
-		if (!VPS_DataReader_ReadBytes(dr, id_data->bytes, id_len))
+		if (VPS_DataReader_ReadBytes(dr, id_data->bytes, id_len))
 		{
 			VPS_Data_Release(id_data);
 			goto cleanup;
@@ -658,7 +658,7 @@ IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 			goto cleanup;
 		}
 
-		if (!VPS_Data_Allocate(&sum_data, sum_len, sum_len))
+		if (VPS_Data_Allocate(&sum_data, sum_len, sum_len))
 		{
 			VPS_Data_Release(id_data);
 			goto cleanup;
@@ -666,7 +666,7 @@ IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 
 		if (sum_len > 0)
 		{
-			if (!VPS_DataReader_ReadBytes(dr, sum_data->bytes, sum_len))
+			if (VPS_DataReader_ReadBytes(dr, sum_data->bytes, sum_len))
 			{
 				VPS_Data_Release(id_data);
 				VPS_Data_Release(sum_data);
@@ -686,7 +686,7 @@ IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 		// Add to dictionary. Key is the string pointer inside id_data.
 		// EndSpan looks up by algorithm->identifier (a const char*), so we
 		// use string hash/compare. The key is id_data->bytes (the null-terminated string).
-		if (!VPS_Dictionary_Add(expected_checksums, id_data->bytes, sum_data))
+		if (VPS_Dictionary_Add(expected_checksums, id_data->bytes, sum_data))
 		{
 			VPS_Data_Release(id_data);
 			VPS_Data_Release(sum_data);

@@ -485,7 +485,7 @@ static char test_gen_ref_single(void)
 	IFF_Tag_Construct(&body_tag, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	body_wrap = PRIVATE_WrapData(body_data, 4);
 
-	if (!VPS_Data_Allocate(&ref_id, 4, 4)) goto cleanup;
+	if (VPS_Data_Allocate(&ref_id, 4, 4)) goto cleanup;
 	memcpy(ref_id->bytes, id_data, 4);
 	ids[0] = ref_id;
 
@@ -555,11 +555,11 @@ static char test_gen_ref_multiple(void)
 	IFF_Tag_Construct(&body_tag, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	body_wrap = PRIVATE_WrapData(body_data, 4);
 
-	if (!VPS_Data_Allocate(&ref_id1, 4, 4)) goto cleanup;
+	if (VPS_Data_Allocate(&ref_id1, 4, 4)) goto cleanup;
 	memcpy(ref_id1->bytes, "ID_A", 4);
-	if (!VPS_Data_Allocate(&ref_id2, 4, 4)) goto cleanup;
+	if (VPS_Data_Allocate(&ref_id2, 4, 4)) goto cleanup;
 	memcpy(ref_id2->bytes, "ID_B", 4);
-	if (!VPS_Data_Allocate(&ref_id3, 4, 4)) goto cleanup;
+	if (VPS_Data_Allocate(&ref_id3, 4, 4)) goto cleanup;
 	memcpy(ref_id3->bytes, "ID_C", 4);
 
 	ids[0] = ref_id1;
@@ -631,10 +631,10 @@ static char test_gen_def_ref_roundtrip(void)
 	IFF_Tag_Construct(&body_tag, (const unsigned char *)"BODY", 4, IFF_TAG_TYPE_TAG);
 	body_wrap = PRIVATE_WrapData(body_data, 4);
 
-	if (!VPS_Data_Allocate(&def_id, 4, 4)) goto cleanup;
+	if (VPS_Data_Allocate(&def_id, 4, 4)) goto cleanup;
 	memcpy(def_id->bytes, "SEG1", 4);
 
-	if (!VPS_Data_Allocate(&ref_id, 4, 4)) goto cleanup;
+	if (VPS_Data_Allocate(&ref_id, 4, 4)) goto cleanup;
 	memcpy(ref_id->bytes, "SEG1", 4);
 	ids[0] = ref_id;
 

@@ -85,10 +85,10 @@ IFF_TYPE_RESULT IFF_FormEncoder_Release
 
 // --- VulpesCore boundary adapter ---
 
-char IFF_FormEncoder_VPS_Release
+VPS_TYPE_RESULT IFF_FormEncoder_VPS_Release
 (
 	void *item
 )
 {
-	return IFF_FormEncoder_Release(item) == IFF_OK;
+	return IFF_FormEncoder_Release(item);
 }

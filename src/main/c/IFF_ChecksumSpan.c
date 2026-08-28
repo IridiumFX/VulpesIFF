@@ -58,8 +58,7 @@ IFF_TYPE_RESULT IFF_ChecksumSpan_Construct
 
 	if
 	(
-		!VPS_List_Construct
-		(
+		VPS_List_Construct(
 			item->calculators
 			, 0
 			, 0
@@ -109,10 +108,10 @@ IFF_TYPE_RESULT IFF_ChecksumSpan_Release
 
 // --- VulpesCore boundary adapter ---
 
-char IFF_ChecksumSpan_VPS_Release
+VPS_TYPE_RESULT IFF_ChecksumSpan_VPS_Release
 (
 	void *item
 )
 {
-	return IFF_ChecksumSpan_Release(item) == IFF_OK;
+	return IFF_ChecksumSpan_Release(item);
 }

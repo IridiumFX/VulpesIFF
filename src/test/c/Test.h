@@ -107,3 +107,4 @@ void test_suite_codec_primitives(void);
 void test_suite_codec_conversion(void);
 void test_suite_codec_images(void);
 void test_suite_codec_audio(void);
+void test_suite_parse_nesting(void);

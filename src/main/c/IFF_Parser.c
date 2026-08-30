@@ -988,28 +988,46 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container
 )
 {
 	VPS_TYPE_16S ordering;
+	IFF_TYPE_RESULT result = IFF_FAIL;
+
+	// Containers are parsed by recursing through here, one frame pair per
+	// level, so the file's nesting depth is this process's call depth. A
+	// container header is twelve bytes, which makes a very small file a
+	// very deep stack; the ceiling is what keeps a crafted one from
+	// running the stack out. See IFF_PARSER_MAX_NESTING_DEPTH.
+	if (parser->nesting_depth >= IFF_PARSER_MAX_NESTING_DEPTH)
+	{
+		return IFF_FAIL;
+	}
+
+	parser->nesting_depth++;
 
 	IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_FORM, &ordering);
 	if (ordering == 0)
 	{
-		return PRIVATE_IFF_Parser_Parse_Container_FORM(parser);
+		result = PRIVATE_IFF_Parser_Parse_Container_FORM(parser);
 	}
-
-	IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_LIST, &ordering);
-	if (ordering == 0)
+	else
 	{
-		return PRIVATE_IFF_Parser_Parse_Container_LIST(parser);
+		IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_LIST, &ordering);
+		if (ordering == 0)
+		{
+			result = PRIVATE_IFF_Parser_Parse_Container_LIST(parser);
+		}
+		else
+		{
+			IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_CAT, &ordering);
+			if (ordering == 0)
+			{
+				result = PRIVATE_IFF_Parser_Parse_Container_CAT(parser);
+			}
+		}
 	}
 
-	IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_CAT, &ordering);
-	if (ordering == 0)
-	{
-		return PRIVATE_IFF_Parser_Parse_Container_CAT(parser);
-	}
+	parser->nesting_depth--;
 
-	return IFF_FAIL;
+	return result;
 }
-
 
 // --- FORM Container ---
 

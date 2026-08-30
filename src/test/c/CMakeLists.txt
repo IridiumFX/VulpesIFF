@@ -51,6 +51,7 @@ add_executable(VulpesIFF_Tests
 	test_codec_conversion.c
 	test_codec_images.c
 	test_codec_audio.c
+	test_parse_nesting.c
 	IFF_TestBuilder.c
 	IFF_TestDecoders.c
 	IFF_TestChecksumAlgorithm.c

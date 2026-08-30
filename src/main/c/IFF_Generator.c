@@ -1997,6 +1997,268 @@ IFF_TYPE_RESULT IFF_Generator_WriteREV
 /*  Factory-driven encoding                                            */
 /* ------------------------------------------------------------------ */
 
+/* --- Form Encoding --- */
+
+/*
+ * Encoding a form is a pipeline: its chunks, then any container groups it
+ * wraps around other forms, then the forms it nests directly, then its
+ * ending. Two of those stages produce further forms, and those used to be
+ * written by calling back into IFF_Generator_EncodeForm -- so, as on the
+ * parse side, a document's nesting depth became the process's call depth.
+ *
+ * Unlike the parser, nothing here was already on the heap to reuse: a level
+ * carries its encoder, the opaque state that encoder handed back, whether it
+ * has a group container open, and how far through the pipeline it has got.
+ * So the levels get an explicit frame, and the loop below walks a stack of
+ * them. A level is visited repeatedly, advancing one step per visit, which is
+ * what lets it pause where the recursion used to be and resume after the
+ * child it asked for has been written.
+ *
+ * Depth is bounded by memory now rather than by the stack, and matches what
+ * the parser will read back.
+ */
+
+enum PRIVATE_IFF_Generator_EncodeStage
+{
+	/* Emitting this form's own chunks. No further forms come from here. */
+	IFF_GENERATOR_ENCODE_STAGE_CHUNKS = 0,
+	/* Asking for the next CAT/LIST group to open. */
+	IFF_GENERATOR_ENCODE_STAGE_GROUPS,
+	/* Inside an open group, asking for the next form to put in it. */
+	IFF_GENERATOR_ENCODE_STAGE_GROUPED,
+	/* Asking for the next form nested directly in this one. */
+	IFF_GENERATOR_ENCODE_STAGE_NESTED,
+	/* Closing the encoder and the FORM. */
+	IFF_GENERATOR_ENCODE_STAGE_FINISH
+};
+
+struct PRIVATE_IFF_Generator_EncodeFrame
+{
+	struct IFF_FormEncoder *encoder;
+	struct IFF_Generator_State state;
+	void *custom_state;
+	enum PRIVATE_IFF_Generator_EncodeStage stage;
+	/* A group container is open and still has to be closed or aborted. */
+	char group_open;
+	/* Which container that is, so the right End is called. */
+	char group_is_cat;
+};
+
+/*
+ * Opens a form and pushes its frame: looks the encoder up, writes the FORM
+ * header and gives the encoder its begin_encode call. On failure nothing is
+ * left on the stack and any container opened here is aborted.
+ */
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EncodeFrame_Push
+(
+	struct IFF_Generator *gen
+	, struct VPS_List *frames
+	, const struct IFF_Tag *form_type
+	, void *source_entity
+)
+{
+	struct IFF_FormEncoder *encoder = 0;
+	struct PRIVATE_IFF_Generator_EncodeFrame *frame = 0;
+	struct VPS_List_Node *node = 0;
+
+	if (!VPS_Dictionary_Find(gen->form_encoders, (void *)form_type, (void **)&encoder))
+	{
+		return IFF_FAIL;
+	}
+
+	frame = calloc(1, sizeof(struct PRIVATE_IFF_Generator_EncodeFrame));
+	if (!frame)
+	{
+		return IFF_FAIL;
+	}
+
+	if (VPS_List_Node_Allocate(&node))
+	{
+		free(frame);
+		return IFF_FAIL;
+	}
+
+	VPS_List_Node_Construct(node, frame);
+
+	frame->encoder = encoder;
+	frame->state.generator = gen;
+	frame->state.flags = gen->flags;
+	frame->stage = IFF_GENERATOR_ENCODE_STAGE_CHUNKS;
+
+	if (IFF_Generator_BeginForm(gen, form_type))
+	{
+		VPS_List_Node_Release(node);
+		free(frame);
+		return IFF_FAIL;
+	}
+
+	if (encoder->begin_encode
+		&& encoder->begin_encode(&frame->state, source_entity, &frame->custom_state))
+	{
+		PRIVATE_IFF_Generator_AbortContainer(gen);
+		VPS_List_Node_Release(node);
+		free(frame);
+		return IFF_FAIL;
+	}
+
+	VPS_List_AddHead(frames, node);
+
+	return IFF_OK;
+}
+
+/* Detaches the top frame. The caller owns it and must free it. */
+static struct PRIVATE_IFF_Generator_EncodeFrame *PRIVATE_IFF_Generator_EncodeFrame_Pop
+(
+	struct VPS_List *frames
+)
+{
+	struct PRIVATE_IFF_Generator_EncodeFrame *frame = 0;
+	struct VPS_List_Node *node = 0;
+
+	if (VPS_List_RemoveHead(frames, &node))
+	{
+		return 0;
+	}
+
+	frame = node->data;
+	VPS_List_Node_Release(node);
+
+	return frame;
+}
+
+/*
+ * Discards the top level after a failure: the encoder gets its teardown so
+ * custom_state is released, then the open group (if any) and the FORM itself
+ * are abandoned, so nothing half-built is left in the output or on the
+ * generator's own container stack.
+ */
+static void PRIVATE_IFF_Generator_EncodeFrame_Abort
+(
+	struct IFF_Generator *gen
+	, struct VPS_List *frames
+)
+{
+	struct PRIVATE_IFF_Generator_EncodeFrame *frame
+		= PRIVATE_IFF_Generator_EncodeFrame_Pop(frames);
+
+	if (!frame)
+	{
+		return;
+	}
+
+	if (frame->encoder->end_encode)
+	{
+		frame->encoder->end_encode(&frame->state, frame->custom_state);
+	}
+
+	if (frame->group_open)
+	{
+		PRIVATE_IFF_Generator_AbortContainer(gen);
+	}
+
+	PRIVATE_IFF_Generator_AbortContainer(gen);
+
+	free(frame);
+}
+
+/* Emits every chunk this form produces. Nothing here opens another form. */
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EncodeFrame_WriteChunks
+(
+	struct IFF_Generator *gen
+	, struct PRIVATE_IFF_Generator_EncodeFrame *frame
+)
+{
+	char done = 0;
+
+	if (!frame->encoder->produce_chunk)
+	{
+		return IFF_OK;
+	}
+
+	while (!done)
+	{
+		struct IFF_Tag chunk_tag;
+		struct VPS_Data *chunk_data = 0;
+
+		memset(&chunk_tag, 0, sizeof(chunk_tag));
+
+		if (frame->encoder->produce_chunk(&frame->state, frame->custom_state,
+			&chunk_tag, &chunk_data, &done))
+		{
+			return IFF_FAIL;
+		}
+
+		if (!done && chunk_data)
+		{
+			struct IFF_ChunkEncoder *chunk_encoder = 0;
+			struct VPS_Data *write_data = chunk_data;
+
+			/* If a ChunkEncoder is registered for this tag, use it */
+			if (gen->chunk_encoders
+				&& VPS_Dictionary_Find(gen->chunk_encoders, (void *)&chunk_tag, (void **)&chunk_encoder)
+				&& chunk_encoder && chunk_encoder->encode)
+			{
+				struct VPS_Data *encoded_data = 0;
+
+				if (chunk_encoder->encode(&frame->state, chunk_data, &encoded_data))
+				{
+					VPS_Data_Release(chunk_data);
+					return IFF_FAIL;
+				}
+
+				VPS_Data_Release(chunk_data);
+				write_data = encoded_data;
+			}
+
+			if (IFF_Generator_WriteChunk(gen, &chunk_tag, write_data))
+			{
+				VPS_Data_Release(write_data);
+				return IFF_FAIL;
+			}
+
+			VPS_Data_Release(write_data);
+		}
+	}
+
+	return IFF_OK;
+}
+
+/*
+ * Closes the top level: the encoder's end_encode, then the FORM. Pops the
+ * frame either way, so the caller never has to.
+ */
+static IFF_TYPE_RESULT PRIVATE_IFF_Generator_EncodeFrame_Finish
+(
+	struct IFF_Generator *gen
+	, struct VPS_List *frames
+)
+{
+	struct PRIVATE_IFF_Generator_EncodeFrame *frame
+		= PRIVATE_IFF_Generator_EncodeFrame_Pop(frames);
+	IFF_TYPE_RESULT result;
+
+	if (!frame)
+	{
+		return IFF_FAIL;
+	}
+
+	/* A failing finalizer aborts the FORM like any other step; end_encode
+	 * has already run, so it must not be called a second time. */
+	if (frame->encoder->end_encode
+		&& frame->encoder->end_encode(&frame->state, frame->custom_state))
+	{
+		PRIVATE_IFF_Generator_AbortContainer(gen);
+		free(frame);
+		return IFF_FAIL;
+	}
+
+	result = IFF_Generator_EndForm(gen);
+
+	free(frame);
+
+	return result;
+}
+
 IFF_TYPE_RESULT IFF_Generator_EncodeForm
 (
 	struct IFF_Generator *gen
@@ -2004,235 +2266,218 @@ IFF_TYPE_RESULT IFF_Generator_EncodeForm
 	, void *source_entity
 )
 {
-	struct IFF_FormEncoder *encoder = 0;
-	struct IFF_Generator_State state;
-	void *custom_state = 0;
-	struct IFF_Tag chunk_tag;
-	struct VPS_Data *chunk_data = 0;
-	char group_open = 0;
-	char done = 0;
+	struct VPS_List *frames = 0;
+	IFF_TYPE_RESULT result = IFF_OK;
 
 	if (!gen || !form_type || !gen->form_encoders)
 	{
 		return IFF_FAIL;
 	}
 
-	/* Look up FormEncoder by form_type */
-	if (!VPS_Dictionary_Find(gen->form_encoders, (void *)form_type, (void **)&encoder))
+	if (VPS_List_Allocate(&frames))
 	{
 		return IFF_FAIL;
 	}
 
-	state.generator = gen;
-	state.flags = gen->flags;
+	VPS_List_Construct(frames, 0, 0, 0);
 
-	/* Begin the FORM */
-	if (IFF_Generator_BeginForm(gen, form_type))
+	if (PRIVATE_IFF_Generator_EncodeFrame_Push(gen, frames, form_type, source_entity))
 	{
+		VPS_List_Release(frames);
 		return IFF_FAIL;
 	}
 
-	/* Call begin_encode */
-	if (encoder->begin_encode)
+	while (frames->count > 0)
 	{
-		if (encoder->begin_encode(&state, source_entity, &custom_state))
+		struct PRIVATE_IFF_Generator_EncodeFrame *frame = frames->head->data;
+		char failed = 0;
+
+		switch (frame->stage)
 		{
-			PRIVATE_IFF_Generator_AbortContainer(gen);
-			return IFF_FAIL;
-		}
-	}
-
-	/* Produce chunks */
-	if (encoder->produce_chunk)
-	{
-		done = 0;
-		while (!done)
-		{
-			chunk_data = 0;
-			memset(&chunk_tag, 0, sizeof(chunk_tag));
-
-			if (encoder->produce_chunk(&state, custom_state, &chunk_tag, &chunk_data, &done))
+			case IFF_GENERATOR_ENCODE_STAGE_CHUNKS:
 			{
-				goto encode_failure;
-			}
-
-			if (!done && chunk_data)
-			{
-				struct IFF_ChunkEncoder *chunk_encoder = 0;
-				struct VPS_Data *write_data = chunk_data;
-
-				/* If a ChunkEncoder is registered for this tag, use it */
-				if (gen->chunk_encoders
-					&& VPS_Dictionary_Find(gen->chunk_encoders, (void *)&chunk_tag, (void **)&chunk_encoder)
-					&& chunk_encoder && chunk_encoder->encode)
+				if (PRIVATE_IFF_Generator_EncodeFrame_WriteChunks(gen, frame))
 				{
-					struct VPS_Data *encoded_data = 0;
+					failed = 1;
+				}
+				else
+				{
+					frame->stage = IFF_GENERATOR_ENCODE_STAGE_GROUPS;
+				}
+			}
+			break;
 
-					if (chunk_encoder->encode(&state, chunk_data, &encoded_data))
-					{
-						VPS_Data_Release(chunk_data);
-						goto encode_failure;
-					}
+			case IFF_GENERATOR_ENCODE_STAGE_GROUPS:
+			{
+				struct IFF_Tag container_variant;
+				struct IFF_Tag container_type;
+				VPS_TYPE_16S cat_ordering;
+				VPS_TYPE_16S list_ordering;
+				char done = 0;
 
-					VPS_Data_Release(chunk_data);
-					write_data = encoded_data;
+				if (!frame->encoder->begin_container_group
+					|| !frame->encoder->produce_grouped_form)
+				{
+					frame->stage = IFF_GENERATOR_ENCODE_STAGE_NESTED;
+					break;
 				}
 
-				if (IFF_Generator_WriteChunk(gen, &chunk_tag, write_data))
+				memset(&container_variant, 0, sizeof(container_variant));
+				memset(&container_type, 0, sizeof(container_type));
+
+				if (frame->encoder->begin_container_group(&frame->state, frame->custom_state,
+					&container_variant, &container_type, &done))
 				{
-					VPS_Data_Release(write_data);
-					goto encode_failure;
+					failed = 1;
+					break;
 				}
 
-				VPS_Data_Release(write_data);
-			}
-		}
-	}
+				if (done)
+				{
+					frame->stage = IFF_GENERATOR_ENCODE_STAGE_NESTED;
+					break;
+				}
 
-	/* Produce container groups (CAT/LIST wrapping nested forms) */
-	if (encoder->begin_container_group && encoder->produce_grouped_form)
-	{
-		done = 0;
-		while (!done)
-		{
-			struct IFF_Tag container_variant;
-			struct IFF_Tag container_type;
-			VPS_TYPE_16S cat_ordering;
-			VPS_TYPE_16S list_ordering;
-
-			memset(&container_variant, 0, sizeof(container_variant));
-			memset(&container_type, 0, sizeof(container_type));
-
-			if (encoder->begin_container_group(&state, custom_state,
-				&container_variant, &container_type, &done))
-			{
-				goto encode_failure;
-			}
-
-			if (!done)
-			{
-				/* Determine container variant and open it. */
 				IFF_Tag_Compare(&container_variant, &IFF_TAG_SYSTEM_CAT, &cat_ordering);
 				IFF_Tag_Compare(&container_variant, &IFF_TAG_SYSTEM_LIST, &list_ordering);
 
 				if (cat_ordering == 0)
 				{
 					if (IFF_Generator_BeginCat(gen, &container_type))
-						goto encode_failure;
+					{
+						failed = 1;
+						break;
+					}
+
+					frame->group_is_cat = 1;
 				}
 				else if (list_ordering == 0)
 				{
 					if (IFF_Generator_BeginList(gen, &container_type))
-						goto encode_failure;
-				}
-				else
-				{
-					goto encode_failure;
-				}
-
-				group_open = 1;
-
-				/* Produce grouped forms inside this container. */
-				{
-					char group_done = 0;
-					while (!group_done)
 					{
-						struct IFF_Tag grouped_type;
-						void *grouped_entity = 0;
-
-						memset(&grouped_type, 0, sizeof(grouped_type));
-
-						if (encoder->produce_grouped_form(&state, custom_state,
-							&grouped_type, &grouped_entity, &group_done))
-						{
-							goto encode_failure;
-						}
-
-						if (!group_done)
-						{
-							if (IFF_Generator_EncodeForm(gen, &grouped_type, grouped_entity))
-							{
-								goto encode_failure;
-							}
-						}
+						failed = 1;
+						break;
 					}
-				}
 
-				/* Close the container. */
-				if (cat_ordering == 0)
-				{
-					if (IFF_Generator_EndCat(gen))
-						goto encode_failure;
+					frame->group_is_cat = 0;
 				}
 				else
 				{
-					if (IFF_Generator_EndList(gen))
-						goto encode_failure;
+					failed = 1;
+					break;
 				}
 
-				group_open = 0;
+				frame->group_open = 1;
+				frame->stage = IFF_GENERATOR_ENCODE_STAGE_GROUPED;
 			}
-		}
-	}
+			break;
 
-	/* Produce nested forms */
-	if (encoder->produce_nested_form)
-	{
-		done = 0;
-		while (!done)
-		{
-			struct IFF_Tag nested_type;
-			void *nested_entity = 0;
-
-			memset(&nested_type, 0, sizeof(nested_type));
-
-			if (encoder->produce_nested_form(&state, custom_state, &nested_type, &nested_entity, &done))
+			case IFF_GENERATOR_ENCODE_STAGE_GROUPED:
 			{
-				goto encode_failure;
-			}
+				struct IFF_Tag grouped_type;
+				void *grouped_entity = 0;
+				char group_done = 0;
 
-			if (!done)
-			{
-				if (IFF_Generator_EncodeForm(gen, &nested_type, nested_entity))
+				memset(&grouped_type, 0, sizeof(grouped_type));
+
+				if (frame->encoder->produce_grouped_form(&frame->state, frame->custom_state,
+					&grouped_type, &grouped_entity, &group_done))
 				{
-					goto encode_failure;
+					failed = 1;
+					break;
 				}
+
+				if (group_done)
+				{
+					/* Close the container and look for the next group. */
+					if (frame->group_is_cat
+						? IFF_Generator_EndCat(gen)
+						: IFF_Generator_EndList(gen))
+					{
+						failed = 1;
+						break;
+					}
+
+					frame->group_open = 0;
+					frame->stage = IFF_GENERATOR_ENCODE_STAGE_GROUPS;
+					break;
+				}
+
+				/* This is where the recursion was: open the grouped form as a
+				   new level and let the loop carry on with it. */
+				if (PRIVATE_IFF_Generator_EncodeFrame_Push(gen, frames, &grouped_type, grouped_entity))
+				{
+					failed = 1;
+				}
+			}
+			break;
+
+			case IFF_GENERATOR_ENCODE_STAGE_NESTED:
+			{
+				struct IFF_Tag nested_type;
+				void *nested_entity = 0;
+				char done = 0;
+
+				if (!frame->encoder->produce_nested_form)
+				{
+					frame->stage = IFF_GENERATOR_ENCODE_STAGE_FINISH;
+					break;
+				}
+
+				memset(&nested_type, 0, sizeof(nested_type));
+
+				if (frame->encoder->produce_nested_form(&frame->state, frame->custom_state,
+					&nested_type, &nested_entity, &done))
+				{
+					failed = 1;
+					break;
+				}
+
+				if (done)
+				{
+					frame->stage = IFF_GENERATOR_ENCODE_STAGE_FINISH;
+					break;
+				}
+
+				/* The other place the recursion was. */
+				if (PRIVATE_IFF_Generator_EncodeFrame_Push(gen, frames, &nested_type, nested_entity))
+				{
+					failed = 1;
+				}
+			}
+			break;
+
+			case IFF_GENERATOR_ENCODE_STAGE_FINISH:
+			default:
+			{
+				if (PRIVATE_IFF_Generator_EncodeFrame_Finish(gen, frames))
+				{
+					/* Finish already popped and abandoned this level. */
+					result = IFF_FAIL;
+				}
+			}
+			break;
+		}
+
+		if (failed)
+		{
+			result = IFF_FAIL;
+		}
+
+		if (result)
+		{
+			/* Abandon every level still open, innermost first, exactly as the
+			   failure unwound through the recursion before. */
+			while (frames->count > 0)
+			{
+				PRIVATE_IFF_Generator_EncodeFrame_Abort(gen, frames);
 			}
 		}
 	}
 
-	/* End encode — a failing finalizer aborts the FORM like any other step
-	 * (end_encode has already run, so don't jump to encode_failure). */
-	if (encoder->end_encode)
-	{
-		if (encoder->end_encode(&state, custom_state))
-		{
-			PRIVATE_IFF_Generator_AbortContainer(gen);
-			return IFF_FAIL;
-		}
-	}
+	VPS_List_Release(frames);
 
-	return IFF_Generator_EndForm(gen);
-
-encode_failure:
-
-	/* Give the encoder its teardown call so custom_state is released. */
-	if (encoder->end_encode)
-	{
-		encoder->end_encode(&state, custom_state);
-	}
-
-	/* Discard the open group container (if any), then the FORM itself,
-	 * so the failure does not leave partial containers on the stack or
-	 * half-built content in the output. */
-	if (group_open)
-	{
-		PRIVATE_IFF_Generator_AbortContainer(gen);
-	}
-
-	PRIVATE_IFF_Generator_AbortContainer(gen);
-
-	return IFF_FAIL;
+	return result;
 }
 
 /* ------------------------------------------------------------------ */

@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	RUN_TEST_SUITE(test_suite_codec_conversion);
 	RUN_TEST_SUITE(test_suite_codec_images);
 	RUN_TEST_SUITE(test_suite_codec_audio);
-	RUN_TEST_SUITE(test_suite_parse_nesting);
+	RUN_TEST_SUITE(test_suite_nesting);
 
 	printf("\n=================================\n");
 	printf("      Test Suite Complete        \n");

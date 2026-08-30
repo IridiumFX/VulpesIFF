@@ -35,14 +35,26 @@
 
 // Private protos
 // --------------
-static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_CAT
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_Begin_CAT
 (
 	struct IFF_Parser *parser
 );
 
-static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_LIST
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_CAT
 (
 	struct IFF_Parser *parser
+	, char failed
+);
+
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_Begin_LIST
+(
+	struct IFF_Parser *parser
+);
+
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_LIST
+(
+	struct IFF_Parser *parser
+	, char failed
 );
 
 static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_PROP
@@ -50,9 +62,15 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_PROP
 	struct IFF_Parser *parser
 );
 
-static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_FORM
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_Begin_FORM
 (
 	struct IFF_Parser *parser
+);
+
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_FORM
+(
+	struct IFF_Parser *parser
+	, char failed
 );
 
 static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Chunk
@@ -979,59 +997,239 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Directive
 }
 
 
-// --- Container Dispatcher ---
+// --- Container Traversal ---
+//
+// Containers nest, and the parser used to follow that nesting by recursing:
+// one C stack frame pair per level. A container header is only twelve bytes,
+// so a small file could ask for an arbitrarily deep stack, and the process
+// died when it ran out -- inside the allocator, nowhere near the cause.
+//
+// Nothing a container carries actually needs the C stack. Its flags,
+// boundary, decoder, shard state, variant and type all live in its
+// struct IFF_Scope, and the session already keeps those on a heap list. The
+// recursion was duplicating, in stack frames, a stack that was on the heap
+// all along.
+//
+// So the traversal is a flat loop over that scope stack. Container_Begin
+// pushes a level, Container_End pops one, and the loop runs until the level
+// it was asked to open has closed again. Nesting now costs one scope
+// allocation per level and is bounded by memory rather than by the stack,
+// with no fixed ceiling.
 
-static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container
+/**
+ * @brief Opens the container named by `tag`, entering its scope.
+ */
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_Begin
 (
 	struct IFF_Parser *parser
 	, struct IFF_Tag tag
 )
 {
 	VPS_TYPE_16S ordering;
-	IFF_TYPE_RESULT result = IFF_FAIL;
-
-	// Containers are parsed by recursing through here, one frame pair per
-	// level, so the file's nesting depth is this process's call depth. A
-	// container header is twelve bytes, which makes a very small file a
-	// very deep stack; the ceiling is what keeps a crafted one from
-	// running the stack out. See IFF_PARSER_MAX_NESTING_DEPTH.
-	if (parser->nesting_depth >= IFF_PARSER_MAX_NESTING_DEPTH)
-	{
-		return IFF_FAIL;
-	}
-
-	parser->nesting_depth++;
 
 	IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_FORM, &ordering);
 	if (ordering == 0)
 	{
-		result = PRIVATE_IFF_Parser_Parse_Container_FORM(parser);
+		return PRIVATE_IFF_Parser_Container_Begin_FORM(parser);
 	}
-	else
+
+	IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_LIST, &ordering);
+	if (ordering == 0)
 	{
-		IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_LIST, &ordering);
-		if (ordering == 0)
+		return PRIVATE_IFF_Parser_Container_Begin_LIST(parser);
+	}
+
+	IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_CAT, &ordering);
+	if (ordering == 0)
+	{
+		return PRIVATE_IFF_Parser_Container_Begin_CAT(parser);
+	}
+
+	return IFF_FAIL;
+}
+
+/**
+ * @brief Closes the container in the current scope, leaving it.
+ * @param failed When set, the level is being unwound after an error rather
+ *        than closing normally.
+ * @details Always pops the scope, so the caller can keep unwinding.
+ */
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End
+(
+	struct IFF_Parser *parser
+	, char failed
+)
+{
+	struct IFF_Scope *scope = parser->session->current_scope;
+	VPS_TYPE_16S ordering;
+
+	IFF_Tag_Compare(&scope->container_variant, &IFF_TAG_SYSTEM_FORM, &ordering);
+	if (ordering == 0)
+	{
+		return PRIVATE_IFF_Parser_Container_End_FORM(parser, failed);
+	}
+
+	IFF_Tag_Compare(&scope->container_variant, &IFF_TAG_SYSTEM_LIST, &ordering);
+	if (ordering == 0)
+	{
+		return PRIVATE_IFF_Parser_Container_End_LIST(parser, failed);
+	}
+
+	IFF_Tag_Compare(&scope->container_variant, &IFF_TAG_SYSTEM_CAT, &ordering);
+	if (ordering == 0)
+	{
+		return PRIVATE_IFF_Parser_Container_End_CAT(parser, failed);
+	}
+
+	// Not a container scope. Pop it anyway so an unwind cannot spin.
+	IFF_Parser_Session_LeaveScope(parser->session);
+
+	return IFF_FAIL;
+}
+
+/**
+ * @brief Parses the container named by `tag` and everything nested inside it.
+ * @details Returns once that container has closed, with its scope popped and
+ *          the parent restored, exactly as the recursive form did.
+ */
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container
+(
+	struct IFF_Parser *parser
+	, struct IFF_Tag tag
+)
+{
+	// Depth of the scope stack before we open anything. The loop runs until
+	// the stack is back to this, which is what "our container closed" means.
+	VPS_TYPE_SIZE base_depth = parser->session->scope_stack->count;
+
+	if (PRIVATE_IFF_Parser_Container_Begin(parser, tag))
+	{
+		return IFF_FAIL;
+	}
+
+	while (parser->session->scope_stack->count > base_depth)
+	{
+		struct IFF_Scope *scope = parser->session->current_scope;
+		VPS_TYPE_16S variant_ordering;
+		struct IFF_Tag inner;
+		char is_form;
+		char is_cat;
+		char closed = 0;
+		char failed = 0;
+
+		// The content a level accepts depends on which container it is.
+		IFF_Tag_Compare(&scope->container_variant, &IFF_TAG_SYSTEM_FORM, &variant_ordering);
+		is_form = variant_ordering == 0;
+		IFF_Tag_Compare(&scope->container_variant, &IFF_TAG_SYSTEM_CAT, &variant_ordering);
+		is_cat = variant_ordering == 0;
+
+		if (!IFF_Parser_Session_IsActive(parser->session)
+			|| !IFF_Parser_Session_IsBoundaryOpen(parser->session))
 		{
-			result = PRIVATE_IFF_Parser_Parse_Container_LIST(parser);
+			closed = 1;
+		}
+		else if (IFF_Reader_ReadTag(parser->reader, scope->flags.as_fields.tag_sizing, &inner))
+		{
+			// Running out of readable input closes the level rather than
+			// failing it; the boundary check in End decides whether that
+			// was legitimate.
+			closed = 1;
 		}
 		else
 		{
-			IFF_Tag_Compare(&tag, &IFF_TAG_SYSTEM_CAT, &ordering);
-			if (ordering == 0)
+			scope->boundary.level +=
+				IFF_Header_Flags_GetTagLength(scope->flags.as_fields.tag_sizing);
+
+			switch (inner.type)
 			{
-				result = PRIVATE_IFF_Parser_Parse_Container_CAT(parser);
+				case IFF_TAG_TYPE_DIRECTIVE:
+				{
+					char scope_ended = 0;
+
+					if (PRIVATE_IFF_Parser_Parse_Directive(parser, inner, &scope_ended))
+					{
+						failed = 1;
+					}
+					else if (scope_ended)
+					{
+						closed = 1;
+					}
+				}
+				break;
+
+				case IFF_TAG_TYPE_CONTAINER:
+				{
+					// A FORM flushes any pending shard decoder before it
+					// descends, so the child cannot land mid-chunk.
+					if (is_form && PRIVATE_IFF_Parser_FlushLastDecoder(parser))
+					{
+						failed = 1;
+					}
+					else if (PRIVATE_IFF_Parser_Container_Begin(parser, inner))
+					{
+						failed = 1;
+					}
+
+					// On success the loop simply continues, now one level
+					// deeper: this is where the recursion used to be.
+				}
+				break;
+
+				case IFF_TAG_TYPE_SUBCONTAINER:
+				{
+					// PROP belongs to LIST. It holds only chunks, so it does
+					// not nest and stays an ordinary call.
+					if (is_form || is_cat || PRIVATE_IFF_Parser_Parse_PROP(parser))
+					{
+						failed = 1;
+					}
+				}
+				break;
+
+				case IFF_TAG_TYPE_TAG:
+				{
+					// Data chunks belong to FORM alone.
+					if (!is_form || PRIVATE_IFF_Parser_Parse_Chunk(parser, inner))
+					{
+						failed = 1;
+					}
+				}
+				break;
+
+				default:
+				{
+					failed = 1;
+				}
+				break;
 			}
+		}
+
+		if (failed)
+		{
+			// Unwind every level we opened, this one included, then report.
+			while (parser->session->scope_stack->count > base_depth)
+			{
+				PRIVATE_IFF_Parser_Container_End(parser, 1);
+			}
+
+			return IFF_FAIL;
+		}
+
+		if (closed && PRIVATE_IFF_Parser_Container_End(parser, 0))
+		{
+			while (parser->session->scope_stack->count > base_depth)
+			{
+				PRIVATE_IFF_Parser_Container_End(parser, 1);
+			}
+
+			return IFF_FAIL;
 		}
 	}
 
-	parser->nesting_depth--;
-
-	return result;
+	return IFF_OK;
 }
 
-// --- FORM Container ---
-
-static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_FORM
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_Begin_FORM
 (
 	struct IFF_Parser *parser
 )
@@ -1042,12 +1240,10 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_FORM
 	VPS_TYPE_8U tag_size = IFF_Header_Flags_GetTagLength(parent_flags.as_fields.tag_sizing);
 	VPS_TYPE_8U size_len = IFF_Header_Flags_GetSizeLength(parent_flags.as_fields.sizing);
 	struct IFF_Tag form_type;
-	struct IFF_Tag tag;
 	struct IFF_Scope* child_scope = 0;
 	struct IFF_Boundary child_boundary;
 	struct IFF_FormDecoder* decoder = 0;
 	struct IFF_Parser_State parser_state;
-	void* final_entity = 0;
 	IFF_TYPE_RESULT result;
 
 	// 1. If blobbed mode, read container size and update parent boundary.
@@ -1185,90 +1381,25 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_FORM
 		}
 	}
 
-	// 5. Content loop.
-	while (IFF_Parser_Session_IsActive(parser->session)
-		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
+	return IFF_OK;
+}
+
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_FORM
+(
+	struct IFF_Parser *parser
+	, char failed
+)
+{
+	struct IFF_Scope* child_scope = parser->session->current_scope;
+	struct IFF_Tag form_type = child_scope->container_type;
+	struct IFF_Parser_State parser_state;
+	void* final_entity = 0;
+
+	if (failed)
 	{
-		result = IFF_Reader_ReadTag
-		(
-			parser->reader,
-			parser->session->current_scope->flags.as_fields.tag_sizing,
-			&tag
-		);
-		if (result)
-		{
-			break;
-		}
-
-		parser->session->current_scope->boundary.level +=
-			IFF_Header_Flags_GetTagLength(parser->session->current_scope->flags.as_fields.tag_sizing);
-
-		switch (tag.type)
-		{
-			case IFF_TAG_TYPE_DIRECTIVE:
-			{
-				char scope_ended = 0;
-
-				result = PRIVATE_IFF_Parser_Parse_Directive
-				(
-					parser,
-					tag,
-					&scope_ended
-				);
-				if (result)
-				{
-					goto form_cleanup;
-				}
-				if (scope_ended)
-				{
-					goto form_done;
-				}
-			}
-			break;
-
-			case IFF_TAG_TYPE_CONTAINER:
-			{
-				// Flush any pending shard decoder before nested container.
-				if (PRIVATE_IFF_Parser_FlushLastDecoder(parser))
-				{
-					goto form_cleanup;
-				}
-
-				result = PRIVATE_IFF_Parser_Parse_Container
-				(
-					parser,
-					tag
-				);
-				if (result)
-				{
-					goto form_cleanup;
-				}
-			}
-			break;
-
-			case IFF_TAG_TYPE_TAG:
-			{
-				result = PRIVATE_IFF_Parser_Parse_Chunk
-				(
-					parser,
-					tag
-				);
-				if (result)
-				{
-					goto form_cleanup;
-				}
-			}
-			break;
-
-			// PROP not allowed inside FORM.
-			default:
-			{
-				goto form_cleanup;
-			}
-		}
+		goto form_cleanup;
 	}
 
-form_done:
 
 	// A bounded container must close exactly at its declared boundary;
 	// anything else means a child over- or under-ran the declared size.
@@ -1560,10 +1691,7 @@ prop_done:
 	return IFF_OK;
 }
 
-
-// --- LIST Container ---
-
-static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_LIST
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_Begin_LIST
 (
 	struct IFF_Parser *parser
 )
@@ -1574,7 +1702,6 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_LIST
 	VPS_TYPE_8U tag_size = IFF_Header_Flags_GetTagLength(parent_flags.as_fields.tag_sizing);
 	VPS_TYPE_8U size_len = IFF_Header_Flags_GetSizeLength(parent_flags.as_fields.sizing);
 	struct IFF_Tag list_type;
-	struct IFF_Tag tag;
 	struct IFF_Scope* child_scope = 0;
 	struct IFF_Boundary child_boundary;
 	IFF_TYPE_RESULT result;
@@ -1666,88 +1793,26 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_LIST
 		}
 	}
 
-	// 4. Content loop — PROPs, containers, and directives. No direct data chunks.
-	while (IFF_Parser_Session_IsActive(parser->session)
-		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
+	return IFF_OK;
+}
+
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_LIST
+(
+	struct IFF_Parser *parser
+	, char failed
+)
+{
+	struct IFF_Scope* child_scope = parser->session->current_scope;
+	struct IFF_Tag list_type = child_scope->container_type;
+
+	// A level that failed is popped without the closing notification, which
+	// is what the recursive form did on its error paths.
+	if (failed)
 	{
-		result = IFF_Reader_ReadTag
-		(
-			parser->reader,
-			parser->session->current_scope->flags.as_fields.tag_sizing,
-			&tag
-		);
-		if (result)
-		{
-			break;
-		}
-
-		parser->session->current_scope->boundary.level +=
-			IFF_Header_Flags_GetTagLength(parser->session->current_scope->flags.as_fields.tag_sizing);
-
-		switch (tag.type)
-		{
-			case IFF_TAG_TYPE_DIRECTIVE:
-			{
-				char scope_ended = 0;
-
-				result = PRIVATE_IFF_Parser_Parse_Directive
-				(
-					parser,
-					tag,
-					&scope_ended
-				);
-				if (result)
-				{
-					IFF_Parser_Session_LeaveScope(parser->session);
-					return IFF_FAIL;
-				}
-				if (scope_ended)
-				{
-					goto list_done;
-				}
-			}
-			break;
-
-			case IFF_TAG_TYPE_CONTAINER:
-			{
-				result = PRIVATE_IFF_Parser_Parse_Container
-				(
-					parser,
-					tag
-				);
-				if (result)
-				{
-					IFF_Parser_Session_LeaveScope(parser->session);
-					return IFF_FAIL;
-				}
-			}
-			break;
-
-			case IFF_TAG_TYPE_SUBCONTAINER:
-			{
-				result = PRIVATE_IFF_Parser_Parse_PROP
-				(
-					parser
-				);
-				if (result)
-				{
-					IFF_Parser_Session_LeaveScope(parser->session);
-					return IFF_FAIL;
-				}
-			}
-			break;
-
-			// Data chunks not allowed directly in LIST.
-			case IFF_TAG_TYPE_TAG:
-			default:
-			{
-				IFF_Parser_Session_LeaveScope(parser->session);
-				return IFF_FAIL;
-			}
-		}
+		IFF_Parser_Session_LeaveScope(parser->session);
+		return IFF_FAIL;
 	}
 
-list_done:
 
 	// A bounded container must close exactly at its declared boundary.
 	if (child_scope->boundary.limit > 0
@@ -1779,10 +1844,7 @@ list_done:
 	return IFF_OK;
 }
 
-
-// --- CAT Container ---
-
-static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_CAT
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_Begin_CAT
 (
 	struct IFF_Parser *parser
 )
@@ -1793,7 +1855,6 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_CAT
 	VPS_TYPE_8U tag_size = IFF_Header_Flags_GetTagLength(parent_flags.as_fields.tag_sizing);
 	VPS_TYPE_8U size_len = IFF_Header_Flags_GetSizeLength(parent_flags.as_fields.sizing);
 	struct IFF_Tag cat_type;
-	struct IFF_Tag tag;
 	struct IFF_Scope* child_scope = 0;
 	struct IFF_Boundary child_boundary;
 	IFF_TYPE_RESULT result;
@@ -1885,74 +1946,26 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Parse_Container_CAT
 		}
 	}
 
-	// 4. Content loop — nested containers and directives only.
-	while (IFF_Parser_Session_IsActive(parser->session)
-		&& IFF_Parser_Session_IsBoundaryOpen(parser->session))
+	return IFF_OK;
+}
+
+static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_CAT
+(
+	struct IFF_Parser *parser
+	, char failed
+)
+{
+	struct IFF_Scope* child_scope = parser->session->current_scope;
+	struct IFF_Tag cat_type = child_scope->container_type;
+
+	// A level that failed is popped without the closing notification, which
+	// is what the recursive form did on its error paths.
+	if (failed)
 	{
-		result = IFF_Reader_ReadTag
-		(
-			parser->reader,
-			parser->session->current_scope->flags.as_fields.tag_sizing,
-			&tag
-		);
-		if (result)
-		{
-			break;
-		}
-
-		parser->session->current_scope->boundary.level +=
-			IFF_Header_Flags_GetTagLength(parser->session->current_scope->flags.as_fields.tag_sizing);
-
-		switch (tag.type)
-		{
-			case IFF_TAG_TYPE_DIRECTIVE:
-			{
-				char scope_ended = 0;
-
-				result = PRIVATE_IFF_Parser_Parse_Directive
-				(
-					parser,
-					tag,
-					&scope_ended
-				);
-				if (result)
-				{
-					IFF_Parser_Session_LeaveScope(parser->session);
-					return IFF_FAIL;
-				}
-				if (scope_ended)
-				{
-					goto cat_done;
-				}
-			}
-			break;
-
-			case IFF_TAG_TYPE_CONTAINER:
-			{
-				result = PRIVATE_IFF_Parser_Parse_Container
-				(
-					parser,
-					tag
-				);
-				if (result)
-				{
-					IFF_Parser_Session_LeaveScope(parser->session);
-					return IFF_FAIL;
-				}
-			}
-			break;
-
-			// PROP and data chunks not allowed in CAT.
-			case IFF_TAG_TYPE_TAG:
-			default:
-			{
-				IFF_Parser_Session_LeaveScope(parser->session);
-				return IFF_FAIL;
-			}
-		}
+		IFF_Parser_Session_LeaveScope(parser->session);
+		return IFF_FAIL;
 	}
 
-cat_done:
 
 	// A bounded container must close exactly at its declared boundary.
 	if (child_scope->boundary.limit > 0

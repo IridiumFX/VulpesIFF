@@ -115,15 +115,6 @@ char IFF_Reader_IsActive
 );
 
 /**
- * @brief Parses a ' CHK' directive payload and starts a checksum span.
- * @details Decodes the binary payload format (version, algorithm identifiers),
- *          builds a VPS_Set of identifiers, and delegates to IFF_DataTap_StartSpan.
- * @param reader The reader whose DataTap owns the checksum state.
- * @param config Current scope flags (for interpreting size fields in the payload).
- * @param chk_payload The raw data from the ' CHK' directive chunk.
- * @return 1 on success, 0 on failure.
- */
-/**
  * @brief Reads a size field from a VPS_DataReader using the provided config.
  */
 IFF_TYPE_RESULT IFF_Reader_ReadPayloadSize
@@ -133,6 +124,15 @@ IFF_TYPE_RESULT IFF_Reader_ReadPayloadSize
 	VPS_TYPE_SIZE* out_size
 );
 
+/**
+ * @brief Parses a ' CHK' directive payload and starts a checksum span.
+ * @details Decodes the binary payload format (version, algorithm identifiers),
+ *          builds a VPS_Set of identifiers, and delegates to IFF_DataTap_StartSpan.
+ * @param reader The reader whose DataTap owns the checksum state.
+ * @param config Current scope flags (for interpreting size fields in the payload).
+ * @param chk_payload The raw data from the ' CHK' directive chunk.
+ * @return IFF_OK on success, non-zero on failure.
+ */
 IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
 (
 	struct IFF_Reader* reader
@@ -148,7 +148,7 @@ IFF_TYPE_RESULT IFF_Reader_StartChecksumSpan
  * @param reader The reader whose DataTap owns the checksum state.
  * @param config Current scope flags (for interpreting size fields in the payload).
  * @param sum_payload The raw data from the ' SUM' directive chunk.
- * @return 1 if all checksums match, 0 on mismatch or failure.
+ * @return IFF_OK if all checksums match, non-zero on mismatch or failure.
  */
 IFF_TYPE_RESULT IFF_Reader_EndChecksumSpan
 (

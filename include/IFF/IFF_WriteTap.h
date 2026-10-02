@@ -102,7 +102,7 @@ IFF_TYPE_RESULT IFF_WriteTap_StartSpan
  * @param tap The write tap.
  * @param out_checksums A dictionary to receive computed {id -> checksum_bytes} pairs.
  *                      The caller is responsible for releasing this dictionary.
- * @return 1 on success, 0 on failure.
+ * @return IFF_OK on success, non-zero on failure.
  */
 IFF_TYPE_RESULT IFF_WriteTap_EndSpan
 (

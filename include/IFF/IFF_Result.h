@@ -6,9 +6,8 @@
  *          carries the source line that raised it, so a failing call can be
  *          traced back to its origin without a debugger.
  *
- *          Note that this is the inverse of the VulpesCore convention, where
- *          1 means success and 0 means failure. See "VulpesCore boundary"
- *          below for how the two meet.
+ *          VulpesCore's VPS_TYPE_RESULT follows the same convention. See
+ *          "Crossing the VulpesCore boundary" below for how the two meet.
  */
 typedef unsigned long IFF_TYPE_RESULT;
 

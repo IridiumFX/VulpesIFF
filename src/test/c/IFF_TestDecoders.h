@@ -148,3 +148,43 @@ IFF_TYPE_RESULT IFF_TestDecoders_CreateInnerFormDecoder
 (
 	struct IFF_FormDecoder **out_decoder
 );
+
+/**
+ * @brief Creates a FormDecoder whose end_decode rejects the FORM.
+ * @details begin_decode and process_chunk behave as TestFormDecoder;
+ *          end_decode releases its state, hands over no entity and fails.
+ */
+IFF_TYPE_RESULT IFF_TestDecoders_CreateEndFailingFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+);
+
+/**
+ * @brief Creates a FormDecoder whose process_nested_form rejects every
+ *        nested entity.
+ * @details Otherwise behaves as TestFormDecoder. The rejected entity, a
+ *          TestFormState from an inner TestFormDecoder, is freed, since the
+ *          receiver owns it from the call on.
+ */
+IFF_TYPE_RESULT IFF_TestDecoders_CreateNestedFailingFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+);
+
+/**
+ * @brief Creates a FormDecoder whose leave_container fails.
+ * @details Otherwise behaves as TestFormDecoder, freeing nested entities.
+ */
+IFF_TYPE_RESULT IFF_TestDecoders_CreateLeaveFailingFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+);
+
+/**
+ * @brief Creates a ChunkDecoder whose end_decode fails.
+ * @details begin_decode and process_shard behave as TestChunkDecoder.
+ */
+IFF_TYPE_RESULT IFF_TestDecoders_CreateEndFailingChunkDecoder
+(
+	struct IFF_ChunkDecoder **out_decoder
+);

@@ -1409,20 +1409,43 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_FORM
 		goto form_cleanup;
 	}
 
-	// Flush any pending shard decoder before ending the form.
-	PRIVATE_IFF_Parser_FlushLastDecoder(parser);
+	// Flush any pending shard decoder before ending the form. A failure here
+	// is a chunk the form never received, so the form fails; the cleanup
+	// path still gives the form decoder its end call.
+	if (PRIVATE_IFF_Parser_FlushLastDecoder(parser))
+	{
+		goto form_cleanup;
+	}
 
-	// 6. End the form decoder.
+	// 6. End the form decoder. Its verdict on the FORM as a whole is part of
+	// the parse: a decoder that rejects the FORM fails it.
 	if (child_scope->form_decoder && child_scope->form_decoder->end_decode)
 	{
+		IFF_TYPE_RESULT result;
+
 		parser_state.session = parser->session;
 
-		child_scope->form_decoder->end_decode
+		result = child_scope->form_decoder->end_decode
 		(
 			&parser_state,
 			child_scope->form_state,
 			&final_entity
 		);
+		if (result)
+		{
+			// end_decode has run, so this cannot go through form_cleanup,
+			// which would end the decoder a second time.
+			IFF_Parser_Session_LeaveScope(parser->session);
+
+			// A failing decoder should hand over nothing; if it did, keep the
+			// entity reachable for the caller, as form_cleanup does.
+			if (final_entity && !parser->session->final_entity)
+			{
+				parser->session->final_entity = final_entity;
+			}
+
+			return result;
+		}
 	}
 
 	// 7. Leave scope — parent is restored.
@@ -1435,19 +1458,27 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_FORM
 		char delivered = 0;
 
 		// Direct parent is a FORM with a decoder (common case: FORM-in-FORM).
+		// The receiver owns the entity from the call on, whatever it returns,
+		// as a FORM decoder owns what process_chunk hands it.
 		if (restored_parent
 			&& restored_parent->form_decoder
 			&& restored_parent->form_decoder->process_nested_form)
 		{
+			IFF_TYPE_RESULT result;
+
 			parser_state.session = parser->session;
 
-			restored_parent->form_decoder->process_nested_form
+			result = restored_parent->form_decoder->process_nested_form
 			(
 				&parser_state,
 				restored_parent->form_state,
 				&form_type,
 				final_entity
 			);
+			if (result)
+			{
+				return result;
+			}
 			delivered = 1;
 		}
 
@@ -1460,16 +1491,21 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_FORM
 			&& restored_parent->receiving_form_scope->form_decoder->process_nested_form)
 		{
 			struct IFF_Scope *receiver = restored_parent->receiving_form_scope;
+			IFF_TYPE_RESULT result;
 
 			parser_state.session = parser->session;
 
-			receiver->form_decoder->process_nested_form
+			result = receiver->form_decoder->process_nested_form
 			(
 				&parser_state,
 				receiver->form_state,
 				&form_type,
 				final_entity
 			);
+			if (result)
+			{
+				return result;
+			}
 			delivered = 1;
 		}
 
@@ -1680,8 +1716,14 @@ prop_done:
 		return IFF_FAIL;
 	}
 
-	// Flush any pending shard decoder before leaving PROP scope.
-	PRIVATE_IFF_Parser_FlushLastDecoder(parser);
+	// Flush any pending shard decoder before leaving PROP scope. A failure
+	// is a property the PROP never stored, so the PROP fails.
+	if (PRIVATE_IFF_Parser_FlushLastDecoder(parser))
+	{
+		VPS_ScopedDictionary_EnterScope(parser->session->props);
+		IFF_Parser_Session_LeaveScope(parser->session);
+		return IFF_FAIL;
+	}
 
 	// Re-enter the ScopedDictionary scope so LeaveScope can leave it.
 	// This balances the LeaveScope we did after EnterScope above.
@@ -1828,15 +1870,21 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_LIST
 		&& child_scope->receiving_form_scope->form_decoder->leave_container)
 	{
 		struct IFF_Parser_State parser_state;
+		IFF_TYPE_RESULT result;
 		parser_state.session = parser->session;
 
-		child_scope->receiving_form_scope->form_decoder->leave_container
+		result = child_scope->receiving_form_scope->form_decoder->leave_container
 		(
 			&parser_state,
 			child_scope->receiving_form_scope->form_state,
 			&child_scope->container_variant,
 			&list_type
 		);
+		if (result)
+		{
+			IFF_Parser_Session_LeaveScope(parser->session);
+			return result;
+		}
 	}
 
 	IFF_Parser_Session_LeaveScope(parser->session);
@@ -1981,15 +2029,21 @@ static IFF_TYPE_RESULT PRIVATE_IFF_Parser_Container_End_CAT
 		&& child_scope->receiving_form_scope->form_decoder->leave_container)
 	{
 		struct IFF_Parser_State parser_state;
+		IFF_TYPE_RESULT result;
 		parser_state.session = parser->session;
 
-		child_scope->receiving_form_scope->form_decoder->leave_container
+		result = child_scope->receiving_form_scope->form_decoder->leave_container
 		(
 			&parser_state,
 			child_scope->receiving_form_scope->form_state,
 			&child_scope->container_variant,
 			&cat_type
 		);
+		if (result)
+		{
+			IFF_Parser_Session_LeaveScope(parser->session);
+			return result;
+		}
 	}
 
 	IFF_Parser_Session_LeaveScope(parser->session);

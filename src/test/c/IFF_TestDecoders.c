@@ -586,3 +586,174 @@ IFF_TYPE_RESULT IFF_TestDecoders_CreateInnerFormDecoder
 	// that the ContainerAwareFormDecoder will receive and free.
 	return IFF_TestDecoders_CreateFormDecoder(out_decoder);
 }
+
+// ===================================================================
+// Failing decoders — one callback fails, so a test can check that the
+// parser propagates that callback's result
+// ===================================================================
+
+static IFF_TYPE_RESULT EndFailingForm_EndDecode
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, void **out_final_entity
+)
+{
+	free(custom_state);
+	*out_final_entity = 0;
+	return IFF_FAIL;
+}
+
+static IFF_TYPE_RESULT NestedFailingForm_ProcessNestedForm
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_Tag *form_type
+	, void *final_entity
+)
+{
+	free(final_entity);
+	return IFF_FAIL;
+}
+
+static IFF_TYPE_RESULT FreeingForm_ProcessNestedForm
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_Tag *form_type
+	, void *final_entity
+)
+{
+	free(final_entity);
+	return IFF_OK;
+}
+
+static IFF_TYPE_RESULT LeaveFailingForm_LeaveContainer
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_Tag *container_variant
+	, struct IFF_Tag *container_type
+)
+{
+	return IFF_FAIL;
+}
+
+static IFF_TYPE_RESULT PRIVATE_IFF_TestDecoders_CreateForm
+(
+	struct IFF_FormDecoder **out_decoder
+	, IFF_TYPE_RESULT (*process_nested_form)(struct IFF_Parser_State*, void*, struct IFF_Tag*, void*)
+	, IFF_TYPE_RESULT (*end_decode)(struct IFF_Parser_State*, void*, void**)
+)
+{
+	struct IFF_FormDecoder *dec = 0;
+
+	if (!out_decoder) return IFF_FAIL;
+
+	if (IFF_FormDecoder_Allocate(&dec)) return IFF_FAIL;
+
+	if (IFF_FormDecoder_Construct
+	(
+		dec
+		, TestForm_BeginDecode
+		, TestForm_ProcessChunk
+		, process_nested_form
+		, end_decode
+	))
+	{
+		IFF_FormDecoder_Release(dec);
+		return IFF_FAIL;
+	}
+
+	*out_decoder = dec;
+	return IFF_OK;
+}
+
+IFF_TYPE_RESULT IFF_TestDecoders_CreateEndFailingFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+)
+{
+	return PRIVATE_IFF_TestDecoders_CreateForm
+	(
+		out_decoder
+		, TestForm_ProcessNestedForm
+		, EndFailingForm_EndDecode
+	);
+}
+
+IFF_TYPE_RESULT IFF_TestDecoders_CreateNestedFailingFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+)
+{
+	return PRIVATE_IFF_TestDecoders_CreateForm
+	(
+		out_decoder
+		, NestedFailingForm_ProcessNestedForm
+		, TestForm_EndDecode
+	);
+}
+
+IFF_TYPE_RESULT IFF_TestDecoders_CreateLeaveFailingFormDecoder
+(
+	struct IFF_FormDecoder **out_decoder
+)
+{
+	IFF_TYPE_RESULT result = PRIVATE_IFF_TestDecoders_CreateForm
+	(
+		out_decoder
+		, FreeingForm_ProcessNestedForm
+		, TestForm_EndDecode
+	);
+
+	if (result) return result;
+
+	(*out_decoder)->leave_container = LeaveFailingForm_LeaveContainer;
+	return IFF_OK;
+}
+
+static IFF_TYPE_RESULT EndFailingChunk_EndDecode
+(
+	struct IFF_Parser_State *state
+	, void *custom_state
+	, struct IFF_ContextualData **out
+)
+{
+	struct TestChunkState *cs = custom_state;
+
+	if (cs)
+	{
+		VPS_Data_Release(cs->accumulated);
+		free(cs);
+	}
+
+	return IFF_FAIL;
+}
+
+IFF_TYPE_RESULT IFF_TestDecoders_CreateEndFailingChunkDecoder
+(
+	struct IFF_ChunkDecoder **out_decoder
+)
+{
+	struct IFF_ChunkDecoder *dec = 0;
+
+	if (!out_decoder) return IFF_FAIL;
+
+	if (IFF_ChunkDecoder_Allocate(&dec)) return IFF_FAIL;
+
+	if (IFF_ChunkDecoder_Construct
+	(
+		dec
+		, TestChunk_BeginDecode
+		, TestChunk_ProcessShard
+		, EndFailingChunk_EndDecode
+	))
+	{
+		IFF_ChunkDecoder_Release(dec);
+		return IFF_FAIL;
+	}
+
+	*out_decoder = dec;
+	return IFF_OK;
+}

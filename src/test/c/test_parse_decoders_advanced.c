@@ -356,7 +356,7 @@ cleanup:
 }
 
 /*
- * R78 covers begin_decode. The cases below cover the other decoder
+ * R78 covers begin_decode. R117 to R122 cover the other decoder
  * callbacks whose result the parser used to drop: end_decode,
  * process_nested_form (direct and through a CAT), leave_container (LIST
  * and CAT), and a chunk decoder's end_decode when a shard sequence is
@@ -442,7 +442,7 @@ cleanup:
 }
 
 /**
- * R78 extended: form_decoder_end_failure_propagates
+ * R117: form_decoder_end_failure_propagates
  *
  * FORM ILBM { BMHD }. A FormDecoder whose end_decode rejects the FORM.
  * Parse fails.
@@ -480,7 +480,7 @@ cleanup:
 }
 
 /**
- * R78 extended: form_decoder_nested_failure_propagates
+ * R118, R119: form_decoder_nested_failure_propagates, through a container
  *
  * FORM AAAA { FORM BBBB { BMHD } }, then FORM AAAA { CAT BBBB { FORM BBBB
  * { BMHD } } }. The outer decoder's process_nested_form rejects the inner
@@ -538,7 +538,7 @@ cleanup:
 }
 
 /**
- * R78 extended: form_decoder_leave_container_failure_propagates
+ * R120: form_decoder_leave_container_failure_propagates
  *
  * FORM AAAA { LIST BBBB { FORM BBBB { BMHD } } }, then the same with a CAT.
  * The outer decoder's leave_container fails. Parse fails both ways.
@@ -595,7 +595,7 @@ cleanup:
 }
 
 /**
- * R82 extended: shard_flush_failure_propagates
+ * R121, R122: shard_flush_failure_at_form_end, shard_flush_failure_at_prop_end
  *
  * SHARDING enabled. FORM ILBM { BMHD + shard }, where the shard sequence is
  * flushed by the end of the FORM; then LIST ILBM { PROP ILBM { BMHD + shard }

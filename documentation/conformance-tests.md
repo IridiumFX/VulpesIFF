@@ -207,6 +207,10 @@ A7. Decoder Lifecycle
 | R76 | form_decoder_no_registration | FORM with no registered decoder. Chunks read and skipped. Parse succeeds. |
 | R77 | form_decoder_find_prop | FormDecoder calls FindProp in begin_decode. PROP data from enclosing LIST retrieved. **[COVERED: test 17]** |
 | R78 | form_decoder_error_propagation | FormDecoder's begin_decode reports a failure. Parse fails. |
+| R117 | form_decoder_end_failure_propagates | FORM ILBM { BMHD }. FormDecoder's end_decode reports a failure, rejecting the FORM as a whole. Parse fails; no entity is delivered. The same stream with an end_decode that succeeds parses. |
+| R118 | form_decoder_nested_failure_propagates | FORM AAAA { FORM BBBB { BMHD } }. AAAA's process_nested_form reports a failure on the entity from BBBB. Parse fails. The receiver owns the entity from the call on, whatever it returns. |
+| R119 | form_decoder_nested_failure_through_container | FORM AAAA { CAT BBBB { FORM BBBB { BMHD } } }. The entity bubbles through the CAT to AAAA's process_nested_form, which reports a failure. Parse fails. |
+| R120 | form_decoder_leave_container_failure_propagates | FORM AAAA { LIST BBBB { FORM BBBB { BMHD } } }, and the same with CAT BBBB. AAAA's leave_container reports a failure as the LIST or CAT closes. Parse fails in both. |
 
 
 A8. Sharding
@@ -221,6 +225,8 @@ A8. Sharding
 | R83 | shard_flush_on_nested_container | After shard sequence, nested FORM triggers decoder end_decode (flush). |
 | R84 | shard_no_pending_decoder | SHARDING enabled. '    ' shard with no pending decoder. Silently consumed. Parse succeeds. |
 | R85 | shard_disabled_acts_as_filler | SHARDING NOT enabled. '    ' chunk treated as filler and skipped. No decoder interaction. |
+| R121 | shard_flush_failure_at_form_end | SHARDING enabled. FORM ILBM { BMHD + one shard }. The BMHD ChunkDecoder's end_decode reports a failure when the end of the FORM flushes it. Parse fails. |
+| R122 | shard_flush_failure_at_prop_end | SHARDING enabled. LIST ILBM { PROP ILBM { BMHD + one shard } FORM ILBM { BODY } }. The BMHD ChunkDecoder's end_decode reports a failure when the end of the PROP flushes it. Parse fails. |
 
 
 A9. Checksum Verification
@@ -562,9 +568,9 @@ Appendix: Summary Statistics
 
 | Path       | Conformance Points | Test Functions | Multi-coverage |
 |------------|--------------------|----------------|----------------|
-| Read (R)   | 108                | 103            | 5 (R28,R30,R31,R52,R77) |
+| Read (R)   | 114                | 107            | 7 (R28,R30,R31,R52,R77,R119,R122) |
 | Write (W)  | 102                | 101            | 4 (W47,W73,W86,W87) |
-| **Total**  | **210**            | **204**        | **9** |
+| **Total**  | **216**            | **208**        | **11** |
 
-204 unique test functions verify 210 conformance points.
-9 points share a test function with another point (multi-coverage).
+208 unique test functions verify 216 conformance points.
+11 points share a test function with another point (multi-coverage).

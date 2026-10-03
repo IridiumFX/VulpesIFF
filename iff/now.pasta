@@ -1,0 +1,53 @@
+/* vulpes-iff — the IFF-2025 reader and generator, with the ILBM and 8SVX
+ * codecs.
+ *
+ * The sources stay where the CMake build has them, one level up:
+ *   src/main/c/          IFF .c files (auto-discovered)
+ *   src/test/c/          tests + harness (CMakeLists.txt beside them)
+ *   include/IFF/         public headers
+ *   Codecs/{ILBM,SVX8}/  codec .c + .h, kept at the repo root
+ *   Codecs/demo_codecs.c CLI exe (not part of this artifact)
+ *
+ * Core is not compiled here: vulpes-core is a module of whatever workspace
+ * builds this one, the submodule dependencies/VulpesCore when VulpesIFF is
+ * built on its own, the sibling ../VulpesCore elsewhere.
+ */
+{
+  group:    "dev.iridium",
+  artifact: "vulpes-iff",
+  version:  "1.0.0",
+  description: "VulpesIFF — IFF-2025 reference reader/writer with ILBM + SVX8 codecs",
+  license:  "MIT",
+  lang:     "c",
+  std:      "c23",
+
+  sources: {
+    dir:     "../src/main/c",
+    headers: "../include",
+    include: [
+      "../Codecs/ILBM/ILBM_Codec.c",
+      "../Codecs/ILBM/ILBM_Conversion.c",
+      "../Codecs/ILBM/ILBM_Decompression.c",
+      "../Codecs/ILBM/ILBM_Loader.c",
+      "../Codecs/SVX8/SVX8_Codec.c",
+      "../Codecs/SVX8/SVX8_Decompression.c",
+      "../Codecs/SVX8/SVX8_Loader.c"
+    ]
+  },
+
+  tests: {
+    dir: "../src/test/c"
+  },
+
+  output: { type: "static", name: "vulpes_iff" },
+
+  compile: {
+    warnings: ["Wall", "Wextra"],
+    includes: ["../include", "../Codecs"],
+    defines:  []
+  },
+
+  deps: [
+    { id: "dev.iridium:vulpes-core:*" }
+  ]
+}

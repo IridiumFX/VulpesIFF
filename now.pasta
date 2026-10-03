@@ -1,33 +1,75 @@
-/* VulpesIFF — `now` workspace root, beside the CMake build.
+/* VulpesIFF — `now` build manifest.
  *
- * The root holds no build of its own. It lists the submodule IFF needs and
- * the iff/ module, whose manifest points at the existing layout (src/,
- * include/IFF/, Codecs/), so the sources do not move. Build and test from
- * this directory: `now build`, `now test`.
+ * Layout (post-Maven conversion 2026-05-15):
+ *   src/main/c/                   34 IFF .c files (auto-discovered)
+ *   src/test/c/                   53 entries: tests + harness + CMakeLists
+ *   include/IFF/                  public headers
+ *   Codecs/{ILBM,SVX8}/           codec .c + .h, kept at repo root
+ *   Codecs/demo_codecs.c          CLI exe (excluded from this artifact)
+ *   dependencies/VulpesCore/      submodule, also Maven layout
+ *     src/main/c/VPS_*.c          16 foundation .c files
+ *     include/vulpes/             public headers
+ *   iff/now.pasta                 the same library as a module that
+ *                                 compiles no Core (see below)
  *
- *   dependencies/VulpesCore   submodule, artifact vulpes-core
- *   iff/                      artifact vulpes-iff
- *
- * A workspace that uses IFF lists "../VulpesIFF/iff" beside its own copy
- * of Core, so it links one Core, not this submodule's as well.
+ * This manifest compiles Core's sources into vulpes-iff, so a workspace
+ * that lists this root beside its own Core links two copies. A workspace
+ * that already has Core lists "../VulpesIFF/iff" instead, and VulpesEarth
+ * lists the iff/ module of its submodule. This root is meant to become a
+ * workspace over dependencies/VulpesCore and iff/; it stays as it is until
+ * `now` groups the archives of a test link (as it does for an executable),
+ * because a consumer with two libraries that share Core cannot link its
+ * tests without it (reported to the `now` team 2026-10-03).
  */
 {
   group:    "dev.iridium",
-  artifact: "vulpes-iff-workspace",
+  artifact: "vulpes-iff",
   version:  "1.0.0",
-  description: "VulpesIFF workspace: IFF-2025 reference reader/writer with ILBM + SVX8 codecs",
+  description: "VulpesIFF — IFF-2025 reference reader/writer with ILBM + SVX8 codecs",
   license:  "MIT",
-  langs:    ["c"],
+  lang:     "c",
   std:      "c23",
 
-  /* The root must compile nothing itself. Without this, `now build` here
-   * falls back to the default src/main/c, which is iff/'s source tree,
-   * and compiles it a second time without iff/'s settings. iff/ holds no
-   * .c, so pointing the root at it leaves the root empty. */
-  sources: { dir: "iff" },
+  sources: {
+    headers: "include",
+    include: [
+      "Codecs/ILBM/ILBM_Codec.c",
+      "Codecs/ILBM/ILBM_Conversion.c",
+      "Codecs/ILBM/ILBM_Decompression.c",
+      "Codecs/ILBM/ILBM_Loader.c",
+      "Codecs/SVX8/SVX8_Codec.c",
+      "Codecs/SVX8/SVX8_Decompression.c",
+      "Codecs/SVX8/SVX8_Loader.c",
+      "dependencies/VulpesCore/src/main/c/VPS_Compare_Utils.c",
+      "dependencies/VulpesCore/src/main/c/VPS_ConcurrentDictionary.c",
+      "dependencies/VulpesCore/src/main/c/VPS_Data.c",
+      "dependencies/VulpesCore/src/main/c/VPS_DataReader.c",
+      "dependencies/VulpesCore/src/main/c/VPS_DataWriter.c",
+      "dependencies/VulpesCore/src/main/c/VPS_Decoder.c",
+      "dependencies/VulpesCore/src/main/c/VPS_Decoder_Base256.c",
+      "dependencies/VulpesCore/src/main/c/VPS_Dictionary.c",
+      "dependencies/VulpesCore/src/main/c/VPS_Endian.c",
+      "dependencies/VulpesCore/src/main/c/VPS_Hash_Utils.c",
+      "dependencies/VulpesCore/src/main/c/VPS_List.c",
+      "dependencies/VulpesCore/src/main/c/VPS_ScopedDictionary.c",
+      "dependencies/VulpesCore/src/main/c/VPS_Set.c",
+      "dependencies/VulpesCore/src/main/c/VPS_StreamReader.c",
+      "dependencies/VulpesCore/src/main/c/VPS_StreamWriter.c",
+      "dependencies/VulpesCore/src/main/c/VPS_SwissDictionary.c"
+    ]
+  },
 
-  modules: [
-    "dependencies/VulpesCore",
-    "iff"
-  ]
+  output: { type: "static", name: "vulpes_iff" },
+
+  compile: {
+    warnings: ["Wall", "Wextra"],
+    includes: [
+      "include",
+      "src",
+      "Codecs",
+      "dependencies/VulpesCore/include",
+      "dependencies/VulpesCore/src/main/c"
+    ],
+    defines: []
+  }
 }
